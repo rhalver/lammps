@@ -39,7 +39,7 @@ using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathConst;
 
-#define RVOUS 1    // 0 for irregular, 1 for all2all
+static constexpr int RVOUS = 1;    // 0 for irregular, 1 for all2all
 
 static constexpr double BIG = 1.0e20;
 static constexpr double MASSDELTA = 0.1;
@@ -63,6 +63,7 @@ FixShake::FixShake(LAMMPS *lmp, int narg, char **arg) :
   create_attribute = 1;
   dof_flag = 1;
   scalar_flag = 1;
+  extscalar = 1;
   stores_ids = 1;
   centroidstressflag = CENTROID_AVAIL;
   next_output = -1;
@@ -207,8 +208,8 @@ FixShake::FixShake(LAMMPS *lmp, int narg, char **arg) :
 
   if (output_every) {
     int nb = atom->nbondtypes + 1;
-    b_count = new int[nb];
-    b_count_all = new int[nb];
+    b_count = new bigint[nb];
+    b_count_all = new bigint[nb];
     b_ave = new double[nb];
     b_ave_all = new double[nb];
     b_max = new double[nb];
@@ -217,8 +218,8 @@ FixShake::FixShake(LAMMPS *lmp, int narg, char **arg) :
     b_min_all = new double[nb];
 
     int na = atom->nangletypes + 1;
-    a_count = new int[na];
-    a_count_all = new int[na];
+    a_count = new bigint[na];
+    a_count_all = new bigint[na];
     a_ave = new double[na];
     a_ave_all = new double[na];
     a_max = new double[na];
@@ -371,7 +372,9 @@ void FixShake::init()
   // if rRESPA, find associated fix that must exist
   // could have changed locations in fix list since created
   // set ptrs to rRESPA variables
+  // set respa to 0 if verlet is used and to 1 otherwise
 
+  respa = 0;
   fix_respa = nullptr;
   if (utils::strmatch(update->integrate_style,"^respa")) {
     if (update->whichflag > 0) {
@@ -379,10 +382,12 @@ void FixShake::init()
       if (fixes.size() > 0) fix_respa = dynamic_cast<FixRespa *>(fixes.front());
       else error->all(FLERR,"Run style respa did not create fix RESPA");
     }
-    auto respa_style = dynamic_cast<Respa *>(update->integrate);
-    nlevels_respa = respa_style->nlevels;
-    loop_respa = respa_style->loop;
-    step_respa = respa_style->step;
+    auto respa_ptr = dynamic_cast<Respa *>(update->integrate);
+    if (!respa_ptr) error->all(FLERR, "Failure to access Respa style {}", update->integrate_style);
+    respa = 1;
+    nlevels_respa = respa_ptr->nlevels;
+    loop_respa = respa_ptr->loop;
+    step_respa = respa_ptr->step;
   }
 
   // set equilibrium bond distances
@@ -473,18 +478,22 @@ void FixShake::setup(int vflag)
       next_output = (ntimestep/output_every)*output_every + output_every;
   } else next_output = -1;
 
-  // set respa to 0 if verlet is used and to 1 otherwise
-
-  if (utils::strmatch(update->integrate_style,"^verlet"))
-    respa = 0;
-  else
-    respa = 1;
-
   if (!respa) {
     dtv     = update->dt;
     dtfsq   = 0.5 * update->dt * update->dt * force->ftm2v;
     if (!rattle) dtfsq = update->dt * update->dt * force->ftm2v;
   } else {
+    auto respa_ptr = dynamic_cast<Respa *>(update->integrate);
+    if (!respa_ptr) error->all(FLERR, "Failure to access Respa style {}", update->integrate_style);
+    if (update->whichflag > 0) {
+      auto fixes = modify->get_fix_by_style("^RESPA");
+      if (fixes.size() > 0) fix_respa = dynamic_cast<FixRespa *>(fixes.front());
+      else error->all(FLERR,"Run style respa did not create fix RESPA");
+    }
+    respa = 1;
+    nlevels_respa = respa_ptr->nlevels;
+    loop_respa = respa_ptr->loop;
+    step_respa = respa_ptr->step;
     dtv = step_respa[0];
     dtf_innerhalf = 0.5 * step_respa[0] * force->ftm2v;
     dtf_inner = dtf_innerhalf;
@@ -755,7 +764,7 @@ void FixShake::min_post_force(int vflag)
    count # of degrees-of-freedom removed by SHAKE for atoms in igroup
 ------------------------------------------------------------------------- */
 
-int FixShake::dof(int igroup)
+bigint FixShake::dof(int igroup)
 {
   int groupbit = group->bitmask[igroup];
 
@@ -766,7 +775,7 @@ int FixShake::dof(int igroup)
   // count dof in a cluster if and only if
   // the central atom is in group and atom i is the central atom
 
-  int n = 0;
+  bigint n = 0;
   for (int i = 0; i < nlocal; i++) {
     if (!(mask[i] & groupbit)) continue;
     if (shake_flag[i] == 0) continue;
@@ -777,8 +786,8 @@ int FixShake::dof(int igroup)
     else if (shake_flag[i] == 4) n += 3;
   }
 
-  int nall;
-  MPI_Allreduce(&n,&nall,1,MPI_INT,MPI_SUM,world);
+  bigint nall;
+  MPI_Allreduce(&n,&nall,1,MPI_LMP_BIGINT,MPI_SUM,world);
   return nall;
 }
 
@@ -1098,7 +1107,7 @@ void FixShake::find_clusters()
   // print info on SHAKE clusters
   // -----------------------------------------------------
 
-  int count1,count2,count3,count4;
+  bigint count1,count2,count3,count4;
   count1 = count2 = count3 = count4 = 0;
   for (i = 0; i < nlocal; i++) {
     if (shake_flag[i] == 1) count1++;
@@ -1107,15 +1116,15 @@ void FixShake::find_clusters()
     else if (shake_flag[i] == 4) count4++;
   }
 
-  int tmp;
+  bigint tmp;
   tmp = count1;
-  MPI_Allreduce(&tmp,&count1,1,MPI_INT,MPI_SUM,world);
+  MPI_Allreduce(&tmp,&count1,1,MPI_LMP_BIGINT,MPI_SUM,world);
   tmp = count2;
-  MPI_Allreduce(&tmp,&count2,1,MPI_INT,MPI_SUM,world);
+  MPI_Allreduce(&tmp,&count2,1,MPI_LMP_BIGINT,MPI_SUM,world);
   tmp = count3;
-  MPI_Allreduce(&tmp,&count3,1,MPI_INT,MPI_SUM,world);
+  MPI_Allreduce(&tmp,&count3,1,MPI_LMP_BIGINT,MPI_SUM,world);
   tmp = count4;
-  MPI_Allreduce(&tmp,&count4,1,MPI_INT,MPI_SUM,world);
+  MPI_Allreduce(&tmp,&count4,1,MPI_LMP_BIGINT,MPI_SUM,world);
 
   if (comm->me == 0) {
     utils::logmesg(lmp,"{:>8} = # of size 2 clusters\n"
@@ -2682,12 +2691,12 @@ void FixShake::stats()
 
   // sum across all procs
 
-  MPI_Allreduce(b_count,b_count_all,nb,MPI_INT,MPI_SUM,world);
+  MPI_Allreduce(b_count,b_count_all,nb,MPI_LMP_BIGINT,MPI_SUM,world);
   MPI_Allreduce(b_ave,b_ave_all,nb,MPI_DOUBLE,MPI_SUM,world);
   MPI_Allreduce(b_max,b_max_all,nb,MPI_DOUBLE,MPI_MAX,world);
   MPI_Allreduce(b_min,b_min_all,nb,MPI_DOUBLE,MPI_MIN,world);
 
-  MPI_Allreduce(a_count,a_count_all,na,MPI_INT,MPI_SUM,world);
+  MPI_Allreduce(a_count,a_count_all,na,MPI_LMP_BIGINT,MPI_SUM,world);
   MPI_Allreduce(a_ave,a_ave_all,na,MPI_DOUBLE,MPI_SUM,world);
   MPI_Allreduce(a_max,a_max_all,na,MPI_DOUBLE,MPI_MAX,world);
   MPI_Allreduce(a_min,a_min_all,na,MPI_DOUBLE,MPI_MIN,world);
@@ -3123,7 +3132,14 @@ void FixShake::reset_dt()
     dtv = update->dt;
     if (rattle) dtfsq   = 0.5 * update->dt * update->dt * force->ftm2v;
     else dtfsq = update->dt * update->dt * force->ftm2v;
+    respa = 0;
   } else {
+    auto respa_ptr = dynamic_cast<Respa *>(update->integrate);
+    if (!respa_ptr) error->all(FLERR, "Failure to access Respa style {}", update->integrate_style);
+    respa = 1;
+    nlevels_respa = respa_ptr->nlevels;
+    loop_respa = respa_ptr->loop;
+    step_respa = respa_ptr->step;
     dtv = step_respa[0];
     dtf_innerhalf = 0.5 * step_respa[0] * force->ftm2v;
     if (rattle) dtf_inner = dtf_innerhalf;
