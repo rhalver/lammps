@@ -13,6 +13,7 @@
 
 #include "helpers.h"
 
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QProcess>
@@ -21,7 +22,7 @@
 // duplicate string, STL version
 char *mystrdup(const std::string &text)
 {
-    auto tmp = new char[text.size() + 1];
+    auto *tmp = new char[text.size() + 1];
     memcpy(tmp, text.c_str(), text.size() + 1);
     return tmp;
 }
@@ -64,6 +65,23 @@ bool has_exe(const QString &exe)
         return true; // Found!
     else
         return false; // Not found!
+}
+
+// recursively remove all contents from a directory
+
+void purge_directory(const QString &dir)
+{
+    QDir directory(dir);
+
+    directory.setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
+    const auto &entries = directory.entryList();
+    for (auto &entry : entries) {
+        if (!directory.remove(entry)) {
+            directory.cd(entry);
+            directory.removeRecursively();
+            directory.cdUp();
+        }
+    }
 }
 
 // Local Variables:
