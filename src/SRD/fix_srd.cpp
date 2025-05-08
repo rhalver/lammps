@@ -830,6 +830,8 @@ void FixSRD::reset_velocities()
   double vsq, tbin, scale;
   double *vave, *xlamda;
   double vstream[3];
+  double *h_rate = domain->h_rate;
+  double *h_ratelo = domain->h_ratelo;
 
   // if requested, perform a dynamic shift of bin positions
 
@@ -880,6 +882,29 @@ void FixSRD::reset_velocities()
       iz = static_cast<int>((x[i][2] - corner[2]) * bininv1z);
       iz = MAX(iz, binlo[2]);
       iz = MIN(iz, binhi[2]);
+
+      // link first and last cells for PBCs, shift velocity if velocity remap
+      if (domain->xperiodic && ix == binhi[0]) {
+        ix = binlo[0];
+        if (domain->deform_vremap) {
+          v[i][0] -= h_rate[0];
+        }
+      }
+      if (domain->yperiodic && iy == binhi[1]) {
+        iy = binlo[1];
+        if (domain->deform_vremap) {
+          v[i][0] -= h_rate[5];
+          v[i][1] -= h_rate[1];
+        }
+      }
+      if (domain->zperiodic && iz == binhi[2]) {
+        iz = binlo[2];
+        if (domain->deform_vremap) {
+          v[i][0] -= h_rate[4];
+          v[i][1] -= h_rate[3];
+          v[i][2] -= h_rate[2];
+        }
+      }
 
       ibin = (iz - binlo[2]) * nbiny * nbinx + (iy - binlo[1]) * nbinx + (ix - binlo[0]);
       binnext[i] = binhead[ibin];
@@ -946,8 +971,6 @@ void FixSRD::reset_velocities()
   srd_bin_count = 0;
 
   if (dimension == 2) axis = 2;
-  double *h_rate = domain->h_rate;
-  double *h_ratelo = domain->h_ratelo;
 
   for (i = 0; i < nbins; i++) {
     vbin[i].value[0] = 0.0;
@@ -1052,6 +1075,38 @@ void FixSRD::reset_velocities()
           MathExtra::scale3(vmax / sqrt(vsq), v[i]);
         }
       }
+  }
+
+  // undo velocity remap
+  if (deformflag && domain->deform_vremap) {
+    domain->x2lamda(nlocal);
+    for (i = 0; i < nlocal; i++) {
+      if (mask[i] & groupbit) {
+        ix = static_cast<int>((x[i][0] - corner[0]) * bininv1x);
+        ix = MAX(ix, binlo[0]);
+        ix = MIN(ix, binhi[0]);
+        iy = static_cast<int>((x[i][1] - corner[1]) * bininv1y);
+        iy = MAX(iy, binlo[1]);
+        iy = MIN(iy, binhi[1]);
+        iz = static_cast<int>((x[i][2] - corner[2]) * bininv1z);
+        iz = MAX(iz, binlo[2]);
+        iz = MIN(iz, binhi[2]);
+
+        if (domain->xperiodic && ix == binhi[0]) {
+          v[i][0] += h_rate[0];
+        }
+        if (domain->yperiodic && iy == binhi[1]) {
+          v[i][0] += h_rate[5];
+          v[i][1] += h_rate[1];
+        }
+        if (domain->zperiodic && iz == binhi[2]) {
+          v[i][0] += h_rate[4];
+          v[i][1] += h_rate[3];
+          v[i][2] += h_rate[2];
+        }
+      }
+    }
+    domain->lamda2x(nlocal);
   }
 }
 
