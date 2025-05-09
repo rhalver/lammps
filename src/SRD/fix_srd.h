@@ -43,7 +43,7 @@ class FixSRD : public Fix {
   int me, nprocs;
   int bigexist, biggroup, biggroupbit;
   int collidestyle, lamdaflag, overlap, insideflag, exactflag, maxbounceallow;
-  int cubicflag, shiftuser, shiftseed, shiftflag, tstat;
+  int cubicflag, shiftuser, shiftseed, shiftflag, tstat, putflag;
   int rescale_rotate, rescale_collide;
   double gridsrd, gridsearch, lamda, radfactor, cubictol;
   int triclinic, change_size, change_shape, deformflag;

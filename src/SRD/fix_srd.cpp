@@ -123,6 +123,7 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
   shiftuser = SHIFT_NO;
   shiftseed = 0;
   tstat = 0;
+  putflag = 0;
   rescale_rotate = rescale_collide = 1;
 
   int iarg = 8;
@@ -199,6 +200,10 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
       if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
       tstat = utils::logical(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
+    } else if (strcmp(arg[iarg], "put") == 0) {
+      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command: stream");
+      putflag = utils::logical(FLERR, arg[iarg + 1], false, lmp);
+      iarg += 2;
     } else if (strcmp(arg[iarg], "rescale") == 0) {
       if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
       if (strcmp(arg[iarg + 1], "no") == 0)
@@ -232,6 +237,7 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
   if (cubictol < 0.0 || cubictol > 1.0) error->all(FLERR, "Illegal fix srd command");
   if ((shiftuser == SHIFT_YES || shiftuser == SHIFT_POSSIBLE) && shiftseed <= 0)
     error->all(FLERR, "Illegal fix srd command");
+  if (putflag && !tstat) error->all(FLERR, "PUT requires tstat");
 
   // initialize Marsaglia RNG with processor-unique seed
 
@@ -961,7 +967,7 @@ void FixSRD::reset_velocities()
   int dof_temp = 1;
   int dof_tstat;
   if (tstat) {
-    if (deformflag)
+    if (deformflag && !putflag)
       dof_tstat = dof_temp = 0;
     else
       dof_tstat = 1;
@@ -1020,7 +1026,7 @@ void FixSRD::reset_velocities()
 
       vave = vbin[i].vsum;
 
-      if (deformflag) {
+      if (deformflag && !putflag) {
         xlamda = vbin[i].xctr;
         vstream[0] =
             h_rate[0] * xlamda[0] + h_rate[5] * xlamda[1] + h_rate[4] * xlamda[2] + h_ratelo[0];
@@ -2829,6 +2835,7 @@ void FixSRD::parameterize()
     mesg += fmt::format("  SRD per actual grid cell = {:.8}\n", srd_per_cell);
     mesg += fmt::format("  SRD viscosity = {:.8}\n", viscosity);
     mesg += fmt::format("  big/SRD mass density ratio = {:.8}\n", mdratio);
+    mesg += fmt::format("  PUT = {}\n", putflag);
     utils::logmesg(lmp, mesg);
   }
 
