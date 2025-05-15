@@ -32,6 +32,11 @@ Syntax
          *yes* = update molecule IDs based on new global topology (default)
          *no* = do not update molecule IDs
          *molmap* = customize how molecule IDs are updated
+       *rate_limit_multi* = Nrxns react-ID_1 ... react-ID_N Nlimit Nsteps
+         Nrxns = number of reactions to include in rate limit
+         react-IDs = names of the reactions to include in rate limit
+         Nlimit = maximum number of reactions allowed to occur within interval
+         Nsteps = the interval (number of timesteps) over which to count reactions
 
 * react = mandatory argument indicating new reaction specification
 * react-ID = user-assigned name for the reaction
@@ -213,6 +218,9 @@ the simulation.  No check is performed to test for this consistency.
 For post-reaction atoms that have a template molecule ID that does not
 exist in pre-reaction template, they are assigned a new molecule ID that
 does not currently exist in the simulation.
+
+The *rate_limit_multi* keyword is a generalization of *rate_limit* keyword
+and is discussed below.
 
 The following comments pertain to each *react* argument (in other
 words, they can be customized for each reaction, or reaction step):
@@ -679,6 +687,20 @@ Nlimit within an interval of Nsteps timesteps. No reactions are
 permitted to occur within the first Nsteps timesteps of the first run
 after reading a data file. Nlimit can be specified with an equal-style
 :doc:`variable <variable>`.
+
+The *rate_limit_multi* keyword is a generalization of the *rate_limit*
+keyword that calculates the value of Nlimit by summing reaction
+occurences over multiple reactions. The number of reactions to sum over
+is specified by Nrxns, and the reactions are listed by reaction name
+(react-ID). Reaction occurences are chosen randomly from all eligible
+reaction sites of all listed reactions. Multiple *rate_limit_multi*
+keywords can be specified. If the same reaction is listed for more than one
+*rate_limit_multi* keyword, note that the skipped reactions are chosen
+independently, so it is likely that more reactions will be skipped than
+strictly necessary. The *rate_limit_multi* keyword is a 'common keyword'
+and must be specified before any 'react' arguments. This keyword is useful
+when multiple *react* arguments define similar types of reactions, and the
+relative rates between two or more types of reactions must be enforced.
 
 The *stabilize_steps* keyword allows for the specification of how many
 time steps a reaction site is stabilized before being returned to the
