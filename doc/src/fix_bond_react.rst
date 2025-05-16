@@ -696,12 +696,13 @@ sum over is specified by Nrxns, and the reactions are listed by reaction
 name (react-ID). Reaction occurences are chosen randomly from all eligible
 reaction sites of all listed reactions. Multiple *rate_limit_multi*
 keywords can be specified. If the same reaction is listed for more than one
-*rate_limit_multi* keyword, note that the skipped reactions are chosen
-independently, so it is likely that more reactions will be skipped than
-strictly necessary. The *rate_limit_multi* keyword is a 'common keyword'
-and must be specified before any 'react' arguments. This keyword is useful
-when multiple *react* arguments define similar types of reactions, and the
-relative rates between two or more types of reactions must be enforced.
+*rate_limit_multi* keyword or a listed reaction also has a *rate_limit*
+keyword, note that the skipped reactions are chosen independently, so it is
+likely that more reactions will be skipped than strictly necessary. The
+*rate_limit_multi* keyword is a 'common keyword' and must be specified
+before any 'react' arguments. This keyword is useful when multiple *react*
+arguments define similar types of reactions, and the relative rates between
+two or more types of reactions must be enforced.
 
 The *stabilize_steps* keyword allows for the specification of how many
 time steps a reaction site is stabilized before being returned to the
