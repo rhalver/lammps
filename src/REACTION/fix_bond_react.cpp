@@ -191,8 +191,10 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   int iarg = 3;
   stabilization_flag = 0;
   molid_mode = RESET_MOL_IDS::YES;
-  int num_common_keywords = 2;
-  for (int m = 0; m < num_common_keywords; m++) {
+  int hang_catch = 0;
+  int num_common_keywords = 50; // generous arbitrary limit
+  while (true) {
+    if (++hang_catch > num_common_keywords) error->all(FLERR, iarg, "Incorrect fix bond/react command syntax");
     if (strcmp(arg[iarg],"stabilization") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"fix bond/react stabilization", error);
       stabilization_flag = utils::logical(FLERR,arg[iarg+1],false,lmp);
@@ -211,6 +213,19 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       else if (str == "molmap") molid_mode = RESET_MOL_IDS::MOLMAP;
       else error->all(FLERR, iarg+1, "Unknown option {} for 'reset_mol_ids' keyword", str);
       iarg += 2;
+    } else if (strcmp(arg[iarg],"rate_limit_multi") == 0) {
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit_multi", error);
+      struct RateLimitMulti rlm;
+      rlm.Nrxns = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      if (iarg+rlm.Nrxns+4 > narg) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit_multi", error);
+      for (int i = 0; i < rlm.Nrxns; i++) {
+        std::string tmpstr = arg[iarg+2+i];
+        rlm.rxn_names.push_back(tmpstr);
+      }
+      rlm.Nlimit = utils::inumeric(FLERR,arg[iarg+rlm.Nrxns+2],false,lmp);
+      rlm.Nsteps = utils::inumeric(FLERR,arg[iarg+rlm.Nrxns+3],false,lmp);
+      rate_limit_multi.push_back(rlm);
+      iarg += rlm.Nrxns+4;
     } else if (strcmp(arg[iarg],"react") == 0) {
       break;
     } else error->all(FLERR, iarg, "Unknown fix bond/react command keyword {}", arg[iarg]);
@@ -442,6 +457,21 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
           } else break;
         }
       } else error->all(FLERR,"Illegal fix bond/react command: unknown keyword");
+    }
+  }
+
+  for (auto & rlm : rate_limit_multi) {
+    for (int i = 0; i < rlm.Nrxns; i++) {
+      int existflag = 0;
+      for (int j = 0; j < nreacts; j++) {
+        std::string my_rxn_name = rxn_name[j];
+        if (rlm.rxn_names[i] == my_rxn_name) {
+          rlm.rxnIDs.push_back(j);
+          existflag = 1;
+          break;
+        }
+      }
+      if (existflag == 0) error->all(FLERR, "Fix bond/react: Invalid reaction name {} listed for rate_limit_multi", rlm.rxn_names[i]);
     }
   }
 
