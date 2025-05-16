@@ -689,10 +689,11 @@ after reading a data file. Nlimit can be specified with an equal-style
 :doc:`variable <variable>`.
 
 The *rate_limit_multi* keyword is a generalization of the *rate_limit*
-keyword that calculates the value of Nlimit by summing reaction
-occurences over multiple reactions. The number of reactions to sum over
-is specified by Nrxns, and the reactions are listed by reaction name
-(react-ID). Reaction occurences are chosen randomly from all eligible
+keyword that calculates the number of reaction occurrences by summing over
+multiple reactions. This sum is limited to Nlimit, which can be specified
+with an equal-style :doc:`variable <variable>`. The number of reactions to
+sum over is specified by Nrxns, and the reactions are listed by reaction
+name (react-ID). Reaction occurences are chosen randomly from all eligible
 reaction sites of all listed reactions. Multiple *rate_limit_multi*
 keywords can be specified. If the same reaction is listed for more than one
 *rate_limit_multi* keyword, note that the skipped reactions are chosen
