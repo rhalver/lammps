@@ -70,8 +70,6 @@ class FixBondReact : public Fix {
   int stabilization_flag;
   RESET_MOL_IDS molid_mode;
   int custom_exclude_flag;
-  int **rate_limit;
-  int **store_rxn_count;
   int *stabilize_steps_flag;
   int *custom_charges_fragid;
   int *rescale_charges_flag;   // if nonzero, indicates number of atoms whose charges are updated
@@ -93,13 +91,12 @@ class FixBondReact : public Fix {
   int status;
   int *groupbits;
 
-  int rxnID;          // integer ID for identifying current bond/react
+  int rxnID;          // integer ID for identifying current reaction
   char **rxn_name;    // name of reaction
   int *reaction_count;
   int *reaction_count_total;
   int nmax;          // max num local atoms
   int max_natoms;    // max natoms in a molecule template
-  int max_rate_limit_steps;    // max rate limit interval
   tagint *partner, *finalpartner;
   double **distsq;
   int *nattempt;
@@ -259,13 +256,15 @@ class FixBondReact : public Fix {
   };
   std::vector<AddAtom> addatoms;
 
-  struct RateLimitMulti {
+  struct RxnLimit {
+    typedef enum { RATE_LIMIT, MAX_RXN } TYPE;
+    TYPE type;
     int Nrxns, var_flag, var_id, Nlimit, Nsteps;
     std::vector<int> rxnIDs;
     std::vector<std::string> rxn_names;
     std::deque<int> store_rxn_counts;
   };
-  std::vector<RateLimitMulti> rate_limit_multi;
+  std::vector<RxnLimit> rate_limit_multi;
 
   // DEBUG
 

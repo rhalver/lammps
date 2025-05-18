@@ -107,7 +107,7 @@ enum { DISTANCE, ANGLE, DIHEDRAL, ARRHENIUS, RMSD, CUSTOM };
 enum { ATOM, FRAG };
 
 // keyword values that accept variables as input
-enum { NEVERY, RMIN, RMAX, PROB, NRATE };
+enum { NEVERY, RMIN, RMAX, PROB };
 
 // flag for one-proc vs shared reaction sites
 enum { LOCAL, GLOBAL };
@@ -215,7 +215,8 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       iarg += 2;
     } else if (strcmp(arg[iarg],"rate_limit_multi") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit_multi", error);
-      struct RateLimitMulti rlm;
+      struct RxnLimit rlm;
+      rlm.type = RxnLimit::RATE_LIMIT;
       rlm.Nrxns = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       if (iarg+rlm.Nrxns+4 > narg) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit_multi", error);
       for (int i = 0; i < rlm.Nrxns; i++) {
@@ -261,7 +262,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   memory->create(nghostlykeep,nreacts,"bond/react:nghostlykeep");
   memory->create(seed,nreacts,"bond/react:seed");
   memory->create(limit_duration,nreacts,"bond/react:limit_duration");
-  memory->create(rate_limit,3,nreacts,"bond/react:rate_limit");
   memory->create(stabilize_steps_flag,nreacts,"bond/react:stabilize_steps_flag");
   memory->create(custom_charges_fragid,nreacts,"bond/react:custom_charges_fragid");
   memory->create(rescale_charges_flag,nreacts,"bond/react:rescale_charges_flag");
@@ -289,8 +289,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     fraction[i] = 1.0;
     seed[i] = 12345;
     max_rxn[i] = INT_MAX;
-    for (int j = 0; j < 3; j++)
-      rate_limit[j][i] = 0;
     stabilize_steps_flag[i] = 0;
     custom_charges_fragid[i] = -1;
     rescale_charges_flag[i] = 0;
@@ -393,14 +391,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
         if (max_rxn[rxn] < 0) error->all(FLERR,"Illegal fix bond/react command: "
                                          "'max_rxn' cannot be negative");
         iarg += 2;
-      } else if (strcmp(arg[iarg],"rate_limit") == 0) {
-        if (iarg+3 > narg) error->all(FLERR,"Illegal fix bond/react command: "
-                                      "'rate_limit' has too few arguments");
-        rate_limit[0][rxn] = 1; // serves as flag for rate_limit keyword
-        if (strncmp(arg[iarg+1],"v_",2) == 0) read_variable_keyword(&arg[iarg+1][2],NRATE,rxn);
-        else rate_limit[1][rxn] = utils::numeric(FLERR,arg[iarg+1],false,lmp);
-        rate_limit[2][rxn] = utils::numeric(FLERR,arg[iarg+2],false,lmp);
-        iarg += 3;
       } else if (strcmp(arg[iarg],"stabilize_steps") == 0) {
         if (stabilization_flag == 0) error->all(FLERR,"Stabilize_steps keyword "
                                                 "used without stabilization keyword");
@@ -485,18 +475,15 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   }
 
   max_natoms = 0; // the number of atoms in largest molecule template
-  max_rate_limit_steps = 0;
   for (int myrxn = 0; myrxn < nreacts; myrxn++) {
     twomol = atom->molecules[reacted_mol[myrxn]];
     max_natoms = MAX(max_natoms,twomol->natoms);
-    max_rate_limit_steps = MAX(max_rate_limit_steps,rate_limit[2][myrxn]);
   }
 
   memory->create(equivalences,max_natoms,2,nreacts,"bond/react:equivalences");
   memory->create(reverse_equiv,max_natoms,2,nreacts,"bond/react:reverse_equiv");
   memory->create(edge,max_natoms,nreacts,"bond/react:edge");
   memory->create(landlocked_atoms,max_natoms,nreacts,"bond/react:landlocked_atoms");
-  memory->create(store_rxn_count,max_rate_limit_steps,nreacts,"bond/react:store_rxn_count");
   memory->create(custom_charges,max_natoms,nreacts,"bond/react:custom_charges");
   memory->create(delete_atoms,max_natoms,nreacts,"bond/react:delete_atoms");
   memory->create(create_atoms,max_natoms,nreacts,"bond/react:create_atoms");
@@ -522,9 +509,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       for (int m = 0; m < 2; m++) {
         equivalences[i][m][j] = i+1;
       }
-    }
-    for (int i = 0; i < max_rate_limit_steps; i++) {
-      store_rxn_count[i][j] = -1;
     }
   }
 
@@ -714,7 +698,6 @@ FixBondReact::~FixBondReact()
   memory->destroy(equivalences);
   memory->destroy(reverse_equiv);
   memory->destroy(landlocked_atoms);
-  memory->destroy(store_rxn_count);
   memory->destroy(custom_charges);
   memory->destroy(delete_atoms);
   memory->destroy(create_atoms);
@@ -737,7 +720,6 @@ FixBondReact::~FixBondReact()
   memory->destroy(limit_duration);
   memory->destroy(var_flag);
   memory->destroy(var_id);
-  memory->destroy(rate_limit);
   memory->destroy(stabilize_steps_flag);
   memory->destroy(custom_charges_fragid);
   memory->destroy(rescale_charges_flag);
@@ -934,14 +916,6 @@ void FixBondReact::init_list(int /*id*/, NeighList *ptr)
 void FixBondReact::post_integrate()
 {
   // update store_rxn_count on every step
-  for (int myrxn = 0; myrxn < nreacts; myrxn++) {
-    if (rate_limit[0][myrxn] == 1) {
-      for (int i = rate_limit[2][myrxn]-1; i > 0; i--) {
-        store_rxn_count[i][myrxn] = store_rxn_count[i-1][myrxn];
-      }
-      store_rxn_count[0][myrxn] = reaction_count_total[myrxn];
-    }
-  }
   for (auto &rlm : rate_limit_multi) {
     int rxn_count_sum = 0;
     for (auto i : rlm.rxnIDs) rxn_count_sum += reaction_count_total[i];
@@ -1041,23 +1015,10 @@ void FixBondReact::post_integrate()
 
   int j;
   for (rxnID = 0; rxnID < nreacts; rxnID++) {
-    if (rate_limit_multi_flag[rxnID] == 0) continue;
-    int rate_limit_flag = 1;
-    if (rate_limit[0][rxnID] == 1) {
-      int myrxn_count = store_rxn_count[rate_limit[2][rxnID]-1][rxnID];
-      if (myrxn_count == -1) rate_limit_flag = 0;
-      else {
-        int nrxns_delta = reaction_count_total[rxnID] - myrxn_count;
-        int my_nrate;
-        if (var_flag[NRATE][rxnID] == 1) {
-          my_nrate = input->variable->compute_equal(var_id[NRATE][rxnID]);
-        } else my_nrate = rate_limit[1][rxnID];
-        if (nrxns_delta >= my_nrate) rate_limit_flag = 0;
-      }
-    }
     if ((update->ntimestep % nevery[rxnID]) ||
         (max_rxn[rxnID] <= reaction_count_total[rxnID]) ||
-        (rate_limit_flag == 0)) continue;
+        (rate_limit_multi_flag[rxnID] == 0)) continue;
+
     for (int ii = 0; ii < nall; ii++) {
       partner[ii] = 0;
       finalpartner[ii] = 0;
@@ -1555,21 +1516,25 @@ void FixBondReact::superimpose_algorithm()
   std::minstd_rand park_rng(rnd());
 
   // check if we overstepped our reaction limit, via either max_rxn or rate_limit
-  for (int i = 0; i < nreacts; i++) {
+  for (auto rlm : rate_limit_multi) {
+    // NEED2FIX let's start simple, assuming that *only 1* rxn per rate_limit_'multi'
+    if (rlm.Nrxns > 1) continue; // NEED2FIX
+    int rxnID = rlm.rxnIDs[0];
     int overstep = 0;
-    int max_rxn_overstep = reaction_count_total[i] + delta_rxn[i] - max_rxn[i];
+    int max_rxn_overstep = reaction_count_total[rxnID] + delta_rxn[rxnID] - max_rxn[rxnID];
     overstep = MAX(overstep,max_rxn_overstep);
-    if (rate_limit[0][i] == 1) {
-      int myrxn_count = store_rxn_count[rate_limit[2][i]-1][i];
-      if (myrxn_count != -1) {
-        int nrxn_delta = reaction_count_total[i] + delta_rxn[i] - myrxn_count;
-        int my_nrate;
-        if (var_flag[NRATE][i] == 1) {
-          my_nrate = input->variable->compute_equal(var_id[NRATE][i]);
-        } else my_nrate = rate_limit[1][i];
-        int rate_limit_overstep = nrxn_delta - my_nrate;
-        overstep = MAX(overstep,rate_limit_overstep);
-      }
+
+    int myrxn_count = rlm.store_rxn_counts[rlm.Nsteps-1];
+    if (myrxn_count != -1) {
+      int rxn_count_sum = 0;
+      for (auto i : rlm.rxnIDs) rxn_count_sum += reaction_count_total[rxnID];
+      int nrxn_delta = rxn_count_sum + delta_rxn[rxnID] - myrxn_count;
+      int my_nrate;
+      if (rlm.var_flag == 1) {
+        my_nrate = input->variable->compute_equal(rlm.var_id);
+      } else my_nrate = rlm.Nlimit;
+      int rate_limit_overstep = nrxn_delta - my_nrate;
+      overstep = MAX(overstep,rate_limit_overstep);
     }
 
     if (overstep > 0) {
@@ -1578,33 +1543,33 @@ void FixBondReact::superimpose_algorithm()
       int *all_localkeep;
       memory->create(local_rxncounts,nprocs,"bond/react:local_rxncounts");
       memory->create(all_localkeep,nprocs,"bond/react:all_localkeep");
-      MPI_Gather(&local_rxn_count[i],1,MPI_INT,local_rxncounts,1,MPI_INT,0,world);
+      MPI_Gather(&local_rxn_count[rxnID],1,MPI_INT,local_rxncounts,1,MPI_INT,0,world);
       if (comm->me == 0) {
         // when using variable input for rate_limit, rate_limit_overstep could be > delta_rxn (below)
         // we need to limit overstep to the number of reactions on this timestep
         // essentially skipping all reactions, would be more efficient to use a skip_all flag
-        if (overstep > delta_rxn[i]) overstep = delta_rxn[i];
-        int nkeep = delta_rxn[i] - overstep;
+        if (overstep > delta_rxn[rxnID]) overstep = delta_rxn[rxnID];
+        int nkeep = delta_rxn[rxnID] - overstep;
         int *rxn_by_proc;
-        memory->create(rxn_by_proc,delta_rxn[i],"bond/react:rxn_by_proc");
-        for (int j = 0; j < delta_rxn[i]; j++)
+        memory->create(rxn_by_proc,delta_rxn[rxnID],"bond/react:rxn_by_proc");
+        for (int j = 0; j < delta_rxn[rxnID]; j++)
           rxn_by_proc[j] = -1; // corresponds to ghostly
         int itemp = 0;
         for (int j = 0; j < nprocs; j++)
           for (int k = 0; k < local_rxncounts[j]; k++)
             rxn_by_proc[itemp++] = j;
-        std::shuffle(&rxn_by_proc[0],&rxn_by_proc[delta_rxn[i]], park_rng);
+        std::shuffle(&rxn_by_proc[0],&rxn_by_proc[delta_rxn[rxnID]], park_rng);
         for (int j = 0; j < nprocs; j++)
           all_localkeep[j] = 0;
-        nghostlykeep[i] = 0;
+        nghostlykeep[rxnID] = 0;
         for (int j = 0; j < nkeep; j++) {
-          if (rxn_by_proc[j] == -1) nghostlykeep[i]++;
+          if (rxn_by_proc[j] == -1) nghostlykeep[rxnID]++;
           else all_localkeep[rxn_by_proc[j]]++;
         }
         memory->destroy(rxn_by_proc);
       }
-      MPI_Scatter(&all_localkeep[0],1,MPI_INT,&nlocalkeep[i],1,MPI_INT,0,world);
-      MPI_Bcast(&nghostlykeep[i],1,MPI_INT,0,world);
+      MPI_Scatter(&all_localkeep[0],1,MPI_INT,&nlocalkeep[rxnID],1,MPI_INT,0,world);
+      MPI_Bcast(&nghostlykeep[rxnID],1,MPI_INT,0,world);
       memory->destroy(local_rxncounts);
       memory->destroy(all_localkeep);
     }
@@ -4680,7 +4645,7 @@ void FixBondReact::write_restart(FILE *fp)
 {
   int revision = 1;
   set[0].nreacts = nreacts;
-  set[0].max_rate_limit_steps = max_rate_limit_steps;
+  // NEED2FIX set[0].max_rate_limit_steps = max_rate_limit_steps;
 
   for (int i = 0; i < nreacts; i++) {
     set[i].reaction_count_total = reaction_count_total[i];
@@ -4689,21 +4654,22 @@ void FixBondReact::write_restart(FILE *fp)
     set[i].rxn_name[MAXNAME-1] = '\0';
   }
 
-  int rbufcount = max_rate_limit_steps*nreacts;
+  /* // NEED2FIX int rbufcount = max_rate_limit_steps*nreacts;
   int *rbuf;
   if (rbufcount) {
     memory->create(rbuf,rbufcount,"bond/react:rbuf");
     memcpy(rbuf,&store_rxn_count[0][0],sizeof(int)*rbufcount);
   }
+    */
 
   if (comm->me == 0) {
-    int size = nreacts*sizeof(Set)+(rbufcount+1)*sizeof(int);
+    int size = nreacts*sizeof(Set); // NEED2FIX +(rbufcount+1)*sizeof(int);
     fwrite(&size,sizeof(int),1,fp);
     fwrite(&revision,sizeof(int),1,fp);
     fwrite(set,sizeof(Set),nreacts,fp);
-    if (rbufcount) fwrite(rbuf,sizeof(int),rbufcount,fp);
+    // NEED2FIX if (rbufcount) fwrite(rbuf,sizeof(int),rbufcount,fp);
   }
-  if (rbufcount) memory->destroy(rbuf);
+  // NEED2FIX if (rbufcount) memory->destroy(rbuf);
 }
 
 /* ----------------------------------------------------------------------
@@ -4713,7 +4679,8 @@ void FixBondReact::write_restart(FILE *fp)
 
 void FixBondReact::restart(char *buf)
 {
-  int n,revision,r_nreacts,r_max_rate_limit_steps,ibufcount,n2cpy;
+
+  /* // NEED2FIX int n,revision,r_nreacts,r_max_rate_limit_steps,ibufcount,n2cpy;
   int **ibuf;
 
   n = 0;
@@ -4746,6 +4713,7 @@ void FixBondReact::restart(char *buf)
     }
   }
   if (revision > 0 && r_max_rate_limit_steps > 0) memory->destroy(ibuf);
+  */
 }
 
 /* ----------------------------------------------------------------------
