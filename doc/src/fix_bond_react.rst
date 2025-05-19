@@ -32,7 +32,7 @@ Syntax
          *yes* = update molecule IDs based on new global topology (default)
          *no* = do not update molecule IDs
          *molmap* = customize how molecule IDs are updated
-       *rate_limit_multi* = Nrxns react-ID_1 ... react-ID_N Nlimit Nsteps
+       *rate_limit* = Nrxns react-ID_1 ... react-ID_N Nlimit Nsteps
          Nrxns = number of reactions to include in rate limit
          react-IDs = names of the reactions to include in rate limit
          Nlimit = maximum number of reactions allowed to occur within interval
@@ -48,16 +48,13 @@ Syntax
 * template-ID(post-reacted) = ID of a molecule template containing post-reaction topology
 * map_file = name of file specifying corresponding atom-IDs in the pre- and post-reacted templates
 * zero or more individual keyword/value pairs may be appended to each react argument
-* individual_keyword = *prob* or *rate_limit* or *max_rxn* or *stabilize_steps* or *custom_charges* or *rescale_charges* or *molecule* or *modify_create*
+* individual_keyword = *prob* or *max_rxn* or *stabilize_steps* or *custom_charges* or *rescale_charges* or *molecule* or *modify_create*
 
   .. parsed-literal::
 
          *prob* values = fraction seed
            fraction = initiate reaction with this probability if otherwise eligible
            seed = random number seed (positive integer)
-         *rate_limit* = Nlimit Nsteps
-           Nlimit = maximum number of reactions allowed to occur within interval
-           Nsteps = the interval (number of timesteps) over which to count reactions
          *max_rxn* value = N
            N = maximum number of reactions allowed to occur
          *stabilize_steps* value = timesteps
@@ -219,8 +216,22 @@ For post-reaction atoms that have a template molecule ID that does not
 exist in pre-reaction template, they are assigned a new molecule ID that
 does not currently exist in the simulation.
 
-The *rate_limit_multi* keyword is a generalization of *rate_limit* keyword
-and is discussed below.
+The *rate_limit* keyword can enforce an upper limit on the overall rate of
+one or more reactions. The number of reaction occurrences is limited to
+Nlimit within an interval of Nsteps timesteps. No reactions are permitted
+to occur within the first Nsteps timesteps of the first run after reading a
+data file. The number of reactions to sum over is specified by Nrxns, and
+the reactions are listed by reaction name (react-ID). The number of
+reaction occurrences is calculated by summing over the listed reactions.
+This sum is limited to Nlimit, which can be specified with an equal-style
+:doc:`variable <variable>`. Reaction occurences are chosen randomly from
+all eligible reaction sites of all listed reactions. Multiple *rate_limit*
+keywords can be specified. If the same reaction is listed for more than one
+*rate_limit* keyword, note that the skipped reactions are chosen
+independently, so it is likely that more reactions will be skipped than
+strictly necessary. This keyword is useful when multiple *react* arguments
+define similar types of reactions, and the relative rates between two or
+more types of reactions must be enforced.
 
 The following comments pertain to each *react* argument (in other
 words, they can be customized for each reaction, or reaction step):
@@ -678,31 +689,6 @@ A uniform random number between 0.0 and 1.0 is generated and the
 eligible reaction only occurs if the random number is less than the
 fraction. Up to :math:`N` reactions are permitted to occur, as optionally
 specified by the *max_rxn* keyword.
-
-.. versionadded:: 22Dec2022
-
-The *rate_limit* keyword can enforce an upper limit on the overall
-rate of the reaction. The number of reaction occurrences is limited to
-Nlimit within an interval of Nsteps timesteps. No reactions are
-permitted to occur within the first Nsteps timesteps of the first run
-after reading a data file. Nlimit can be specified with an equal-style
-:doc:`variable <variable>`.
-
-The *rate_limit_multi* keyword is a generalization of the *rate_limit*
-keyword that calculates the number of reaction occurrences by summing over
-multiple reactions. This sum is limited to Nlimit, which can be specified
-with an equal-style :doc:`variable <variable>`. The number of reactions to
-sum over is specified by Nrxns, and the reactions are listed by reaction
-name (react-ID). Reaction occurences are chosen randomly from all eligible
-reaction sites of all listed reactions. Multiple *rate_limit_multi*
-keywords can be specified. If the same reaction is listed for more than one
-*rate_limit_multi* keyword or a listed reaction also has a *rate_limit*
-keyword, note that the skipped reactions are chosen independently, so it is
-likely that more reactions will be skipped than strictly necessary. The
-*rate_limit_multi* keyword is a 'common keyword' and must be specified
-before any 'react' arguments. This keyword is useful when multiple *react*
-arguments define similar types of reactions, and the relative rates between
-two or more types of reactions must be enforced.
 
 The *stabilize_steps* keyword allows for the specification of how many
 time steps a reaction site is stabilized before being returned to the
