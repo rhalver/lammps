@@ -41,7 +41,7 @@ Syntax
            *possible* = shift depending on mean free path and bin size
          shiftseed = random # seed (positive integer)
        *tstat* value = *yes* or *no* = thermostat SRD particles or not
-       *put* value = *yes* or *no* = use profile-unbiased thermostat or not
+       *unbiased* value = *yes* or *no* = use profile-unbiased thermostat or not
        *rescale* value = *yes* or *no* or *rotate* or *collide* = rescaling of SRD velocities
          *yes* = rescale during velocity rotation and collisions
          *no* = no rescaling
@@ -295,7 +295,7 @@ big particles or walls have a thermostatting effect on the colliding particles,
 so it may not be necessary to thermostat the SRD particles on a bin by bin
 basis in that case.
 
-The *put* keyword controls how the thermostat operates if there is a streaming
+The *unbiased* keyword controls how the thermostat operates if there is a streaming
 velocity associated with the system, e.g. due to use of the
 :doc:`fix deform <fix_deform>` command to perform a simulation undergoing
 shear. The default case, *no*, is profile-biased: velocities relative to the
@@ -403,7 +403,7 @@ Default
 The option defaults are: *lamda* (:math:`\lambda`) is inferred from *Tsrd*,
 collision = noslip, overlap = no, inside = error, exact = yes, radius =
 1.0, bounce = 0, search = hgrid, cubic = error 0.01, shift = no, tstat =
-no, put = no, and rescale = yes.
+no, unbiased = no, and rescale = yes.
 
 ----------
 

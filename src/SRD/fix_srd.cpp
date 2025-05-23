@@ -200,7 +200,7 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
       if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
       tstat = utils::logical(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
-    } else if (strcmp(arg[iarg], "put") == 0) {
+    } else if (strcmp(arg[iarg], "unbiased") == 0) {
       if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command: stream");
       putflag = utils::logical(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
