@@ -889,23 +889,16 @@ void FixSRD::reset_velocities()
       iz = MAX(iz, binlo[2]);
       iz = MIN(iz, binhi[2]);
 
-      // link first and last cells for PBCs, shift velocity if velocity remap
-      if (domain->xperiodic && ix == binhi[0]) {
-        ix = binlo[0];
-        if (domain->deform_vremap) {
+      if (deformflag) {
+        // shift velocities in last bins
+        if (domain->xperiodic && ix == nbin1x) {
           v[i][0] -= h_rate[0];
         }
-      }
-      if (domain->yperiodic && iy == binhi[1]) {
-        iy = binlo[1];
-        if (domain->deform_vremap) {
+        if (domain->yperiodic && iy == nbin1y) {
           v[i][0] -= h_rate[5];
           v[i][1] -= h_rate[1];
         }
-      }
-      if (domain->zperiodic && iz == binhi[2]) {
-        iz = binlo[2];
-        if (domain->deform_vremap) {
+        if (domain->zperiodic && iz == nbin1z) {
           v[i][0] -= h_rate[4];
           v[i][1] -= h_rate[3];
           v[i][2] -= h_rate[2];
@@ -1083,8 +1076,8 @@ void FixSRD::reset_velocities()
       }
   }
 
-  // undo velocity remap
-  if (deformflag && domain->deform_vremap) {
+  // undo velocity remap (only if using PUT or tstat no)
+  if (deformflag && (putflag || !tstat)) {
     domain->x2lamda(nlocal);
     for (i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
@@ -1098,14 +1091,14 @@ void FixSRD::reset_velocities()
         iz = MAX(iz, binlo[2]);
         iz = MIN(iz, binhi[2]);
 
-        if (domain->xperiodic && ix == binhi[0]) {
+        if (domain->xperiodic && ix == nbin1x) {
           v[i][0] += h_rate[0];
         }
-        if (domain->yperiodic && iy == binhi[1]) {
+        if (domain->yperiodic && iy == nbin1y) {
           v[i][0] += h_rate[5];
           v[i][1] += h_rate[1];
         }
-        if (domain->zperiodic && iz == binhi[2]) {
+        if (domain->zperiodic && iz == nbin1z) {
           v[i][0] += h_rate[4];
           v[i][1] += h_rate[3];
           v[i][2] += h_rate[2];
@@ -2835,7 +2828,7 @@ void FixSRD::parameterize()
     mesg += fmt::format("  SRD per actual grid cell = {:.8}\n", srd_per_cell);
     mesg += fmt::format("  SRD viscosity = {:.8}\n", viscosity);
     mesg += fmt::format("  big/SRD mass density ratio = {:.8}\n", mdratio);
-    mesg += fmt::format("  PUT = {}\n", putflag);
+    mesg += fmt::format("  unbiased profile = {}\n", putflag);
     utils::logmesg(lmp, mesg);
   }
 
