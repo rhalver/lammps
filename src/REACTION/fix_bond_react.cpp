@@ -1514,48 +1514,52 @@ void FixBondReact::superimpose_algorithm()
   std::random_device rnd;
   std::minstd_rand park_rng(rnd());
 
-  // check if we overstepped our reaction limit, via either max_rxn or rate_limit
   std::vector<int> oversteps(nreacts, 0);
-  for (rxnID = 0; rxnID < nreacts; rxnID++) {
-    int max_rxn_overstep = reaction_count_total[rxnID] + delta_rxn[rxnID] - max_rxn[rxnID];
-    oversteps[rxnID] = MAX(oversteps[rxnID],max_rxn_overstep);
-  }
+  if (comm->me == 0) {
+    // check if we overstepped our reaction limit, via either max_rxn or rate_limit
+    for (rxnID = 0; rxnID < nreacts; rxnID++) {
+      int max_rxn_overstep = reaction_count_total[rxnID] + delta_rxn[rxnID] - max_rxn[rxnID];
+      oversteps[rxnID] = MAX(oversteps[rxnID],max_rxn_overstep);
+    }
 
-  for (auto rlm : rate_limits) {
-    int myrxn_count = rlm.store_rxn_counts[rlm.Nsteps-1];
-    if (myrxn_count != -1) {
-      int rxn_count_sum = 0;
-      int delta_rxn_sum = 0;
-      for (auto i : rlm.rxnIDs) {
-        rxn_count_sum += reaction_count_total[i];
-        delta_rxn_sum += delta_rxn[i];
-      }
-      int nrxn_delta = rxn_count_sum + delta_rxn_sum - myrxn_count;
-      int my_nrate;
-      if (rlm.var_flag == 1) {
-        my_nrate = input->variable->compute_equal(rlm.var_id);
-      } else my_nrate = rlm.Nlimit;
-      int rate_limit_overstep_sum = delta_rxn_sum - my_nrate;
-      if (rate_limit_overstep_sum > 0) {
-        if (rlm.Nrxns == 1) {
-          rxnID = rlm.rxnIDs[0];
-          oversteps[rxnID] = MAX(oversteps[rxnID], rate_limit_overstep_sum);
-        } else {
-          std::vector<int> dummy_list;
-          for (auto i : rlm.rxnIDs)
-            for (int j = 0; j < delta_rxn[i]; j++)
-              dummy_list.push_back(i);
-          std::shuffle(dummy_list.begin(), dummy_list.end(), park_rng);
-          std::vector<int> rate_limit_overstep(nreacts,0);
-          for (int i = 0; i < rate_limit_overstep_sum; i++)
-            rate_limit_overstep[dummy_list[i]]++;
-          for (rxnID = 0; rxnID < nreacts; rxnID++)
-            oversteps[rxnID] = MAX(oversteps[rxnID], rate_limit_overstep[rxnID]);
+    for (auto rlm : rate_limits) {
+      int myrxn_count = rlm.store_rxn_counts[rlm.Nsteps-1];
+      if (myrxn_count != -1) {
+        int rxn_count_sum = 0;
+        int delta_rxn_sum = 0;
+        for (auto i : rlm.rxnIDs) {
+          rxn_count_sum += reaction_count_total[i];
+          delta_rxn_sum += delta_rxn[i];
+        }
+        int nrxn_delta = rxn_count_sum + delta_rxn_sum - myrxn_count;
+        int my_nrate;
+        if (rlm.var_flag == 1) {
+          my_nrate = input->variable->compute_equal(rlm.var_id);
+        } else my_nrate = rlm.Nlimit;
+        int rate_limit_overstep_sum = delta_rxn_sum - my_nrate;
+        if (rate_limit_overstep_sum > 0) {
+          if (rlm.Nrxns == 1) {
+            rxnID = rlm.rxnIDs[0];
+            oversteps[rxnID] = MAX(oversteps[rxnID], rate_limit_overstep_sum);
+          } else {
+            std::vector<int> dummy_list;
+            for (auto i : rlm.rxnIDs)
+              for (int j = 0; j < delta_rxn[i]; j++)
+                dummy_list.push_back(i);
+            std::shuffle(dummy_list.begin(), dummy_list.end(), park_rng);
+            std::vector<int> rate_limit_overstep(nreacts,0);
+            for (int i = 0; i < rate_limit_overstep_sum; i++)
+              rate_limit_overstep[dummy_list[i]]++;
+            for (rxnID = 0; rxnID < nreacts; rxnID++)
+              oversteps[rxnID] = MAX(oversteps[rxnID], rate_limit_overstep[rxnID]);
+          }
+        }
       }
     }
   }
+  MPI_Bcast(oversteps.data(),nreacts,MPI_INT,0,world);
 
-  for (rxnID = 0; rxnID < nreacts; rxnID++)
+  for (rxnID = 0; rxnID < nreacts; rxnID++) {
     if (oversteps[rxnID] > 0) {
       // let's randomly choose rxns to skip, unbiasedly from local and ghostly
       int *local_rxncounts;
