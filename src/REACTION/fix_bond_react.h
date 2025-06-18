@@ -60,41 +60,47 @@ class FixBondReact : public Fix {
  private:
   int newton_bond;
   int nreacts;
-  int *nevery;
   FILE *fp;
-  int *iatomtype, *jatomtype;
-  int *seed;
-  double **cutsq, *fraction;
-  int *max_rxn, *nlocalkeep, *nghostlykeep;
   tagint lastcheck;
   int stabilization_flag;
   RESET_MOL_IDS molid_mode;
   int custom_exclude_flag;
-  int *stabilize_steps_flag;
-  int *custom_charges_fragid;
-  int *rescale_charges_flag;   // if nonzero, indicates number of atoms whose charges are updated
   int rescale_charges_anyflag; // indicates if any reactions do charge rescaling
   double *mol_total_charge;    // sum of charges of post-reaction atoms whose charges are updated
-  int *create_atoms_flag;
-  int *modify_create_fragid;
-  double *overlapsq;
-  int *molecule_keyword;
   int maxnconstraints;
-  int *nconstraints;
-  char **constraintstr;
   int nrxnfunction;
   std::vector<std::string> rxnfunclist;     // lists current special rxn function
   std::vector<int> peratomflag; // 1 if special rxn function uses per-atom variable (vs. per-bond)
   int atoms2bondflag;           // 1 if atoms2bond map has been populated on this timestep
   int narrhenius;
-  int **var_flag, **var_id;     // for keyword values with variable inputs
   int status;
-  int *groupbits;
+
+  char **rxn_name;
+  double **cutsq;
+  char **constraintstr;
+  int **var_flag, **var_id;    // for keyword values with variable inputs
+  struct Reaction {
+    int nevery, groupbits;
+    int iatomtype, jatomtype;
+    int ibonding, jbonding;
+    int closeneigh;            // indicates if bonding atoms of a rxn are 1-2, 1-3, or 1-4 neighbors
+    double fraction;
+    int reacted_mol, unreacted_mol;
+    int reaction_count, reaction_count_total;
+    int local_rxn_count, ghostly_rxn_count;
+    int max_rxn, nlocalkeep, nghostlykeep;
+    int seed, limit_duration;
+    int stabilize_steps_flag;
+    int custom_charges_fragid;
+    int rescale_charges_flag;   // if nonzero, indicates number of atoms whose charges are updated
+    int create_atoms_flag, modify_create_fragid;
+    double overlapsq;
+    int molecule_keyword;
+    int nconstraints;
+  };
+  std::vector<Reaction> rxns;
 
   int rxnID;          // integer ID for identifying current reaction
-  char **rxn_name;    // name of reaction
-  int *reaction_count;
-  int *reaction_count_total;
   int nmax;          // max num local atoms
   int max_natoms;    // max natoms in a molecule template
   tagint *partner, *finalpartner;
@@ -115,8 +121,6 @@ class FixBondReact : public Fix {
   class NeighList *list;
   class ResetAtomsMol *reset_mol_ids;    // class for resetting mol IDs
 
-  int *reacted_mol, *unreacted_mol;
-  int *limit_duration;     // indicates how long to relax
   char *nve_limit_xmax;    // indicates max distance allowed to move when relaxing
   char *id_fix1;           // id of internally created fix nve/limit
   char *id_fix2;           // id of internally created fix per-atom properties
@@ -130,12 +134,8 @@ class FixBondReact : public Fix {
 
   void superimpose_algorithm();    // main function of the superimpose algorithm
 
-  int *ibonding, *jbonding;
-  int *closeneigh;    // indicates if bonding atoms of a rxn are 1-2, 1-3, or 1-4 neighbors
   int nedge, nequivalent, ndelete, ncreate, nchiral;    // # edge, equivalent atoms in mapping file
   int attempted_rxn;                                    // there was an attempt!
-  int *local_rxn_count;
-  int *ghostly_rxn_count;
   int avail_guesses;     // num of restore points available
   int *guess_branch;     // used when there is more than two choices when guessing
   int **restore_pt;      // contains info about restore points
