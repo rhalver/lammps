@@ -245,6 +245,12 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     reset_mol_ids->create_computes(id,group->names[igroup]);
   }
 
+  memory->create(rxn_name,nreacts,MAXNAME,"bond/react:rxn_name");
+  memory->create(cutsq,nreacts,2,"bond/react:cutsq");
+  memory->create(constraintstr,nreacts,MAXLINE,"bond/react:constraintstr");
+  memory->create(var_flag,NUMVARVALS,nreacts,"bond/react:var_flag");
+  memory->create(var_id,NUMVARVALS,nreacts,"bond/react:var_id");
+
   // set up common variables as vectors of length 'nreacts'
   rxns.resize(nreacts);
 
