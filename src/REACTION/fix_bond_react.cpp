@@ -283,57 +283,57 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   char **files;
   files = new char*[nreacts];
 
-  for (int rxn = 0; rxn < nreacts; rxn++) {
+  for (rxnID = 0; rxnID < nreacts; rxnID++) {
 
     if (strcmp(arg[iarg],"react") != 0) error->all(FLERR,"Illegal fix bond/react command: "
                                                    "'react' or 'stabilization' has incorrect arguments");
-
+    Reaction &rxn = rxns[rxnID];
     iarg++;
 
     int n = strlen(arg[iarg]) + 1;
     if (n > MAXNAME) error->all(FLERR,"Reaction name (react-ID) is too long (limit: 256 characters)");
-    strcpy(rxn_name[rxn],arg[iarg++]);
+    strcpy(rxn_name[rxnID],arg[iarg++]);
 
     int groupid = group->find(arg[iarg++]);
     if (groupid == -1) error->all(FLERR,"Could not find fix group ID");
-    rxns[rxn].groupbits = group->bitmask[groupid];
+    rxn.groupbits = group->bitmask[groupid];
 
-    if (strncmp(arg[iarg],"v_",2) == 0) read_variable_keyword(&arg[iarg][2],NEVERY,rxn);
+    if (strncmp(arg[iarg],"v_",2) == 0) read_variable_keyword(&arg[iarg][2],NEVERY,rxnID);
     else {
-      rxns[rxn].nevery = utils::inumeric(FLERR,arg[iarg],false,lmp);
-      if (rxns[rxn].nevery <= 0) error->all(FLERR,"Illegal fix bond/react command: "
+      rxn.nevery = utils::inumeric(FLERR,arg[iarg],false,lmp);
+      if (rxn.nevery <= 0) error->all(FLERR,"Illegal fix bond/react command: "
                                        "'Nevery' must be a positive integer");
     }
     iarg++;
 
     double cutoff;
     if (strncmp(arg[iarg],"v_",2) == 0) {
-      read_variable_keyword(&arg[iarg][2],RMIN,rxn);
-      cutoff = input->variable->compute_equal(var_id[RMIN][rxn]);
+      read_variable_keyword(&arg[iarg][2],RMIN,rxnID);
+      cutoff = input->variable->compute_equal(var_id[RMIN][rxnID]);
     } else cutoff = utils::numeric(FLERR,arg[iarg],false,lmp);
       if (cutoff < 0.0) error->all(FLERR,"Illegal fix bond/react command: "
                                    "'Rmin' cannot be negative");
-      cutsq[rxn][0] = cutoff*cutoff;
+      cutsq[rxnID][0] = cutoff*cutoff;
     iarg++;
 
     if (strncmp(arg[iarg],"v_",2) == 0) {
-      read_variable_keyword(&arg[iarg][2],RMAX,rxn);
-      cutoff = input->variable->compute_equal(var_id[RMAX][rxn]);
+      read_variable_keyword(&arg[iarg][2],RMAX,rxnID);
+      cutoff = input->variable->compute_equal(var_id[RMAX][rxnID]);
     } else cutoff = utils::numeric(FLERR,arg[iarg],false,lmp);
       if (cutoff < 0.0) error->all(FLERR,"Illegal fix bond/react command:"
                                    "'Rmax' cannot be negative");
-      cutsq[rxn][1] = cutoff*cutoff;
+      cutsq[rxnID][1] = cutoff*cutoff;
     iarg++;
 
-    rxns[rxn].unreacted_mol = atom->find_molecule(arg[iarg++]);
-    if (rxns[rxn].unreacted_mol == -1) error->all(FLERR,"Unreacted molecule template ID for "
+    rxn.unreacted_mol = atom->find_molecule(arg[iarg++]);
+    if (rxn.unreacted_mol == -1) error->all(FLERR,"Unreacted molecule template ID for "
                                              "fix bond/react does not exist");
-    rxns[rxn].reacted_mol = atom->find_molecule(arg[iarg++]);
-    if (rxns[rxn].reacted_mol == -1) error->all(FLERR,"Reacted molecule template ID for "
+    rxn.reacted_mol = atom->find_molecule(arg[iarg++]);
+    if (rxn.reacted_mol == -1) error->all(FLERR,"Reacted molecule template ID for "
                                            "fix bond/react does not exist");
 
     //read map file
-    files[rxn] = utils::strdup(arg[iarg]);
+    files[rxnID] = utils::strdup(arg[iarg]);
     iarg++;
 
     while (iarg < narg && strcmp(arg[iarg],"react") != 0) {
@@ -342,24 +342,24 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
                                       "'prob' keyword has too few arguments");
         // check if probability is a variable
         if (strncmp(arg[iarg+1],"v_",2) == 0) {
-          read_variable_keyword(&arg[iarg+1][2],PROB,rxn);
-          rxns[rxn].fraction = input->variable->compute_equal(var_id[PROB][rxn]);
+          read_variable_keyword(&arg[iarg+1][2],PROB,rxnID);
+          rxn.fraction = input->variable->compute_equal(var_id[PROB][rxnID]);
         } else {
           // otherwise probability should be a number
-          rxns[rxn].fraction = utils::numeric(FLERR,arg[iarg+1],false,lmp);
+          rxn.fraction = utils::numeric(FLERR,arg[iarg+1],false,lmp);
         }
-        rxns[rxn].seed = utils::inumeric(FLERR,arg[iarg+2],false,lmp);
-        if (rxns[rxn].fraction < 0.0 || rxns[rxn].fraction > 1.0)
+        rxn.seed = utils::inumeric(FLERR,arg[iarg+2],false,lmp);
+        if (rxn.fraction < 0.0 || rxn.fraction > 1.0)
           error->all(FLERR,"Illegal fix bond/react command: "
                      "probability fraction must between 0 and 1, inclusive");
-        if (rxns[rxn].seed <= 0) error->all(FLERR,"Illegal fix bond/react command: "
+        if (rxn.seed <= 0) error->all(FLERR,"Illegal fix bond/react command: "
                                        "probability seed must be positive");
         iarg += 3;
       } else if (strcmp(arg[iarg],"max_rxn") == 0) {
         if (iarg+2 > narg) error->all(FLERR,"Illegal fix bond/react command: "
                                       "'max_rxn' has too few arguments");
-        rxns[rxn].max_rxn = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
-        if (rxns[rxn].max_rxn < 0) error->all(FLERR,"Illegal fix bond/react command: "
+        rxn.max_rxn = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+        if (rxn.max_rxn < 0) error->all(FLERR,"Illegal fix bond/react command: "
                                          "'max_rxn' cannot be negative");
         iarg += 2;
       } else if (strcmp(arg[iarg],"stabilize_steps") == 0) {
@@ -367,30 +367,30 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
                                                 "used without stabilization keyword");
         if (iarg+2 > narg) error->all(FLERR,"Illegal fix bond/react command: "
                                       "'stabilize_steps' has too few arguments");
-        rxns[rxn].limit_duration = utils::numeric(FLERR,arg[iarg+1],false,lmp);
-        rxns[rxn].stabilize_steps_flag = 1;
+        rxn.limit_duration = utils::numeric(FLERR,arg[iarg+1],false,lmp);
+        rxn.stabilize_steps_flag = 1;
         iarg += 2;
       } else if (strcmp(arg[iarg],"custom_charges") == 0) {
         if (iarg+2 > narg) error->all(FLERR,"Illegal fix bond/react command: "
                                       "'custom_charges' has too few arguments");
-        if (strcmp(arg[iarg+1],"no") == 0) rxns[rxn].custom_charges_fragid = -1; //default
+        if (strcmp(arg[iarg+1],"no") == 0) rxn.custom_charges_fragid = -1; //default
         else {
-          rxns[rxn].custom_charges_fragid = atom->molecules[rxns[rxn].unreacted_mol]->findfragment(arg[iarg+1]);
-          if (rxns[rxn].custom_charges_fragid < 0) error->one(FLERR,"Fix bond/react: Molecule fragment for "
+          rxn.custom_charges_fragid = atom->molecules[rxn.unreacted_mol]->findfragment(arg[iarg+1]);
+          if (rxn.custom_charges_fragid < 0) error->one(FLERR,"Fix bond/react: Molecule fragment for "
                                                          "'custom_charges' keyword does not exist");
         }
         iarg += 2;
       } else if (strcmp(arg[iarg],"rescale_charges") == 0) {
         if (iarg+2 > narg) error->all(FLERR,"Illegal fix bond/react command: "
                                       "'rescale_charges' has too few arguments");
-        if (strcmp(arg[iarg+1],"no") == 0) rxns[rxn].rescale_charges_flag = 0; //default
+        if (strcmp(arg[iarg+1],"no") == 0) rxn.rescale_charges_flag = 0; //default
         else if (strcmp(arg[iarg+1],"yes") == 0) {
           if (!atom->q_flag) error->all(FLERR,"Illegal fix bond/react command: cannot use "
                                       "'rescale_charges' without atomic charges enabled");
-          twomol = atom->molecules[rxns[rxn].reacted_mol];
+          twomol = atom->molecules[rxn.reacted_mol];
           if (!twomol->qflag) error->all(FLERR,"Illegal fix bond/react command: cannot use "
                                       "'rescale_charges' without Charges section in post-reaction template");
-          rxns[rxn].rescale_charges_flag = 1; // overloaded below to also indicate number of atoms to update
+          rxn.rescale_charges_flag = 1; // overloaded below to also indicate number of atoms to update
           rescale_charges_anyflag = 1;
           cuff = 2; // index shift for extra values carried around by mega_gloves
         } else error->one(FLERR,"Bond/react: Illegal option for 'rescale_charges' keyword");
@@ -398,9 +398,9 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       } else if (strcmp(arg[iarg],"molecule") == 0) {
         if (iarg+2 > narg) error->all(FLERR,"Illegal fix bond/react command: "
                                       "'molecule' has too few arguments");
-        if (strcmp(arg[iarg+1],"off") == 0) rxns[rxn].molecule_keyword = OFF; //default
-        else if (strcmp(arg[iarg+1],"inter") == 0) rxns[rxn].molecule_keyword = INTER;
-        else if (strcmp(arg[iarg+1],"intra") == 0) rxns[rxn].molecule_keyword = INTRA;
+        if (strcmp(arg[iarg+1],"off") == 0) rxn.molecule_keyword = OFF; //default
+        else if (strcmp(arg[iarg+1],"inter") == 0) rxn.molecule_keyword = INTER;
+        else if (strcmp(arg[iarg+1],"intra") == 0) rxn.molecule_keyword = INTRA;
         else error->one(FLERR,"Fix bond/react: Illegal option for 'molecule' keyword");
         iarg += 2;
       } else if (strcmp(arg[iarg],"modify_create") == 0) {
@@ -410,18 +410,18 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
           if (strcmp(arg[iarg],"fit") == 0) {
             if (iarg+2 > narg) error->all(FLERR,"Illegal fix bond/react command: "
                                           "'modify_create' has too few arguments");
-            if (strcmp(arg[iarg+1],"all") == 0) rxns[rxn].modify_create_fragid = -1; //default
+            if (strcmp(arg[iarg+1],"all") == 0) rxn.modify_create_fragid = -1; //default
             else {
-              rxns[rxn].modify_create_fragid = atom->molecules[rxns[rxn].reacted_mol]->findfragment(arg[iarg+1]);
-              if (rxns[rxn].modify_create_fragid < 0) error->one(FLERR,"Fix bond/react: Molecule fragment for "
+              rxn.modify_create_fragid = atom->molecules[rxn.reacted_mol]->findfragment(arg[iarg+1]);
+              if (rxn.modify_create_fragid < 0) error->one(FLERR,"Fix bond/react: Molecule fragment for "
                                                              "'modify_create' keyword does not exist");
             }
             iarg += 2;
           } else if (strcmp(arg[iarg],"overlap") == 0) {
             if (iarg+2 > narg) error->all(FLERR,"Illegal fix bond/react command: "
                                           "'modify_create' has too few arguments");
-            rxns[rxn].overlapsq = utils::numeric(FLERR,arg[iarg+1],false,lmp);
-            rxns[rxn].overlapsq *= rxns[rxn].overlapsq;
+            rxn.overlapsq = utils::numeric(FLERR,arg[iarg+1],false,lmp);
+            rxn.overlapsq *= rxn.overlapsq;
             iarg += 2;
           } else break;
         }
