@@ -89,7 +89,6 @@ static constexpr double BIG = 1.0e20;
 static constexpr int DELTA = 16;
 static constexpr int MAXGUESS = 20;      // max # of guesses allowed by superimpose algorithm
 static constexpr int MAXCONARGS = 14;    // max # of arguments for any type of constraint + rxnID
-static constexpr int NUMVARVALS = 5;     // max # of keyword values that have variables as input
 
 // various statuses of superimpose algorithm:
 // ACCEPT: site successfully matched to pre-reacted template
@@ -105,9 +104,6 @@ enum { DISTANCE, ANGLE, DIHEDRAL, ARRHENIUS, RMSD, CUSTOM };
 
 // ID type used by constraint
 enum { ATOM, FRAG };
-
-// keyword values that accept variables as input
-enum { NEVERY, RMIN, RMAX, PROB };
 
 // flag for one-proc vs shared reaction sites
 enum { LOCAL, GLOBAL };
@@ -247,8 +243,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
 
   memory->create(rxn_name,nreacts,MAXNAME,"bond/react:rxn_name");
   memory->create(constraintstr,nreacts,MAXLINE,"bond/react:constraintstr");
-  memory->create(var_flag,NUMVARVALS,nreacts,"bond/react:var_flag");
-  memory->create(var_id,NUMVARVALS,nreacts,"bond/react:var_id");
 
   // set up common variables as vectors of length 'nreacts'
   rxns.resize(nreacts);
@@ -271,12 +265,8 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     rxn.local_rxn_count = 0;
     rxn.ghostly_rxn_count = 0;
     rxn.reaction_count_total = 0;
-  }
-  for (int i = 0; i < nreacts; i++) {
-    for (int j = 0; j < NUMVARVALS; j++) {
-      var_flag[j][i] = 0;
-      var_id[j][i] = 0;
-    }
+    rxn.v_rmin = rxn.v_rmax = -1;
+    rxn.v_nevery = rxn.v_prob = -1;
   }
 
   char **files;
@@ -297,8 +287,10 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     if (groupid == -1) error->all(FLERR,"Could not find fix group ID");
     rxn.groupbits = group->bitmask[groupid];
 
-    if (strncmp(arg[iarg],"v_",2) == 0) read_variable_keyword(&arg[iarg][2],NEVERY,rxnID);
-    else {
+    if (strncmp(arg[iarg],"v_",2) == 0) {
+      rxn.v_nevery = input->variable->find(&arg[iarg][2]);
+      validate_variable_keyword(&arg[iarg][2], rxn.v_nevery);
+    } else {
       rxn.nevery = utils::inumeric(FLERR,arg[iarg],false,lmp);
       if (rxn.nevery <= 0) error->all(FLERR,"Illegal fix bond/react command: "
                                        "'Nevery' must be a positive integer");
@@ -307,8 +299,9 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
 
     double cutoff;
     if (strncmp(arg[iarg],"v_",2) == 0) {
-      read_variable_keyword(&arg[iarg][2],RMIN,rxnID);
-      cutoff = input->variable->compute_equal(var_id[RMIN][rxnID]);
+      rxn.v_rmin = input->variable->find(&arg[iarg][2]);
+      validate_variable_keyword(&arg[iarg][2], rxn.v_rmin);
+      cutoff = input->variable->compute_equal(rxn.v_rmin);
     } else cutoff = utils::numeric(FLERR,arg[iarg],false,lmp);
       if (cutoff < 0.0) error->all(FLERR,"Illegal fix bond/react command: "
                                    "'Rmin' cannot be negative");
@@ -316,8 +309,9 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     iarg++;
 
     if (strncmp(arg[iarg],"v_",2) == 0) {
-      read_variable_keyword(&arg[iarg][2],RMAX,rxnID);
-      cutoff = input->variable->compute_equal(var_id[RMAX][rxnID]);
+      rxn.v_rmax = input->variable->find(&arg[iarg][2]);
+      validate_variable_keyword(&arg[iarg][2], rxn.v_rmax);
+      cutoff = input->variable->compute_equal(rxn.v_rmax);
     } else cutoff = utils::numeric(FLERR,arg[iarg],false,lmp);
       if (cutoff < 0.0) error->all(FLERR,"Illegal fix bond/react command:"
                                    "'Rmax' cannot be negative");
@@ -341,8 +335,9 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
                                       "'prob' keyword has too few arguments");
         // check if probability is a variable
         if (strncmp(arg[iarg+1],"v_",2) == 0) {
-          read_variable_keyword(&arg[iarg+1][2],PROB,rxnID);
-          rxn.fraction = input->variable->compute_equal(var_id[PROB][rxnID]);
+          rxn.v_prob = input->variable->find(&arg[iarg][2]);
+          validate_variable_keyword(&arg[iarg+1][2], rxn.v_prob);
+          rxn.fraction = input->variable->compute_equal(rxn.v_prob);
         } else {
           // otherwise probability should be a number
           rxn.fraction = utils::numeric(FLERR,arg[iarg+1],false,lmp);
@@ -678,8 +673,6 @@ FixBondReact::~FixBondReact()
   if (vvec != nullptr) memory->destroy(vvec);
 
   memory->destroy(rxn_name);
-  memory->destroy(var_flag);
-  memory->destroy(var_id);
   memory->destroy(constraintstr);
 
   if (attempted_rxn == 1) {
@@ -866,27 +859,25 @@ void FixBondReact::post_integrate()
 
   // check if any reactions could occur on this timestep
   int nevery_check = 1;
-  for (int i = 0; i < nreacts; i++) {
-    if (var_flag[NEVERY][i])
-      rxns[i].nevery = ceil(input->variable->compute_equal(var_id[NEVERY][i]));
-    if (rxns[i].nevery <= 0)
+  for (auto &rxn : rxns) {
+    if (rxn.v_nevery > -1)
+      rxn.nevery = ceil(input->variable->compute_equal(rxn.v_nevery));
+    if (rxn.nevery <= 0)
       error->all(FLERR,"Illegal fix bond/react command: "
                  "'Nevery' must be a positive integer");
-    if (!(update->ntimestep % rxns[i].nevery)) {
+    if (!(update->ntimestep % rxn.nevery)) {
       nevery_check = 0;
       break;
     }
   }
 
-  for (int i = 0; i < nreacts; i++) {
-    rxns[i].reaction_count = 0;
-    rxns[i].local_rxn_count = 0;
-    rxns[i].ghostly_rxn_count = 0;
-    rxns[i].nlocalkeep = INT_MAX;
-    rxns[i].nghostlykeep = INT_MAX;
-    // update reaction probability
-    if (var_flag[PROB][i])
-      rxns[i].fraction = input->variable->compute_equal(var_id[PROB][i]);
+  for (auto &rxn : rxns) {
+    rxn.reaction_count = 0;
+    rxn.local_rxn_count = 0;
+    rxn.ghostly_rxn_count = 0;
+    rxn.nlocalkeep = INT_MAX;
+    rxn.nghostlykeep = INT_MAX;
+    if (rxn.v_prob > -1) rxn.fraction = input->variable->compute_equal(rxn.v_prob);
   }
 
   if (nevery_check) {
@@ -1158,12 +1149,12 @@ void FixBondReact::far_partner()
       domain->minimum_image(delx,dely,delz); // ghost location fix
       rsq = delx*delx + dely*dely + delz*delz;
 
-      if (var_flag[RMIN][rxnID]) {
-        double cutoff = input->variable->compute_equal(var_id[RMIN][rxnID]);
+      if (rxns[rxnID].v_rmin > -1) {
+        double cutoff = input->variable->compute_equal(rxns[rxnID].v_rmin);
         rxns[rxnID].rminsq = cutoff*cutoff;
       }
-      if (var_flag[RMAX][rxnID]) {
-        double cutoff = input->variable->compute_equal(var_id[RMAX][rxnID]);
+      if (rxns[rxnID].v_rmax > -1) {
+        double cutoff = input->variable->compute_equal(rxns[rxnID].v_rmax);
         rxns[rxnID].rmaxsq = cutoff*cutoff;
       }
       if (rsq >= rxns[rxnID].rmaxsq || rsq <= rxns[rxnID].rminsq) {
@@ -1228,12 +1219,12 @@ void FixBondReact::close_partner()
       domain->minimum_image(delx,dely,delz); // ghost location fix
       rsq = delx*delx + dely*dely + delz*delz;
 
-      if (var_flag[RMIN][rxnID]) {
-        double cutoff = input->variable->compute_equal(var_id[RMIN][rxnID]);
+      if (rxns[rxnID].v_rmin > -1) {
+        double cutoff = input->variable->compute_equal(rxns[rxnID].v_rmin);
         rxns[rxnID].rminsq = cutoff*cutoff;
       }
-      if (var_flag[RMAX][rxnID]) {
-        double cutoff = input->variable->compute_equal(var_id[RMAX][rxnID]);
+      if (rxns[rxnID].v_rmax > -1) {
+        double cutoff = input->variable->compute_equal(rxns[rxnID].v_rmax);
         rxns[rxnID].rmaxsq = cutoff*cutoff;
       }
       if (rsq >= rxns[rxnID].rmaxsq || rsq <= rxns[rxnID].rminsq) continue;
@@ -4044,14 +4035,12 @@ int FixBondReact::insert_atoms_setup(tagint **my_update_mega_glove, int iupdate)
 add equal-style variable to keyword argument list
 ------------------------------------------------------------------------- */
 
-void FixBondReact::read_variable_keyword(const char *myarg, int keyword, int myrxn)
+void FixBondReact::validate_variable_keyword(const char *myarg, int var_id)
 {
-  var_id[keyword][myrxn] = input->variable->find(myarg);
-  if (var_id[keyword][myrxn] < 0)
+  if (var_id < 0)
     error->all(FLERR,"Fix bond/react: Variable name {} does not exist",myarg);
-  if (!input->variable->equalstyle(var_id[keyword][myrxn]))
+  if (!input->variable->equalstyle(var_id))
     error->all(FLERR,"Fix bond/react: Variable {} is not equal-style",myarg);
-  var_flag[keyword][myrxn] = 1;
 }
 
 /* ----------------------------------------------------------------------

@@ -77,7 +77,6 @@ class FixBondReact : public Fix {
 
   char **rxn_name;
   char **constraintstr;
-  int **var_flag, **var_id;    // for keyword values with variable inputs
   struct Reaction {
     int nevery, groupbits;
     int iatomtype, jatomtype;
@@ -97,6 +96,7 @@ class FixBondReact : public Fix {
     double overlapsq;
     int molecule_keyword;
     int nconstraints;
+    int v_nevery, v_rmin, v_rmax, v_prob; // ID of variable, -1 if static
   };
   std::vector<Reaction> rxns;
 
@@ -177,7 +177,7 @@ class FixBondReact : public Fix {
                            // but whose first neighbors haven't
   int glove_counter;       // used to determine when to terminate Superimpose Algorithm
 
-  void read_variable_keyword(const char *, int, int);
+  void validate_variable_keyword(const char *, int);
   void read_map_file(int);
   void EdgeIDs(char *, int);
   void Equivalences(char *, int);
