@@ -76,7 +76,6 @@ class FixBondReact : public Fix {
   int status;
 
   char **rxn_name;
-  double **cutsq;
   char **constraintstr;
   int **var_flag, **var_id;    // for keyword values with variable inputs
   struct Reaction {
@@ -84,6 +83,7 @@ class FixBondReact : public Fix {
     int iatomtype, jatomtype;
     int ibonding, jbonding;
     int closeneigh;            // indicates if bonding atoms of a rxn are 1-2, 1-3, or 1-4 neighbors
+    double rminsq, rmaxsq;
     double fraction;
     int reacted_mol, unreacted_mol;
     int reaction_count, reaction_count_total;

@@ -246,7 +246,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   }
 
   memory->create(rxn_name,nreacts,MAXNAME,"bond/react:rxn_name");
-  memory->create(cutsq,nreacts,2,"bond/react:cutsq");
   memory->create(constraintstr,nreacts,MAXLINE,"bond/react:constraintstr");
   memory->create(var_flag,NUMVARVALS,nreacts,"bond/react:var_flag");
   memory->create(var_id,NUMVARVALS,nreacts,"bond/react:var_id");
@@ -313,7 +312,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     } else cutoff = utils::numeric(FLERR,arg[iarg],false,lmp);
       if (cutoff < 0.0) error->all(FLERR,"Illegal fix bond/react command: "
                                    "'Rmin' cannot be negative");
-      cutsq[rxnID][0] = cutoff*cutoff;
+      rxn.rminsq = cutoff*cutoff;
     iarg++;
 
     if (strncmp(arg[iarg],"v_",2) == 0) {
@@ -322,7 +321,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     } else cutoff = utils::numeric(FLERR,arg[iarg],false,lmp);
       if (cutoff < 0.0) error->all(FLERR,"Illegal fix bond/react command:"
                                    "'Rmax' cannot be negative");
-      cutsq[rxnID][1] = cutoff*cutoff;
+      rxn.rmaxsq = cutoff*cutoff;
     iarg++;
 
     rxn.unreacted_mol = atom->find_molecule(arg[iarg++]);
@@ -679,7 +678,6 @@ FixBondReact::~FixBondReact()
   if (vvec != nullptr) memory->destroy(vvec);
 
   memory->destroy(rxn_name);
-  memory->destroy(cutsq);
   memory->destroy(var_flag);
   memory->destroy(var_id);
   memory->destroy(constraintstr);
@@ -834,8 +832,8 @@ void FixBondReact::init()
 
   // check cutoff for iatomtype,jatomtype
   if (!utils::strmatch(force->pair_style,"^hybrid"))
-    for (int i = 0; i < nreacts; i++)
-      if (force->pair == nullptr || (rxns[i].closeneigh < 0 && cutsq[i][1] > force->pair->cutsq[rxns[i].iatomtype][rxns[i].jatomtype]))
+    for (auto &rxn : rxns)
+      if (force->pair == nullptr || (rxn.closeneigh < 0 && rxn.rmaxsq > force->pair->cutsq[rxn.iatomtype][rxn.jatomtype]))
         error->all(FLERR,"Fix bond/react: Fix bond/react cutoff is longer than pairwise cutoff");
 
   // need a half neighbor list, built every Nevery steps
@@ -1162,13 +1160,13 @@ void FixBondReact::far_partner()
 
       if (var_flag[RMIN][rxnID]) {
         double cutoff = input->variable->compute_equal(var_id[RMIN][rxnID]);
-        cutsq[rxnID][0] = cutoff*cutoff;
+        rxns[rxnID].rminsq = cutoff*cutoff;
       }
       if (var_flag[RMAX][rxnID]) {
         double cutoff = input->variable->compute_equal(var_id[RMAX][rxnID]);
-        cutsq[rxnID][1] = cutoff*cutoff;
+        rxns[rxnID].rmaxsq = cutoff*cutoff;
       }
-      if (rsq >= cutsq[rxnID][1] || rsq <= cutsq[rxnID][0]) {
+      if (rsq >= rxns[rxnID].rmaxsq || rsq <= rxns[rxnID].rminsq) {
         continue;
       }
       if (rsq < distsq[i][1]) {
@@ -1232,13 +1230,13 @@ void FixBondReact::close_partner()
 
       if (var_flag[RMIN][rxnID]) {
         double cutoff = input->variable->compute_equal(var_id[RMIN][rxnID]);
-        cutsq[rxnID][0] = cutoff*cutoff;
+        rxns[rxnID].rminsq = cutoff*cutoff;
       }
       if (var_flag[RMAX][rxnID]) {
         double cutoff = input->variable->compute_equal(var_id[RMAX][rxnID]);
-        cutsq[rxnID][1] = cutoff*cutoff;
+        rxns[rxnID].rmaxsq = cutoff*cutoff;
       }
-      if (rsq >= cutsq[rxnID][1] || rsq <= cutsq[rxnID][0]) continue;
+      if (rsq >= rxns[rxnID].rmaxsq || rsq <= rxns[rxnID].rminsq) continue;
 
       if (rxns[rxnID].closeneigh == 0) {
         if (rsq > distsq[i1][0]) {
