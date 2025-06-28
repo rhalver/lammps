@@ -34,6 +34,7 @@
 #include "modify.h"
 #include "neigh_list.h"
 #include "neighbor.h"
+#include "output.h"
 #include "update.h"
 #include "variable.h"
 
@@ -68,7 +69,7 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg), Name(nullptr), MolName(nullptr), NMol(nullptr), nd(nullptr),
     MolType(nullptr), molmap(nullptr), mark(nullptr), Mol2Spec(nullptr), clusterID(nullptr),
     x0(nullptr), BOCut(nullptr), fp(nullptr), pos(nullptr), fdel(nullptr), delete_Tcount(nullptr),
-    filepos(nullptr), filedel(nullptr)
+    filepos(nullptr)
 {
   if (narg < 7) utils::missing_cmd_args(FLERR, "fix reaxff/species", error);
 
@@ -156,7 +157,7 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
     for (int j = 1; j < np1; j++) BOCut[i][j] = bo_cut;
 
   // optional args
-  filepos = filedel = nullptr;
+  filepos = nullptr;
   eleflag = posflag = padflag = 0;
   delflag = NONE;
   specieslistflag = masslimitflag = 0;
@@ -198,13 +199,12 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
 
       // delete species
     } else if (strcmp(arg[iarg], "delete") == 0) {
-      delete[] filedel;
-      filedel = utils::strdup(arg[iarg + 1]);
+      filedel = arg[iarg + 1];
       if (utils::strmatch(filedel, "\\.json$")) delflag = JSON;
       else delflag = NATIVE;
       if (comm->me == 0) {
         if (fdel) fclose(fdel);
-        fdel = fopen(filedel, "w");
+        fdel = fopen(filedel.c_str(), "w");
         if (!fdel)
           error->one(FLERR, "Cannot open fix reaxff/species delete file {}: {}", filedel,
                      utils::getsyserror());
@@ -238,21 +238,19 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
         error->all(FLERR, "Unknown fix reaxff/species delete option: {}", arg[iarg]);
       // rate limit when deleting molecules
 
-      if (comm->me == 0 && delflag == JSON) {
-        // header for 'delete' keyword JSON output
-        fprintf(fdel, "{\n");
-        fprintf(fdel, "    \"application\": \"LAMMPS\",\n");
-        fprintf(fdel, "    \"format\": \"output\",\n");
-        fprintf(fdel, "    \"subformat\": \"fix reaxff/species: delete keyword\",\n");
-        fprintf(fdel, "    \"revision\": 1,\n");
-        fprintf(fdel, "    \"data\": [\n");
-        fflush(fdel);
-
-        std::string id_fix1 = "_internal_prop-atom_fix_reaxff_species";
-        mols4json = "_ivec_internal_prop-atom_fix_reaxff_species";
-        if (!modify->get_fix_by_id(id_fix1))
-          modify->add_fix(id_fix1 + " all property/atom i_" + mols4json + " ghost yes");
+      if (delflag == JSON) {
+        if (comm->me == 0) {
+          // header for 'delete' keyword JSON output
+          fprintf(fdel, "{\n");
+          fprintf(fdel, "    \"application\": \"LAMMPS\",\n");
+          fprintf(fdel, "    \"format\": \"output\",\n");
+          fprintf(fdel, "    \"subformat\": \"fix reaxff/species: delete keyword\",\n");
+          fprintf(fdel, "    \"revision\": 1,\n");
+          fprintf(fdel, "    \"run_output\": [\n");
+          fflush(fdel);
+        }
       }
+
     } else if (strcmp(arg[iarg], "delete_rate_limit") == 0) {
       if (iarg + 3 > narg)
         utils::missing_cmd_args(FLERR, "fix reaxff/species delete_rate_limit", error);
@@ -329,7 +327,6 @@ FixReaxFFSpecies::~FixReaxFFSpecies()
   memory->destroy(delete_Tcount);
 
   delete[] filepos;
-  delete[] filedel;
 
   if (comm->me == 0) {
     if (compressed)
@@ -981,7 +978,7 @@ void FixReaxFFSpecies::DeleteSpecies(int Nmole, int Nspec)
   }
 
   int j, m, n, itype, cid;
-  int ndel, ndelone, count, count_tmp;
+  int count, count_tmp;
   int *Nameall;
   int *mask = atom->mask;
   double *mass = atom->mass;
@@ -1067,7 +1064,7 @@ void FixReaxFFSpecies::DeleteSpecies(int Nmole, int Nspec)
       if (totalmass > massmin && totalmass < massmax) {
         this_delete_Tcount++;
         for (j = 0; j < nmarklist; j++) {
-          mark[marklist[j]] = 1;
+          mark[marklist[j]] = m;
           deletecount[Mol2Spec[m - 1]] += 1.0 / (double) count;
         }
       }
@@ -1077,7 +1074,7 @@ void FixReaxFFSpecies::DeleteSpecies(int Nmole, int Nspec)
           if (del_species[i] == species_str) {
             this_delete_Tcount++;
             for (j = 0; j < nmarklist; j++) {
-              mark[marklist[j]] = 1;
+              mark[marklist[j]] = m;
               deletecount[i] += 1.0 / (double) count;
             }
             break;
@@ -1087,11 +1084,79 @@ void FixReaxFFSpecies::DeleteSpecies(int Nmole, int Nspec)
     }
   }
 
+  if (comm->me == 0)
+    MPI_Reduce(MPI_IN_PLACE, deletecount, ndelcomm, MPI_DOUBLE, MPI_SUM, 0, world);
+  else
+    MPI_Reduce(deletecount, deletecount, ndelcomm, MPI_DOUBLE, MPI_SUM, 0, world);
+
+  int printflag = 0;
+  if (comm->me == 0)
+    for (int m = 0; m < ndelcomm; m++) 
+      if (deletecount[m] > 0) { printflag = 1; break; }
+
+  MPI_Bcast(&printflag, 1, MPI_INT, 0, world);
+
+  if (printflag) {
+    if (delflag == NATIVE) {
+      if (comm->me == 0) {
+        if (masslimitflag) {
+          utils::print(fdel, "Timestep {}", update->ntimestep);
+          for (int m = 0; m < Nspec; m++) {
+            if (deletecount[m] > 0) {
+              fprintf(fdel, " %g ", deletecount[m]);
+              for (j = 0; j < nutypes; j++) {
+                int itemp = MolName[nutypes * m + j];
+                if (itemp != 0) {
+                  fprintf(fdel, "%s", ueletype[j].c_str());
+                  if (itemp != 1) fprintf(fdel, "%d", itemp);
+                }
+              }
+            }
+          }
+          fprintf(fdel, "\n");
+          fflush(fdel);
+        } else if (specieslistflag) {
+          utils::print(fdel, "{}", update->ntimestep);
+          for (i = 0; i < ndelspec; i++) { fprintf(fdel, "\t%g", deletecount[i]); }
+          fprintf(fdel, "\n");
+          fflush(fdel);
+        }
+      }
+    } else if (delflag == JSON) {
+      std::string indent;
+      int json_level = 2, tab = 4;
+  
+      if (comm->me == 0) {
+        indent.resize(json_level*tab, ' ');
+        if (deljson_init == 1) {
+          fprintf(fdel, "%s},\n%s{\n", indent.c_str(), indent.c_str());
+        } else {
+          fprintf(fdel, "%s{\n", indent.c_str());
+          deljson_init = 1;
+        }
+    
+        indent.resize(++json_level*tab, ' ');
+        utils::print(fdel, "{}\"timestep\": {},\n", indent, update->ntimestep);
+        utils::print(fdel, "{}\"deleted_molecules\": [\n", indent);
+    
+        indent.resize(++json_level*tab, ' ');
+      }
+  
+      output->write_molecule_json(fdel, json_level, mark);
+  
+      if (comm->me == 0) { 
+        indent.resize(--json_level*tab, ' ');
+        fprintf(fdel, "%s]\n", indent.c_str());
+        fflush(fdel);
+      }
+    }
+  }
+
   // delete atoms. loop in reverse order to avoid copying marked atoms
 
-  ndel = ndelone = 0;
+  int ndel, ndelone = 0;
   for (i = atom->nlocal - 1; i >= 0; i--) {
-    if (mark[i] == 1) {
+    if (mark[i] > 0) {
       avec->copy(atom->nlocal - 1, i, 1);
       atom->nlocal--;
       ndelone++;
@@ -1102,83 +1167,12 @@ void FixReaxFFSpecies::DeleteSpecies(int Nmole, int Nspec)
 
   atom->natoms -= ndel;
 
-  if (comm->me == 0)
-    MPI_Reduce(MPI_IN_PLACE, deletecount, ndelcomm, MPI_DOUBLE, MPI_SUM, 0, world);
-  else
-    MPI_Reduce(deletecount, deletecount, ndelcomm, MPI_DOUBLE, MPI_SUM, 0, world);
-
-  if (comm->me == 0) {
-    if (delflag == NATIVE) {
-      if (masslimitflag) {
-        int printflag = 0;
-        for (int m = 0; m < Nspec; m++) {
-          if (deletecount[m] > 0) {
-            if (printflag == 0) {
-              utils::print(fdel, "Timestep {}", update->ntimestep);
-              printflag = 1;
-            }
-            fprintf(fdel, " %g ", deletecount[m]);
-            for (j = 0; j < nutypes; j++) {
-              int itemp = MolName[nutypes * m + j];
-              if (itemp != 0) {
-                fprintf(fdel, "%s", ueletype[j].c_str());
-                if (itemp != 1) fprintf(fdel, "%d", itemp);
-              }
-            }
-          }
-        }
-        if (printflag) {
-          fprintf(fdel, "\n");
-          fflush(fdel);
-        }
-      } else {
-        int writeflag = 0;
-        for (i = 0; i < ndelspec; i++)
-          if (deletecount[i]) writeflag = 1;
-
-        if (writeflag) {
-          utils::print(fdel, "{}", update->ntimestep);
-          for (i = 0; i < ndelspec; i++) { fprintf(fdel, "\t%g", deletecount[i]); }
-          fprintf(fdel, "\n");
-          fflush(fdel);
-        }
-      }
-    } else if (delflag == JSON) {
-      std::string indent;
-      int json_level = 2, tab = 4;
-      indent.resize(json_level*tab, ' ');
-      if (deljson_init == 1) {
-        fprintf(fdel, "%s},\n%s{\n", indent.c_str(), indent.c_str());
-      } else {
-        fprintf(fdel, "%s{\n", indent.c_str());
-        deljson_init = 1;
-      }
-
-      indent.resize(++json_level*tab, ' ');
-      utils::print(fdel, "{}\"timestep\": {},\n", indent, update->ntimestep);
-      utils::print(fdel, "{}\"deleted_molecules\": [\n", indent);
-
-      indent.resize(++json_level*tab, ' ');
-      fprintf(fdel, "%s{\n", indent.c_str());
-
-      indent.resize(++json_level*tab, ' ');
-      utils::print(fdel, "{}Deleted_Molecule\n", indent);
-
-      indent.resize(--json_level*tab, ' ');
-      fprintf(fdel, "%s},\n", indent.c_str());
-
-      indent.resize(--json_level*tab, ' ');
-      fprintf(fdel, "%s]\n", indent.c_str());
-      fflush(fdel);
-    }
-  }
-
   // push back delete_Tcount on every step
   if (delete_Nsteps > 0) {
     for (i = delete_Nsteps - 1; i > 0; i--) delete_Tcount[i] = delete_Tcount[i - 1];
     delete_Tcount[0] += this_delete_Tcount;
   }
-
+  
   if (ndel && (atom->map_style != Atom::MAP_NONE)) {
     atom->nghost = 0;
     atom->map_init();
