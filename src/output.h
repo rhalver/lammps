@@ -77,7 +77,6 @@ class Output : protected Pointers {
   } Particle;
   MPI_Datatype createParticleStructType();
 
-
   Output(class LAMMPS *);
   ~Output() override;
   void init();

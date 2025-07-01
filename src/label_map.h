@@ -42,7 +42,7 @@ class LabelMap : protected Pointers {
   void write_data(FILE *);
   void read_restart(FILE *fp);
   void write_restart(FILE *);
-  inline std::vector<std::string> getTypelabel() const { return typelabel; }
+  inline auto getTypelabel() const { return typelabel; }
 
 protected:
   int natomtypes, nbondtypes, nangletypes, ndihedraltypes, nimpropertypes;
