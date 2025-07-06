@@ -241,7 +241,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     reset_mol_ids->create_computes(id,group->names[igroup]);
   }
 
-  memory->create(rxn_name,nreacts,MAXNAME,"bond/react:rxn_name");
   memory->create(constraintstr,nreacts,MAXLINE,"bond/react:constraintstr");
 
   // set up common variables as vectors of length 'nreacts'
@@ -280,9 +279,8 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     Reaction &rxn = rxns[rxnID];
     iarg++;
 
-    int n = strlen(arg[iarg]) + 1;
-    if (n > MAXNAME) error->all(FLERR,"Reaction name (react-ID) is too long (limit: 256 characters)");
-    strcpy(rxn_name[rxnID],arg[iarg++]);
+    rxn.name = arg[iarg++];
+    if (rxn.name.size()+1 > MAXNAME) error->all(FLERR,"Reaction name (react-ID) is too long (limit: 255 characters)");
 
     int groupid = group->find(arg[iarg++]);
     if (groupid == -1) error->all(FLERR,"Could not find fix group ID");
@@ -428,8 +426,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     for (int i = 0; i < rlm.Nrxns; i++) {
       int existflag = 0;
       for (int j = 0; j < nreacts; j++) {
-        std::string my_rxn_name = rxn_name[j];
-        if (rlm.rxn_names[i] == my_rxn_name) {
+        if (rlm.rxn_names[i] == rxns[j].name) {
           rlm.rxnIDs.push_back(j);
           existflag = 1;
           break;
@@ -670,7 +667,6 @@ FixBondReact::~FixBondReact()
   memory->destroy(nnewmolids);
   if (vvec != nullptr) memory->destroy(vvec);
 
-  memory->destroy(rxn_name);
   memory->destroy(constraintstr);
 
   if (attempted_rxn == 1) {
@@ -2607,7 +2603,7 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
         (twomol->type[i] != onemol->type[equivalences[i][1][myrxn]-1]) &&
         (landlocked_atoms[i][myrxn] == 0))
       error->all(FLERR, "Fix bond/react: Atom type affected by reaction {} is too close "
-                 "to template edge", rxn_name[myrxn]);
+                 "to template edge", rxns[myrxn].name);
   }
 
   // additionally, if a bond changes type, but neither involved atom is landlocked, bad
@@ -2625,7 +2621,7 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
               if ((onemol_batom == equivalences[twomol_atomj-1][1][myrxn]) &&
                   (twomol->bond_type[i][j] != onemol->bond_type[onemol_atomi-1][m]))
                 error->all(FLERR, "Fix bond/react: Bond type affected by reaction {} is "
-                           "too close to template edge",rxn_name[myrxn]);
+                           "too close to template edge",rxns[myrxn].name);
             }
             if (newton_bond) {
               int onemol_atomj = equivalences[twomol_atomj-1][1][myrxn];
@@ -2634,7 +2630,7 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
                 if ((onemol_batom == equivalences[i][1][myrxn]) &&
                     (twomol->bond_type[i][j] != onemol->bond_type[onemol_atomj-1][m]))
                   error->all(FLERR, "Fix bond/react: Bond type affected by reaction {} is "
-                             "too close to template edge",rxn_name[myrxn]);
+                             "too close to template edge",rxns[myrxn].name);
               }
             }
           }
@@ -2691,7 +2687,7 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
     }
 
   if (comm->me == 0 && warnflag == 1) error->warning(FLERR, "Fix bond/react: Atom affected "
-                       "by reaction {} is too close to template edge",rxn_name[myrxn]);
+                       "by reaction {} is too close to template edge",rxns[myrxn].name);
 
   // finally, if a created atom is not landlocked, bad!
   for (int i = 0; i < twomol->natoms; i++) {
@@ -4605,7 +4601,7 @@ void FixBondReact::write_restart(FILE *fp)
   for (int i = 0; i < nreacts; i++) {
     set[i].reaction_count_total = rxns[i].reaction_count_total;
 
-    strncpy(set[i].rxn_name,rxn_name[i],MAXNAME-1);
+    strncpy(set[i].rxn_name,rxns[i].name.c_str(),MAXNAME-1);
     set[i].rxn_name[MAXNAME-1] = '\0';
   }
 
@@ -4660,7 +4656,7 @@ void FixBondReact::restart(char *buf)
 
   for (int i = 0; i < r_nreacts; i++)
     for (int j = 0; j < nreacts; j++)
-      if (strcmp(set_restart[i].rxn_name,rxn_name[j]) == 0)
+      if (strcmp(set_restart[i].rxn_name,rxns[j].name.c_str()) == 0)
         rxns[j].reaction_count_total = set_restart[i].reaction_count_total;
 
   if (revision > 1) {

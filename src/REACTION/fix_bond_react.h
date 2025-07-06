@@ -74,9 +74,9 @@ class FixBondReact : public Fix {
   int narrhenius;
   int status;
 
-  char **rxn_name;
   char **constraintstr;
   struct Reaction {
+    std::string name;
     int nevery, groupbits;
     int iatomtype, jatomtype;
     int ibonding, jbonding;
