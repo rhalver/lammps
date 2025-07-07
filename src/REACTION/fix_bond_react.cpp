@@ -445,7 +445,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   memory->create(equivalences,max_natoms,2,nreacts,"bond/react:equivalences");
   memory->create(reverse_equiv,max_natoms,2,nreacts,"bond/react:reverse_equiv");
   memory->create(landlocked_atoms,max_natoms,nreacts,"bond/react:landlocked_atoms");
-  memory->create(delete_atoms,max_natoms,nreacts,"bond/react:delete_atoms");
   memory->create(create_atoms,max_natoms,nreacts,"bond/react:create_atoms");
   memory->create(chiral_atoms,max_natoms,6,nreacts,"bond/react:chiral_atoms");
   memory->create(newmolids,max_natoms,nreacts,"bond/react:newmolids");
@@ -455,7 +454,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     for (int i = 0; i < max_natoms; i++) {
       rxns[j].atom[i].edge = 0;
       rxns[j].atom[i].recharged = 1; // update all partial charges by default
-      delete_atoms[i][j] = 0;
+      rxns[j].atom[i].deleted = 0;
       create_atoms[i][j] = 0;
       newmolids[i][j] = 0;
       nnewmolids[j] = 0;
@@ -531,7 +530,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       twomol = atom->molecules[rxns[myrxn].reacted_mol];
       for (int j = 0; j < twomol->natoms; j++) {
         int jj = equivalences[j][1][myrxn]-1;
-        if (rxns[myrxn].atom[jj].recharged == 1 && delete_atoms[jj][myrxn] == 0) {
+        if (rxns[myrxn].atom[jj].recharged == 1 && rxns[myrxn].atom[jj].deleted == 0) {
           rxns[myrxn].mol_total_charge += twomol->q[j];
           rxns[myrxn].rescale_charges_flag++;
         }
@@ -655,7 +654,6 @@ FixBondReact::~FixBondReact()
   memory->destroy(equivalences);
   memory->destroy(reverse_equiv);
   memory->destroy(landlocked_atoms);
-  memory->destroy(delete_atoms);
   memory->destroy(create_atoms);
   memory->destroy(chiral_atoms);
   memory->destroy(newmolids);
@@ -2633,10 +2631,10 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
 
   // additionally, if a deleted atom is bonded to an atom that is not deleted, bad
   for (int i = 0; i < onemol->natoms; i++) {
-    if (delete_atoms[i][myrxn] == 1) {
+    if (rxns[myrxn].atom[i].deleted == 1) {
       int ii = reverse_equiv[i][1][myrxn] - 1;
       for (int j = 0; j < twomol_nxspecial[ii][0]; j++) {
-        if (delete_atoms[equivalences[twomol_xspecial[ii][j]-1][1][myrxn]-1][myrxn] == 0) {
+        if (rxns[myrxn].atom[equivalences[twomol_xspecial[ii][j]-1][1][myrxn]-1].deleted == 0) {
           error->all(FLERR,"Fix bond/react: A deleted atom cannot remain bonded to an atom that is not deleted");
         }
       }
@@ -3230,7 +3228,7 @@ void FixBondReact::update_everything()
       onemol = atom->molecules[rxns[rxnID].unreacted_mol];
       for (int j = 0; j < onemol->natoms; j++) {
         int iatom = atom->map(update_mega_glove[j+1][i]);
-        if (delete_atoms[j][rxnID] == 1 && iatom >= 0 && iatom < nlocal) {
+        if (rxns[rxnID].atom[j].deleted == 1 && iatom >= 0 && iatom < nlocal) {
           mark[iatom] = 1;
         }
       }
@@ -3804,7 +3802,7 @@ int FixBondReact::insert_atoms_setup(tagint **my_update_mega_glove, int iupdate)
   for (int j = 0; j < twomol->natoms; j++) {
     if (rxns[rxnID].modify_create_fragid >= 0)
       if (!twomol->fragmentmask[rxns[rxnID].modify_create_fragid][j]) continue;
-    if (!create_atoms[j][rxnID] && !delete_atoms[equivalences[j][1][rxnID]][rxnID])
+    if (!create_atoms[j][rxnID] && !rxns[rxnID].atom[equivalences[j][1][rxnID]].deleted)
       n2superpose++;
   }
 
@@ -3829,7 +3827,7 @@ int FixBondReact::insert_atoms_setup(tagint **my_update_mega_glove, int iupdate)
       if (rxns[rxnID].modify_create_fragid >= 0)
         if (!twomol->fragmentmask[rxns[rxnID].modify_create_fragid][j]) continue;
       int ipre = equivalences[j][1][rxnID]-1; // equiv pre-reaction template index
-      if (!create_atoms[j][rxnID] && !delete_atoms[ipre][rxnID]) {
+      if (!create_atoms[j][rxnID] && !rxns[rxnID].atom[ipre].deleted) {
         if (atom->map(my_update_mega_glove[ipre+1][iupdate]) < 0) {
           error->warning(FLERR," eligible atoms skipped for created-atoms fit on rank {}\n",
                          comm->me);
@@ -4191,7 +4189,7 @@ void FixBondReact::DeleteAtoms(char *line, int myrxn)
     if (rv != 1) error->one(FLERR, "DeleteIDs section is incorrectly formatted");
     if (tmp > onemol->natoms)
       error->one(FLERR,"Fix bond/react: Invalid template atom ID in map file");
-    delete_atoms[tmp-1][myrxn] = 1;
+    rxns[myrxn].atom.[tmp-1].deleted = 1;
   }
 }
 
