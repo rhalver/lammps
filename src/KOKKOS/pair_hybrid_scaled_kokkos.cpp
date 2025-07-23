@@ -32,7 +32,7 @@ using namespace LAMMPS_NS;
 /* ---------------------------------------------------------------------- */
 
 PairHybridScaledKokkos::PairHybridScaledKokkos(LAMMPS *lmp) : PairHybridKokkos(lmp), fsum(nullptr), tsum(nullptr), scaleval(nullptr), scaleidx(nullptr),
-    atomvar(nullptr), atomscale(nullptr) 
+    atomvar(nullptr), atomscale(nullptr)
 {
   nmaxfsum = -1;
 
