@@ -25,10 +25,13 @@
 #include "group.h"
 #include "memory.h"
 #include "modify.h"
-#include "pair.h"
 #include "pair_lambda_input_apip.h"
 #include "pair_lambda_zone_apip.h"
 #include "update.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstring>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -714,8 +717,8 @@ void FixLambdaAPIP::unpack_forward_comm(int n, int first, double *buf)
 
 void FixLambdaAPIP::write_restart(FILE *fp)
 {
-  int timesteps_since_invoked_history_update = update->ntimestep - invoked_history_update;
-  int timesteps_since_invoked_history2_update = update->ntimestep - invoked_history2_update;
+  bigint timesteps_since_invoked_history_update = update->ntimestep - invoked_history_update;
+  bigint timesteps_since_invoked_history2_update = update->ntimestep - invoked_history2_update;
 
   int n = 0;
   double list[8];

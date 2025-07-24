@@ -35,7 +35,6 @@
 #include "improper.h"
 #include "input.h"
 #include "json.h"
-#include "lmpfftsettings.h"
 #include "modify.h"
 #include "neighbor.h"
 #include "output.h"
@@ -936,7 +935,7 @@ std::vector<std::string> Info::get_available_styles(const std::string &category)
 
 namespace {
 template<typename ValueType>
-static std::vector<std::string> get_style_names(std::map<std::string, ValueType> *styles)
+std::vector<std::string> get_style_names(std::map<std::string, ValueType> *styles)
 {
   std::vector<std::string> names;
 
@@ -951,7 +950,7 @@ static std::vector<std::string> get_style_names(std::map<std::string, ValueType>
 }
 
 template<typename ValueType>
-static bool find_style(const LAMMPS *lmp, std::map<std::string, ValueType> *styles,
+bool find_style(const LAMMPS *lmp, std::map<std::string, ValueType> *styles,
                        const std::string &name, bool suffix_check)
 {
   if (styles->find(name) != styles->end()) {
@@ -976,7 +975,7 @@ static bool find_style(const LAMMPS *lmp, std::map<std::string, ValueType> *styl
 }
 
 template<typename ValueType>
-static void print_columns(FILE *fp, std::map<std::string, ValueType> *styles)
+void print_columns(FILE *fp, std::map<std::string, ValueType> *styles)
 {
   if (styles->empty()) {
     fprintf(fp, "\nNone");
@@ -1070,6 +1069,12 @@ bool Info::has_exceptions() {
   return true;
 }
 
+
+/** Return true if a LAMMPS package is enabled in this binary
+ *
+ * \param pkg name of package
+ * \return true if yes, else false
+ */
 bool Info::has_package(const std::string &package_name) {
   for (int i = 0; LAMMPS::installed_packages[i] != nullptr; ++i) {
     if (package_name == LAMMPS::installed_packages[i]) {

@@ -928,13 +928,13 @@ int Neighbor::init_pair()
     }
 
     if (requests[i]->pair && i < nrequest_original) {
-      auto pair = (Pair *) requests[i]->requestor;
+      auto *pair = (Pair *) requests[i]->requestor;
       pair->init_list(requests[i]->id,lists[i]);
     } else if (requests[i]->fix && i < nrequest_original) {
       Fix *fix = (Fix *) requests[i]->requestor;
       fix->init_list(requests[i]->id,lists[i]);
     } else if (requests[i]->compute && i < nrequest_original) {
-      auto compute = (Compute *) requests[i]->requestor;
+      auto *compute = (Compute *) requests[i]->requestor;
       compute->init_list(requests[i]->id,lists[i]);
     }
   }
@@ -2867,7 +2867,7 @@ void Neighbor::modify_params(int narg, char **arg)
           utils::bounds(FLERR,word,1,ntypes,nlo,nhi,error);
           for (k = nlo; k <= nhi; k++) {
             if (type2collection[k] != -1)
-              error->all(FLERR,"Type specified more than once in collection/type commnd");
+              error->all(FLERR,"Type specified more than once in collection/type command");
             type2collection[k] = i;
           }
         }
@@ -2877,7 +2877,7 @@ void Neighbor::modify_params(int narg, char **arg)
 
       for (i = 1; i <= ntypes; i++){
         if (type2collection[i] == -1) {
-          error->all(FLERR,"Type missing in collection/type commnd");
+          error->all(FLERR,"Type missing in collection/type command");
         }
       }
 
@@ -2893,7 +2893,7 @@ void Neighbor::modify_params(int narg, char **arg)
 void Neighbor::modify_params(const std::string &modcmd)
 {
   auto args = utils::split_words(modcmd);
-  auto newarg = new char*[args.size()];
+  auto *newarg = new char*[args.size()];
   int i=0;
   for (const auto &arg : args) {
     newarg[i++] = (char *)arg.c_str();

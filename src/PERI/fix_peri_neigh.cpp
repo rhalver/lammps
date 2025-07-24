@@ -69,7 +69,7 @@ FixPeriNeigh::FixPeriNeigh(LAMMPS *lmp,int narg, char **arg) :
   vinter = nullptr;
   wvolume = nullptr;
 
-  grow_arrays(atom->nmax);
+  FixPeriNeigh::grow_arrays(atom->nmax);
   memset(wvolume,0,atom->nmax*sizeof(double));
   atom->add_callback(Atom::GROW);
   atom->add_callback(Atom::RESTART);
@@ -561,7 +561,7 @@ void FixPeriNeigh::write_restart(FILE *fp)
 void FixPeriNeigh::restart(char *buf)
 {
   int n = 0;
-  auto list = (double *) buf;
+  auto *list = (double *) buf;
 
   first = static_cast<int> (list[n++]);
   maxpartner = static_cast<int> (list[n++]);

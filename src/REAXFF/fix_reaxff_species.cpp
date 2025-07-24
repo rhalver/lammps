@@ -42,6 +42,7 @@
 #include "reaxff_defs.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <exception>
 #include <random>

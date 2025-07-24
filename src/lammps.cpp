@@ -560,8 +560,9 @@ LAMMPS::LAMMPS(int narg, char **arg, MPI_Comm communicator) :
       if (inflag <= 0) infile = stdin;
       else if (strcmp(arg[inflag], "none") == 0) infile = stdin;
       else infile = fopen(arg[inflag],"r");
+
       if (infile == nullptr)
-        error->all(FLERR,"Cannot open input script {}: {}", arg[inflag], utils::getsyserror());
+        error->one(FLERR,"Cannot open input script {}: {}", arg[inflag], utils::getsyserror());
       if (!helpflag)
         utils::logmesg(this,"LAMMPS ({}{})\n", version, update_string);
 
@@ -1139,19 +1140,6 @@ void _noopt LAMMPS::init_pkg_lists()
 #include "packages_region.h"
 #undef RegionStyle
 #undef REGION_CLASS
-}
-
-/** Return true if a LAMMPS package is enabled in this binary
- *
- * \param pkg name of package
- * \return true if yes, else false
- */
-bool LAMMPS::is_installed_pkg(const char *pkg)
-{
-  for (int i=0; installed_packages[i] != nullptr; ++i)
-    if (strcmp(installed_packages[i],pkg) == 0) return true;
-
-  return false;
 }
 
 #define check_for_match(style,list,name)                                \
