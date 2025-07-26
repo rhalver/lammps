@@ -1144,7 +1144,7 @@ void FixReaxFFSpecies::DeleteSpecies(int Nmole, int Nspec)
 
         indent.resize(++json_level*tab, ' ');
         utils::print(fdel, "{}\"timestep\": {},\n", indent, update->ntimestep);
-        utils::print(fdel, "{}\"deleted_molecules\": [\n", indent);
+        utils::print(fdel, "{}\"molecules\": [\n", indent);
 
         indent.resize(++json_level*tab, ' ');
       }

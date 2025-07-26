@@ -186,7 +186,7 @@ deleted on the first timestep:
        "run_output": [
            {
                "timestep": 1,
-               "deleted_molecules": [
+               "molecules": [
                    {
                        "types": {
                            "format": ["atom-tag", "type"],
@@ -215,7 +215,7 @@ The first-level keys of the JSON format output are "application", "format",
 key is an array of objects that contain data for each timestep on which a
 molecule was deleted, and the other first-level keys identify this JSON
 schema.  The "run_output" objects contain two keys, "timestep" and
-"deleted_molecules". The "deleted_molecules" key is an array of :doc:`LAMMPS
+"molecules". The "molecules" key is an array of :doc:`LAMMPS
 molecule JSON <molecule>` objects, one for each deleted molecule.  The
 "format" keys within molecule JSON objects are only listed once per output
 file, for brevity.  The "atom-tag" values are atom IDs from the simulation,
