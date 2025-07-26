@@ -244,6 +244,8 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   // set up common variables as vectors of length 'nreacts'
   rxns.resize(nreacts);
 
+  memory->create(reverse_equiv,max_natoms,2,nreacts,"bond/react:reverse_equiv");
+
   rescale_charges_anyflag = 0;
   for (auto &rxn : rxns) {
     rxn.fraction = 1.0;
@@ -441,24 +443,20 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     max_natoms = MAX(max_natoms,twomol->natoms);
   }
 
-  for (auto &rxn : rxns) rxn.atom.resize(max_natoms);
-  memory->create(equivalences,max_natoms,2,nreacts,"bond/react:equivalences");
-  memory->create(reverse_equiv,max_natoms,2,nreacts,"bond/react:reverse_equiv");
-
-  for (int j = 0; j < nreacts; j++) {
-    rxns[j].nnewmolids = 0;
-    for (int i = 0; i < max_natoms; i++) {
-      rxns[j].atom[i].edge = 0;
-      rxns[j].atom[i].recharged = 1; // update all partial charges by default
-      rxns[j].atom[i].deleted = 0;
-      rxns[j].atom[i].created = 0;
-      rxns[j].atom[i].newmolid = 0;
-      rxns[j].atom[i].chiral.fill(0);
-      // default equivalences to their own mol index
+  for (auto &rxn : rxns) {
+    rxn.nnewmolids = 0;
+    rxn.atoms.resize(max_natoms);
+    int idx = 0;
+    for (auto &atm : rxn.atoms) {
+      atm.edge = 0;
+      atm.recharged = 1; // update all partial charges by default
+      atm.deleted = 0;
+      atm.created = 0;
+      atm.newmolid = 0;
+      atm.chiral.fill(0);
+      // default amap to their own molecule template atom ID
       // all but created atoms will be updated
-      for (int m = 0; m < 2; m++) {
-        equivalences[i][m][j] = i+1;
-      }
+      atm.amap.fill(idx++);
     }
   }
 
@@ -480,7 +478,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       twomol = atom->molecules[rxns[myrxn].reacted_mol];
       if (onemol->moleculeflag && twomol->moleculeflag) {
         for (int j = 0; j < twomol->natoms; j++) {
-          if (rxns[myrxn].atom[j].newmolid != 0) continue;
+          if (rxns[myrxn].atoms[j].newmolid != 0) continue;
           int molid_isnew = 1;
           for (int k = 0; k < onemol->natoms; k++) {
             if (twomol->molecule[j] == onemol->molecule[k]) {
@@ -492,7 +490,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
             rxns[myrxn].nnewmolids++;
             for (int k = j; k < twomol->natoms; k++) {
               if (twomol->molecule[k] == twomol->molecule[j])
-                rxns[myrxn].atom[k].newmolid = rxns[myrxn].nnewmolids;
+                rxns[myrxn].atoms[k].newmolid = rxns[myrxn].nnewmolids;
             }
           }
         }
@@ -522,8 +520,8 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       rxns[myrxn].rescale_charges_flag = 0; // will now store number of updated atoms
       twomol = atom->molecules[rxns[myrxn].reacted_mol];
       for (int j = 0; j < twomol->natoms; j++) {
-        int jj = equivalences[j][1][myrxn]-1;
-        if (rxns[myrxn].atom[jj].recharged == 1 && rxns[myrxn].atom[jj].deleted == 0) {
+        int jj = rxns[myrxn].atoms[j].amap[1]-1;
+        if (rxns[myrxn].atoms[jj].recharged == 1 && rxns[myrxn].atoms[jj].deleted == 0) {
           rxns[myrxn].mol_total_charge += twomol->q[j];
           rxns[myrxn].rescale_charges_flag++;
         }
@@ -644,7 +642,6 @@ FixBondReact::~FixBondReact()
   memory->destroy(nattempt);
   memory->destroy(distsq);
   memory->destroy(attempt);
-  memory->destroy(equivalences);
   memory->destroy(reverse_equiv);
   if (vvec != nullptr) memory->destroy(vvec);
 
@@ -1345,7 +1342,7 @@ void FixBondReact::superimpose_algorithm()
         }
 
         for (int i = 0; i < onemol->natoms; i++) {
-          if (glove[i][0] != 0 && pioneer_count[i] < onemol_nxspecial[i][0] && rxns[rxnID].atom[i].edge == 0) {
+          if (glove[i][0] != 0 && pioneer_count[i] < onemol_nxspecial[i][0] && rxns[rxnID].atoms[i].edge == 0) {
             pioneers[i] = 1;
           }
         }
@@ -1651,7 +1648,7 @@ void FixBondReact::check_a_neighbor()
 
   if (status != RESTORE) {
     // special consideration for hydrogen atoms (and all first neighbors bonded to no other atoms) (and aren't edge atoms)
-    if (onemol_nxspecial[(int)onemol_xspecial[pion][neigh]-1][0] == 1 && rxns[rxnID].atom[(int)onemol_xspecial[pion][neigh]-1].edge == 0) {
+    if (onemol_nxspecial[(int)onemol_xspecial[pion][neigh]-1][0] == 1 && rxns[rxnID].atoms[(int)onemol_xspecial[pion][neigh]-1].edge == 0) {
 
       for (int i = 0; i < nfirst_neighs; i++) {
 
@@ -1881,7 +1878,7 @@ int FixBondReact::ring_check()
   // double check the number of neighbors match for all non-edge atoms
   // otherwise, atoms at 'end' of symmetric ring can behave like edge atoms
   for (int i = 0; i < onemol->natoms; i++)
-    if (rxns[rxnID].atom[i].edge == 0 &&
+    if (rxns[rxnID].atoms[i].edge == 0 &&
         onemol_nxspecial[i][0] != nxspecial[atom->map(glove[i][1])][0])
       return 0;
 
@@ -2097,14 +2094,14 @@ int FixBondReact::check_constraints()
 
   // let's also check chirality within 'check_constraint'
   for (int i = 0; i < onemol->natoms; i++) {
-    if (rxns[rxnID].atom[i].chiral[0] == 1) {
+    if (rxns[rxnID].atoms[i].chiral[0] == 1) {
       double my4coords[12];
       // already ensured, by transitive property, that chiral simulation atom has four neighs
       for (int j = 0; j < 4; j++) {
         atom1 = atom->map(glove[i][1]);
         // loop over known types involved in chiral center
         for (int jj = 0; jj < 4; jj++) {
-          if (atom->type[atom->map(xspecial[atom1][j])] == rxns[rxnID].atom[i].chiral[jj+2]) {
+          if (atom->type[atom->map(xspecial[atom1][j])] == rxns[rxnID].atoms[i].chiral[jj+2]) {
             atom2 = atom->map(xspecial[atom1][j]);
             atom2 = domain->closest_image(atom1,atom2);
             for (int k = 0; k < 3; k++) {
@@ -2114,7 +2111,7 @@ int FixBondReact::check_constraints()
           }
         }
       }
-      if (get_chirality(my4coords) != rxns[rxnID].atom[i].chiral[1]) {
+      if (get_chirality(my4coords) != rxns[rxnID].atoms[i].chiral[1]) {
         memory->destroy(satisfied);
         return 0;
       }
@@ -2209,8 +2206,8 @@ double FixBondReact::get_totalcharge()
   double *q = atom->q;
   double sim_total_charge = 0.0;
   for (j = 0; j < onemol->natoms; j++) {
-    jj = equivalences[j][1][rxnID]-1;
-    if (rxns[rxnID].atom[jj].recharged == 1)
+    jj = rxns[rxnID].atoms[j].amap[1]-1;
+    if (rxns[rxnID].atoms[jj].recharged == 1)
       sim_total_charge += q[atom->map(glove[jj][1])];
   }
   return sim_total_charge;
@@ -2552,9 +2549,9 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
 
   // always remove edge atoms from landlocked list
   for (int i = 0; i < twomol->natoms; i++) {
-    if (rxns[myrxn].atom[i].created == 0 && rxns[myrxn].atom[equivalences[i][1][myrxn]-1].edge == 1)
-      rxns[myrxn].atom[i].landlocked = 0;
-    else rxns[myrxn].atom[i].landlocked = 1;
+    if (rxns[myrxn].atoms[i].created == 0 && rxns[myrxn].atoms[rxns[myrxn].atoms[i].amap[1]-1].edge == 1)
+      rxns[myrxn].atoms[i].landlocked = 0;
+    else rxns[myrxn].atoms[i].landlocked = 1;
   }
   int nspecial_limit = -1;
   if (force->angle && twomol->angleflag) nspecial_limit = 0;
@@ -2566,8 +2563,8 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
     for (int i = 0; i < twomol->natoms; i++) {
       for (int j = 0; j < twomol_nxspecial[i][nspecial_limit]; j++) {
         for (int k = 0; k < onemol->natoms; k++) {
-          if (equivalences[twomol_xspecial[i][j]-1][1][myrxn] == k+1 && rxns[myrxn].atom[k].edge == 1) {
-            rxns[myrxn].atom[i].landlocked = 0;
+          if (rxns[myrxn].atoms[twomol_xspecial[i][j]-1].amap[1] == k+1 && rxns[myrxn].atoms[k].edge == 1) {
+            rxns[myrxn].atoms[i].landlocked = 0;
           }
         }
       }
@@ -2577,9 +2574,9 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
   // bad molecule templates check
   // if atoms change types, but aren't landlocked, that's bad
   for (int i = 0; i < twomol->natoms; i++) {
-    if ((rxns[myrxn].atom[i].created == 0) &&
-        (twomol->type[i] != onemol->type[equivalences[i][1][myrxn]-1]) &&
-        (rxns[myrxn].atom[i].landlocked == 0))
+    if ((rxns[myrxn].atoms[i].created == 0) &&
+        (twomol->type[i] != onemol->type[rxns[myrxn].atoms[i].amap[1]-1]) &&
+        (rxns[myrxn].atoms[i].landlocked == 0))
       error->all(FLERR, "Fix bond/react: Atom type affected by reaction {} is too close "
                  "to template edge", rxns[myrxn].name);
   }
@@ -2587,25 +2584,25 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
   // additionally, if a bond changes type, but neither involved atom is landlocked, bad
   // would someone want to change an angle type but not bond or atom types? (etc.) ...hopefully not yet
   for (int i = 0; i < twomol->natoms; i++) {
-    if (rxns[myrxn].atom[i].created == 0) {
-      if (rxns[myrxn].atom[i].landlocked == 0) {
+    if (rxns[myrxn].atoms[i].created == 0) {
+      if (rxns[myrxn].atoms[i].landlocked == 0) {
         for (int j = 0; j < twomol->num_bond[i]; j++) {
           int twomol_atomj = twomol->bond_atom[i][j];
-          if (rxns[myrxn].atom[twomol_atomj-1].landlocked == 0) {
-            int onemol_atomi = equivalences[i][1][myrxn];
+          if (rxns[myrxn].atoms[twomol_atomj-1].landlocked == 0) {
+            int onemol_atomi = rxns[myrxn].atoms[i].amap[1];
             int onemol_batom;
             for (int m = 0; m < onemol->num_bond[onemol_atomi-1]; m++) {
               onemol_batom = onemol->bond_atom[onemol_atomi-1][m];
-              if ((onemol_batom == equivalences[twomol_atomj-1][1][myrxn]) &&
+              if ((onemol_batom == rxns[myrxn].atoms[twomol_atomj-1].amap[1]) &&
                   (twomol->bond_type[i][j] != onemol->bond_type[onemol_atomi-1][m]))
                 error->all(FLERR, "Fix bond/react: Bond type affected by reaction {} is "
                            "too close to template edge",rxns[myrxn].name);
             }
             if (newton_bond) {
-              int onemol_atomj = equivalences[twomol_atomj-1][1][myrxn];
+              int onemol_atomj = rxns[myrxn].atoms[twomol_atomj-1].amap[1];
               for (int m = 0; m < onemol->num_bond[onemol_atomj-1]; m++) {
                 onemol_batom = onemol->bond_atom[onemol_atomj-1][m];
-                if ((onemol_batom == equivalences[i][1][myrxn]) &&
+                if ((onemol_batom == rxns[myrxn].atoms[i].amap[1]) &&
                     (twomol->bond_type[i][j] != onemol->bond_type[onemol_atomj-1][m]))
                   error->all(FLERR, "Fix bond/react: Bond type affected by reaction {} is "
                              "too close to template edge",rxns[myrxn].name);
@@ -2619,10 +2616,10 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
 
   // additionally, if a deleted atom is bonded to an atom that is not deleted, bad
   for (int i = 0; i < onemol->natoms; i++) {
-    if (rxns[myrxn].atom[i].deleted == 1) {
+    if (rxns[myrxn].atoms[i].deleted == 1) {
       int ii = reverse_equiv[i][1][myrxn] - 1;
       for (int j = 0; j < twomol_nxspecial[ii][0]; j++) {
-        if (rxns[myrxn].atom[equivalences[twomol_xspecial[ii][j]-1][1][myrxn]-1].deleted == 0) {
+        if (rxns[myrxn].atoms[rxns[myrxn].atoms[twomol_xspecial[ii][j]-1].amap[1]-1].deleted == 0) {
           error->all(FLERR,"Fix bond/react: A deleted atom cannot remain bonded to an atom that is not deleted");
         }
       }
@@ -2633,9 +2630,9 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
   int warnflag = 0;
   if (comm->me == 0)
     for (int i = 0; i < twomol->natoms; i++) {
-      if ((rxns[myrxn].atom[i].created == 0) &&
-          (twomol_nxspecial[i][0] != onemol_nxspecial[equivalences[i][1][myrxn]-1][0]) &&
-          (rxns[myrxn].atom[i].landlocked == 0)) {
+      if ((rxns[myrxn].atoms[i].created == 0) &&
+          (twomol_nxspecial[i][0] != onemol_nxspecial[rxns[myrxn].atoms[i].amap[1]-1][0]) &&
+          (rxns[myrxn].atoms[i].landlocked == 0)) {
         warnflag = 1;
         break;
       }
@@ -2645,10 +2642,10 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
   int thereflag;
   if (comm->me == 0)
     for (int i = 0; i < twomol->natoms; i++) {
-      if (rxns[myrxn].atom[i].landlocked == 1) continue;
+      if (rxns[myrxn].atoms[i].landlocked == 1) continue;
       for (int j = 0; j < twomol_nxspecial[i][0]; j++) {
-        int oneneighID = equivalences[twomol_xspecial[i][j]-1][1][myrxn];
-        int ii = equivalences[i][1][myrxn] - 1;
+        int oneneighID = rxns[myrxn].atoms[twomol_xspecial[i][j]-1].amap[1];
+        int ii = rxns[myrxn].atoms[i].amap[1] - 1;
         thereflag = 0;
         for (int k = 0; k < onemol_nxspecial[ii][0]; k++) {
           if (oneneighID == onemol_xspecial[ii][k]) {
@@ -2669,7 +2666,7 @@ void FixBondReact::find_landlocked_atoms(int myrxn)
 
   // finally, if a created atom is not landlocked, bad!
   for (int i = 0; i < twomol->natoms; i++) {
-    if (rxns[myrxn].atom[i].created == 1 && rxns[myrxn].atom[i].landlocked == 0) {
+    if (rxns[myrxn].atoms[i].created == 1 && rxns[myrxn].atoms[i].landlocked == 0) {
       error->one(FLERR,"Fix bond/react: Created atom too close to template edge");
     }
   }
@@ -3134,7 +3131,7 @@ void FixBondReact::update_everything()
         for (int j = 0; j < twomol->natoms; j++) {
           int neednewid = 0;
           tagint *thismolid;
-          if (rxns[rxnID].atom[j].created == 1) {
+          if (rxns[rxnID].atoms[j].created == 1) {
             for (auto & myaddatom : addatoms) {
               if (myaddatom.tag == update_mega_glove[j+1][i]) {
                 thismolid = &(myaddatom.molecule);
@@ -3143,7 +3140,7 @@ void FixBondReact::update_everything()
               }
             }
           } else {
-            int jj = equivalences[j][1][rxnID]-1;
+            int jj = rxns[rxnID].atoms[j].amap[1]-1;
             int jlocal = atom->map(update_mega_glove[jj+1][i]);
             if (jlocal < nlocal && jlocal >= 0) {
               thismolid = &(atom->molecule[jlocal]);
@@ -3151,8 +3148,8 @@ void FixBondReact::update_everything()
             }
           }
           if (neednewid == 1) {
-            if (rxns[rxnID].atom[j].newmolid != 0) {
-              molmapid = moloffset + rxns[rxnID].atom[j].newmolid;
+            if (rxns[rxnID].atoms[j].newmolid != 0) {
+              molmapid = moloffset + rxns[rxnID].atoms[j].newmolid;
             } else {
               for (int k = 0; k < onemol->natoms; k++) {
                 if (twomol->molecule[j] == onemol->molecule[k]) {
@@ -3216,7 +3213,7 @@ void FixBondReact::update_everything()
       onemol = atom->molecules[rxns[rxnID].unreacted_mol];
       for (int j = 0; j < onemol->natoms; j++) {
         int iatom = atom->map(update_mega_glove[j+1][i]);
-        if (rxns[rxnID].atom[j].deleted == 1 && iatom >= 0 && iatom < nlocal) {
+        if (rxns[rxnID].atoms[j].deleted == 1 && iatom >= 0 && iatom < nlocal) {
           mark[iatom] = 1;
         }
       }
@@ -3235,7 +3232,7 @@ void FixBondReact::update_everything()
         charge_rescale_addend = (sim_total_charges[i]-rxns[rxnID].mol_total_charge)/n_custom_charge;
       }
       for (int j = 0; j < twomol->natoms; j++) {
-        int jj = equivalences[j][1][rxnID]-1;
+        int jj = rxns[rxnID].atoms[j].amap[1]-1;
         int ilocal = atom->map(update_mega_glove[jj+1][i]);
         if (ilocal >= 0 && ilocal < nlocal) {
 
@@ -3244,9 +3241,9 @@ void FixBondReact::update_everything()
           if (stabilization_flag == 1) i_statted_tags[ilocal] = 0;
           i_react_tags[ilocal] = rxnID;
 
-          if (rxns[rxnID].atom[j].landlocked == 1)
+          if (rxns[rxnID].atoms[j].landlocked == 1)
             type[ilocal] = twomol->type[j];
-          if (twomol->qflag && atom->q_flag && rxns[rxnID].atom[jj].recharged == 1) {
+          if (twomol->qflag && atom->q_flag && rxns[rxnID].atoms[jj].recharged == 1) {
             double *q = atom->q;
             q[ilocal] = twomol->q[j]+charge_rescale_addend;
           }
@@ -3261,20 +3258,20 @@ void FixBondReact::update_everything()
       onemol = atom->molecules[rxns[rxnID].unreacted_mol];
       twomol = atom->molecules[rxns[rxnID].reacted_mol];
       for (int j = 0; j < twomol->natoms; j++) {
-        int jj = equivalences[j][1][rxnID]-1;
+        int jj = rxns[rxnID].atoms[j].amap[1]-1;
         int ilocal = atom->map(update_mega_glove[jj+1][i]);
         if (ilocal < nlocal && ilocal >= 0) {
-          if (rxns[rxnID].atom[j].landlocked == 1) {
+          if (rxns[rxnID].atoms[j].landlocked == 1) {
             for (int k = 0; k < 3; k++) {
               nspecial[ilocal][k] = twomol->nspecial[j][k];
             }
             for (int p = 0; p < twomol->nspecial[j][2]; p++) {
-              special[ilocal][p] = update_mega_glove[equivalences[twomol->special[j][p]-1][1][rxnID]][i];
+              special[ilocal][p] = update_mega_glove[rxns[rxnID].atoms[twomol->special[j][p]-1].amap[1]][i];
             }
           }
           // now delete and replace landlocked atoms from non-landlocked atoms' special info
           // delete 1-2, 1-3, 1-4 specials individually. only delete if special exists in pre-reaction template
-          if (rxns[rxnID].atom[j].landlocked == 0) {
+          if (rxns[rxnID].atoms[j].landlocked == 0) {
             int ispec, fspec, imolspec, fmolspec, nspecdel[3];
             for (int k = 0; k < 3; k++) nspecdel[k] = 0;
             for (int k = 0; k < atom->maxspecial; k++) delflag[k] = 0;
@@ -3319,7 +3316,7 @@ void FixBondReact::update_everything()
               for (int n = nspecial[ilocal][2]-1; n > insert_num; n--) {
                 special[ilocal][n] = special[ilocal][n-1];
               }
-              special[ilocal][insert_num] = update_mega_glove[equivalences[twomol->special[j][k]-1][1][rxnID]][i];
+              special[ilocal][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->special[j][k]-1].amap[1]][i];
             }
           }
         }
@@ -3338,9 +3335,9 @@ void FixBondReact::update_everything()
       twomol = atom->molecules[rxns[rxnID].reacted_mol];
       // let's first delete all bond info about landlocked atoms
       for (int j = 0; j < twomol->natoms; j++) {
-        int jj = equivalences[j][1][rxnID]-1;
+        int jj = rxns[rxnID].atoms[j].amap[1]-1;
         if (atom->map(update_mega_glove[jj+1][i]) < nlocal && atom->map(update_mega_glove[jj+1][i]) >= 0) {
-          if (rxns[rxnID].atom[j].landlocked == 1) {
+          if (rxns[rxnID].atoms[j].landlocked == 1) {
             delta_bonds -= num_bond[atom->map(update_mega_glove[jj+1][i])];
             // If deleting all bonds, first cache then remove all histories
             if (n_histories > 0)
@@ -3352,11 +3349,11 @@ void FixBondReact::update_everything()
               }
             num_bond[atom->map(update_mega_glove[jj+1][i])] = 0;
           }
-          if (rxns[rxnID].atom[j].landlocked == 0) {
+          if (rxns[rxnID].atoms[j].landlocked == 0) {
             for (int p = num_bond[atom->map(update_mega_glove[jj+1][i])]-1; p > -1 ; p--) {
               for (int n = 0; n < twomol->natoms; n++) {
-                int nn = equivalences[n][1][rxnID]-1;
-                if (n!=j && bond_atom[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i] && rxns[rxnID].atom[n].landlocked == 1) {
+                int nn = rxns[rxnID].atoms[n].amap[1]-1;
+                if (n!=j && bond_atom[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i] && rxns[rxnID].atoms[n].landlocked == 1) {
                   // Cache history information, shift history, then delete final element
                   if (n_histories > 0)
                     for (auto &ihistory: histories)
@@ -3382,26 +3379,26 @@ void FixBondReact::update_everything()
       }
       // now let's add the new bond info.
       for (int j = 0; j < twomol->natoms; j++) {
-        int jj = equivalences[j][1][rxnID]-1;
+        int jj = rxns[rxnID].atoms[j].amap[1]-1;
         if (atom->map(update_mega_glove[jj+1][i]) < nlocal && atom->map(update_mega_glove[jj+1][i]) >= 0) {
-          if (rxns[rxnID].atom[j].landlocked == 1)  {
+          if (rxns[rxnID].atoms[j].landlocked == 1)  {
             num_bond[atom->map(update_mega_glove[jj+1][i])] = twomol->num_bond[j];
             delta_bonds += twomol->num_bond[j];
             for (int p = 0; p < twomol->num_bond[j]; p++) {
               bond_type[atom->map(update_mega_glove[jj+1][i])][p] = twomol->bond_type[j][p];
-              bond_atom[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->bond_atom[j][p]-1][1][rxnID]][i];
+              bond_atom[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->bond_atom[j][p]-1].amap[1]][i];
               // Check cached history data to see if bond regenerated
               if (n_histories > 0)
                 for (auto &ihistory: histories)
                   dynamic_cast<FixBondHistory *>(ihistory)->check_cache(atom->map(update_mega_glove[jj+1][i]), p);
             }
           }
-          if (rxns[rxnID].atom[j].landlocked == 0) {
+          if (rxns[rxnID].atoms[j].landlocked == 0) {
             for (int p = 0; p < twomol->num_bond[j]; p++) {
-              if (rxns[rxnID].atom[twomol->bond_atom[j][p]-1].landlocked == 1) {
+              if (rxns[rxnID].atoms[twomol->bond_atom[j][p]-1].landlocked == 1) {
                 insert_num = num_bond[atom->map(update_mega_glove[jj+1][i])];
                 bond_type[atom->map(update_mega_glove[jj+1][i])][insert_num] = twomol->bond_type[j][p];
-                bond_atom[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->bond_atom[j][p]-1][1][rxnID]][i];
+                bond_atom[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->bond_atom[j][p]-1].amap[1]][i];
                 // Check cached history data to see if bond regenerated
                 if (n_histories > 0)
                   for (auto &ihistory: histories)
@@ -3433,17 +3430,17 @@ void FixBondReact::update_everything()
         rxnID = update_mega_glove[0][i];
         twomol = atom->molecules[rxns[rxnID].reacted_mol];
         for (int j = 0; j < twomol->natoms; j++) {
-          int jj = equivalences[j][1][rxnID]-1;
+          int jj = rxns[rxnID].atoms[j].amap[1]-1;
           if (atom->map(update_mega_glove[jj+1][i]) < nlocal && atom->map(update_mega_glove[jj+1][i]) >= 0) {
-            if (rxns[rxnID].atom[j].landlocked == 1) {
+            if (rxns[rxnID].atoms[j].landlocked == 1) {
               delta_angle -= num_angle[atom->map(update_mega_glove[jj+1][i])];
               num_angle[atom->map(update_mega_glove[jj+1][i])] = 0;
             }
-            if (rxns[rxnID].atom[j].landlocked == 0) {
+            if (rxns[rxnID].atoms[j].landlocked == 0) {
               for (int p = num_angle[atom->map(update_mega_glove[jj+1][i])]-1; p > -1; p--) {
                 for (int n = 0; n < twomol->natoms; n++) {
-                  int nn = equivalences[n][1][rxnID]-1;
-                  if (n!=j && rxns[rxnID].atom[n].landlocked == 1 &&
+                  int nn = rxns[rxnID].atoms[n].amap[1]-1;
+                  if (n!=j && rxns[rxnID].atoms[n].landlocked == 1 &&
                       (angle_atom1[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i] ||
                        angle_atom2[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i] ||
                        angle_atom3[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i])) {
@@ -3465,28 +3462,28 @@ void FixBondReact::update_everything()
         // now let's add the new angle info.
         if (twomol->angleflag) {
           for (int j = 0; j < twomol->natoms; j++) {
-            int jj = equivalences[j][1][rxnID]-1;
+            int jj = rxns[rxnID].atoms[j].amap[1]-1;
             if (atom->map(update_mega_glove[jj+1][i]) < nlocal && atom->map(update_mega_glove[jj+1][i]) >= 0) {
-              if (rxns[rxnID].atom[j].landlocked == 1) {
+              if (rxns[rxnID].atoms[j].landlocked == 1) {
                 num_angle[atom->map(update_mega_glove[jj+1][i])] = twomol->num_angle[j];
                 delta_angle += twomol->num_angle[j];
                 for (int p = 0; p < twomol->num_angle[j]; p++) {
                   angle_type[atom->map(update_mega_glove[jj+1][i])][p] = twomol->angle_type[j][p];
-                  angle_atom1[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->angle_atom1[j][p]-1][1][rxnID]][i];
-                  angle_atom2[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->angle_atom2[j][p]-1][1][rxnID]][i];
-                  angle_atom3[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->angle_atom3[j][p]-1][1][rxnID]][i];
+                  angle_atom1[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->angle_atom1[j][p]-1].amap[1]][i];
+                  angle_atom2[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->angle_atom2[j][p]-1].amap[1]][i];
+                  angle_atom3[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->angle_atom3[j][p]-1].amap[1]][i];
                 }
               }
-              if (rxns[rxnID].atom[j].landlocked == 0) {
+              if (rxns[rxnID].atoms[j].landlocked == 0) {
                 for (int p = 0; p < twomol->num_angle[j]; p++) {
-                  if (rxns[rxnID].atom[twomol->angle_atom1[j][p]-1].landlocked == 1 ||
-                      rxns[rxnID].atom[twomol->angle_atom2[j][p]-1].landlocked == 1 ||
-                      rxns[rxnID].atom[twomol->angle_atom3[j][p]-1].landlocked == 1) {
+                  if (rxns[rxnID].atoms[twomol->angle_atom1[j][p]-1].landlocked == 1 ||
+                      rxns[rxnID].atoms[twomol->angle_atom2[j][p]-1].landlocked == 1 ||
+                      rxns[rxnID].atoms[twomol->angle_atom3[j][p]-1].landlocked == 1) {
                     insert_num = num_angle[atom->map(update_mega_glove[jj+1][i])];
                     angle_type[atom->map(update_mega_glove[jj+1][i])][insert_num] = twomol->angle_type[j][p];
-                    angle_atom1[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->angle_atom1[j][p]-1][1][rxnID]][i];
-                    angle_atom2[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->angle_atom2[j][p]-1][1][rxnID]][i];
-                    angle_atom3[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->angle_atom3[j][p]-1][1][rxnID]][i];
+                    angle_atom1[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->angle_atom1[j][p]-1].amap[1]][i];
+                    angle_atom2[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->angle_atom2[j][p]-1].amap[1]][i];
+                    angle_atom3[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->angle_atom3[j][p]-1].amap[1]][i];
                     num_angle[atom->map(update_mega_glove[jj+1][i])]++;
                     if (num_angle[atom->map(update_mega_glove[jj+1][i])] > atom->angle_per_atom)
                       error->one(FLERR,"Fix bond/react topology/atom exceed system topology/atom");
@@ -3513,17 +3510,17 @@ void FixBondReact::update_everything()
         rxnID = update_mega_glove[0][i];
         twomol = atom->molecules[rxns[rxnID].reacted_mol];
         for (int j = 0; j < twomol->natoms; j++) {
-          int jj = equivalences[j][1][rxnID]-1;
+          int jj = rxns[rxnID].atoms[j].amap[1]-1;
           if (atom->map(update_mega_glove[jj+1][i]) < nlocal && atom->map(update_mega_glove[jj+1][i]) >= 0) {
-            if (rxns[rxnID].atom[j].landlocked == 1) {
+            if (rxns[rxnID].atoms[j].landlocked == 1) {
               delta_dihed -= num_dihedral[atom->map(update_mega_glove[jj+1][i])];
               num_dihedral[atom->map(update_mega_glove[jj+1][i])] = 0;
             }
-            if (rxns[rxnID].atom[j].landlocked == 0) {
+            if (rxns[rxnID].atoms[j].landlocked == 0) {
               for (int p = num_dihedral[atom->map(update_mega_glove[jj+1][i])]-1; p > -1; p--) {
                 for (int n = 0; n < twomol->natoms; n++) {
-                  int nn = equivalences[n][1][rxnID]-1;
-                  if (n!=j && rxns[rxnID].atom[n].landlocked == 1 &&
+                  int nn = rxns[rxnID].atoms[n].amap[1]-1;
+                  if (n!=j && rxns[rxnID].atoms[n].landlocked == 1 &&
                       (dihedral_atom1[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i] ||
                        dihedral_atom2[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i] ||
                        dihedral_atom3[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i] ||
@@ -3547,31 +3544,31 @@ void FixBondReact::update_everything()
         // now let's add new dihedral info
         if (twomol->dihedralflag) {
           for (int j = 0; j < twomol->natoms; j++) {
-            int jj = equivalences[j][1][rxnID]-1;
+            int jj = rxns[rxnID].atoms[j].amap[1]-1;
             if (atom->map(update_mega_glove[jj+1][i]) < nlocal && atom->map(update_mega_glove[jj+1][i]) >= 0) {
-              if (rxns[rxnID].atom[j].landlocked == 1) {
+              if (rxns[rxnID].atoms[j].landlocked == 1) {
                 num_dihedral[atom->map(update_mega_glove[jj+1][i])] = twomol->num_dihedral[j];
                 delta_dihed += twomol->num_dihedral[j];
                 for (int p = 0; p < twomol->num_dihedral[j]; p++) {
                   dihedral_type[atom->map(update_mega_glove[jj+1][i])][p] = twomol->dihedral_type[j][p];
-                  dihedral_atom1[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->dihedral_atom1[j][p]-1][1][rxnID]][i];
-                  dihedral_atom2[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->dihedral_atom2[j][p]-1][1][rxnID]][i];
-                  dihedral_atom3[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->dihedral_atom3[j][p]-1][1][rxnID]][i];
-                  dihedral_atom4[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->dihedral_atom4[j][p]-1][1][rxnID]][i];
+                  dihedral_atom1[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->dihedral_atom1[j][p]-1].amap[1]][i];
+                  dihedral_atom2[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->dihedral_atom2[j][p]-1].amap[1]][i];
+                  dihedral_atom3[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->dihedral_atom3[j][p]-1].amap[1]][i];
+                  dihedral_atom4[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->dihedral_atom4[j][p]-1].amap[1]][i];
                 }
               }
-              if (rxns[rxnID].atom[j].landlocked == 0) {
+              if (rxns[rxnID].atoms[j].landlocked == 0) {
                 for (int p = 0; p < twomol->num_dihedral[j]; p++) {
-                  if (rxns[rxnID].atom[twomol->dihedral_atom1[j][p]-1].landlocked == 1 ||
-                      rxns[rxnID].atom[twomol->dihedral_atom2[j][p]-1].landlocked == 1 ||
-                      rxns[rxnID].atom[twomol->dihedral_atom3[j][p]-1].landlocked == 1 ||
-                      rxns[rxnID].atom[twomol->dihedral_atom4[j][p]-1].landlocked == 1) {
+                  if (rxns[rxnID].atoms[twomol->dihedral_atom1[j][p]-1].landlocked == 1 ||
+                      rxns[rxnID].atoms[twomol->dihedral_atom2[j][p]-1].landlocked == 1 ||
+                      rxns[rxnID].atoms[twomol->dihedral_atom3[j][p]-1].landlocked == 1 ||
+                      rxns[rxnID].atoms[twomol->dihedral_atom4[j][p]-1].landlocked == 1) {
                     insert_num = num_dihedral[atom->map(update_mega_glove[jj+1][i])];
                     dihedral_type[atom->map(update_mega_glove[jj+1][i])][insert_num] = twomol->dihedral_type[j][p];
-                    dihedral_atom1[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->dihedral_atom1[j][p]-1][1][rxnID]][i];
-                    dihedral_atom2[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->dihedral_atom2[j][p]-1][1][rxnID]][i];
-                    dihedral_atom3[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->dihedral_atom3[j][p]-1][1][rxnID]][i];
-                    dihedral_atom4[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->dihedral_atom4[j][p]-1][1][rxnID]][i];
+                    dihedral_atom1[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->dihedral_atom1[j][p]-1].amap[1]][i];
+                    dihedral_atom2[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->dihedral_atom2[j][p]-1].amap[1]][i];
+                    dihedral_atom3[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->dihedral_atom3[j][p]-1].amap[1]][i];
+                    dihedral_atom4[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->dihedral_atom4[j][p]-1].amap[1]][i];
                     num_dihedral[atom->map(update_mega_glove[jj+1][i])]++;
                     if (num_dihedral[atom->map(update_mega_glove[jj+1][i])] > atom->dihedral_per_atom)
                       error->one(FLERR,"Fix bond/react topology/atom exceed system topology/atom");
@@ -3598,17 +3595,17 @@ void FixBondReact::update_everything()
         rxnID = update_mega_glove[0][i];
         twomol = atom->molecules[rxns[rxnID].reacted_mol];
         for (int j = 0; j < twomol->natoms; j++) {
-          int jj = equivalences[j][1][rxnID]-1;
+          int jj = rxns[rxnID].atoms[j].amap[1]-1;
           if (atom->map(update_mega_glove[jj+1][i]) < nlocal && atom->map(update_mega_glove[jj+1][i]) >= 0) {
-            if (rxns[rxnID].atom[j].landlocked == 1) {
+            if (rxns[rxnID].atoms[j].landlocked == 1) {
               delta_imprp -= num_improper[atom->map(update_mega_glove[jj+1][i])];
               num_improper[atom->map(update_mega_glove[jj+1][i])] = 0;
             }
-            if (rxns[rxnID].atom[j].landlocked == 0) {
+            if (rxns[rxnID].atoms[j].landlocked == 0) {
               for (int p = num_improper[atom->map(update_mega_glove[jj+1][i])]-1; p > -1; p--) {
                 for (int n = 0; n < twomol->natoms; n++) {
-                  int nn = equivalences[n][1][rxnID]-1;
-                  if (n!=j && rxns[rxnID].atom[n].landlocked == 1 &&
+                  int nn = rxns[rxnID].atoms[n].amap[1]-1;
+                  if (n!=j && rxns[rxnID].atoms[n].landlocked == 1 &&
                       (improper_atom1[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i] ||
                        improper_atom2[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i] ||
                        improper_atom3[atom->map(update_mega_glove[jj+1][i])][p] == update_mega_glove[nn+1][i] ||
@@ -3632,31 +3629,31 @@ void FixBondReact::update_everything()
         // now let's add new improper info
         if (twomol->improperflag) {
           for (int j = 0; j < twomol->natoms; j++) {
-            int jj = equivalences[j][1][rxnID]-1;
+            int jj = rxns[rxnID].atoms[j].amap[1]-1;
             if (atom->map(update_mega_glove[jj+1][i]) < nlocal && atom->map(update_mega_glove[jj+1][i]) >= 0) {
-              if (rxns[rxnID].atom[j].landlocked == 1) {
+              if (rxns[rxnID].atoms[j].landlocked == 1) {
                 num_improper[atom->map(update_mega_glove[jj+1][i])] = twomol->num_improper[j];
                 delta_imprp += twomol->num_improper[j];
                 for (int p = 0; p < twomol->num_improper[j]; p++) {
                   improper_type[atom->map(update_mega_glove[jj+1][i])][p] = twomol->improper_type[j][p];
-                  improper_atom1[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->improper_atom1[j][p]-1][1][rxnID]][i];
-                  improper_atom2[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->improper_atom2[j][p]-1][1][rxnID]][i];
-                  improper_atom3[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->improper_atom3[j][p]-1][1][rxnID]][i];
-                  improper_atom4[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[equivalences[twomol->improper_atom4[j][p]-1][1][rxnID]][i];
+                  improper_atom1[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->improper_atom1[j][p]-1].amap[1]][i];
+                  improper_atom2[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->improper_atom2[j][p]-1].amap[1]][i];
+                  improper_atom3[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->improper_atom3[j][p]-1].amap[1]][i];
+                  improper_atom4[atom->map(update_mega_glove[jj+1][i])][p] = update_mega_glove[rxns[rxnID].atoms[twomol->improper_atom4[j][p]-1].amap[1]][i];
                 }
               }
-              if (rxns[rxnID].atom[j].landlocked == 0) {
+              if (rxns[rxnID].atoms[j].landlocked == 0) {
                 for (int p = 0; p < twomol->num_improper[j]; p++) {
-                  if (rxns[rxnID].atom[twomol->improper_atom1[j][p]-1].landlocked == 1 ||
-                      rxns[rxnID].atom[twomol->improper_atom2[j][p]-1].landlocked == 1 ||
-                      rxns[rxnID].atom[twomol->improper_atom3[j][p]-1].landlocked == 1 ||
-                      rxns[rxnID].atom[twomol->improper_atom4[j][p]-1].landlocked == 1) {
+                  if (rxns[rxnID].atoms[twomol->improper_atom1[j][p]-1].landlocked == 1 ||
+                      rxns[rxnID].atoms[twomol->improper_atom2[j][p]-1].landlocked == 1 ||
+                      rxns[rxnID].atoms[twomol->improper_atom3[j][p]-1].landlocked == 1 ||
+                      rxns[rxnID].atoms[twomol->improper_atom4[j][p]-1].landlocked == 1) {
                     insert_num = num_improper[atom->map(update_mega_glove[jj+1][i])];
                     improper_type[atom->map(update_mega_glove[jj+1][i])][insert_num] = twomol->improper_type[j][p];
-                    improper_atom1[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->improper_atom1[j][p]-1][1][rxnID]][i];
-                    improper_atom2[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->improper_atom2[j][p]-1][1][rxnID]][i];
-                    improper_atom3[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->improper_atom3[j][p]-1][1][rxnID]][i];
-                    improper_atom4[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[equivalences[twomol->improper_atom4[j][p]-1][1][rxnID]][i];
+                    improper_atom1[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->improper_atom1[j][p]-1].amap[1]][i];
+                    improper_atom2[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->improper_atom2[j][p]-1].amap[1]][i];
+                    improper_atom3[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->improper_atom3[j][p]-1].amap[1]][i];
+                    improper_atom4[atom->map(update_mega_glove[jj+1][i])][insert_num] = update_mega_glove[rxns[rxnID].atoms[twomol->improper_atom4[j][p]-1].amap[1]][i];
                     num_improper[atom->map(update_mega_glove[jj+1][i])]++;
                     if (num_improper[atom->map(update_mega_glove[jj+1][i])] > atom->improper_per_atom)
                       error->one(FLERR,"Fix bond/react topology/atom exceed system topology/atom");
@@ -3790,7 +3787,7 @@ int FixBondReact::insert_atoms_setup(tagint **my_update_mega_glove, int iupdate)
   for (int j = 0; j < twomol->natoms; j++) {
     if (rxns[rxnID].modify_create_fragid >= 0)
       if (!twomol->fragmentmask[rxns[rxnID].modify_create_fragid][j]) continue;
-    if (!rxns[rxnID].atom[j].created && !rxns[rxnID].atom[equivalences[j][1][rxnID]].deleted)
+    if (!rxns[rxnID].atoms[j].created && !rxns[rxnID].atoms[rxns[rxnID].atoms[j].amap[1]].deleted)
       n2superpose++;
   }
 
@@ -3814,8 +3811,8 @@ int FixBondReact::insert_atoms_setup(tagint **my_update_mega_glove, int iupdate)
     for (int j = 0; j < twomol->natoms; j++) {
       if (rxns[rxnID].modify_create_fragid >= 0)
         if (!twomol->fragmentmask[rxns[rxnID].modify_create_fragid][j]) continue;
-      int ipre = equivalences[j][1][rxnID]-1; // equiv pre-reaction template index
-      if (!rxns[rxnID].atom[j].created && !rxns[rxnID].atom[ipre].deleted) {
+      int ipre = rxns[rxnID].atoms[j].amap[1]-1; // equiv pre-reaction template index
+      if (!rxns[rxnID].atoms[j].created && !rxns[rxnID].atoms[ipre].deleted) {
         if (atom->map(my_update_mega_glove[ipre+1][iupdate]) < 0) {
           error->warning(FLERR," eligible atoms skipped for created-atoms fit on rank {}\n",
                          comm->me);
@@ -3843,7 +3840,7 @@ int FixBondReact::insert_atoms_setup(tagint **my_update_mega_glove, int iupdate)
 
   // get coordinates and image flags
   for (int m = 0; m < twomol->natoms; m++) {
-    if (rxns[rxnID].atom[m].created == 1) {
+    if (rxns[rxnID].atoms[m].created == 1) {
       // apply optimal rotation/translation for created atom coords
       // also map coords back into simulation box
       if (fitroot == comm->me) {
@@ -3862,7 +3859,7 @@ int FixBondReact::insert_atoms_setup(tagint **my_update_mega_glove, int iupdate)
   if (rxns[rxnID].overlapsq > 0) {
     int abortflag = 0;
     for (int m = 0; m < twomol->natoms; m++) {
-      if (rxns[rxnID].atom[m].created == 1) {
+      if (rxns[rxnID].atoms[m].created == 1) {
         for (int i = 0; i < nlocal; i++) {
           delx = coords[m][0] - x[i][0];
           dely = coords[m][1] - x[i][1];
@@ -3881,7 +3878,7 @@ int FixBondReact::insert_atoms_setup(tagint **my_update_mega_glove, int iupdate)
     if (!abortflag) {
       for (auto & myaddatom : addatoms) {
         for (int m = 0; m < twomol->natoms; m++) {
-          if (rxns[rxnID].atom[m].created == 1) {
+          if (rxns[rxnID].atoms[m].created == 1) {
             delx = coords[m][0] - myaddatom.x[0];
             dely = coords[m][1] - myaddatom.x[1];
             delz = coords[m][2] - myaddatom.x[2];
@@ -3909,10 +3906,10 @@ int FixBondReact::insert_atoms_setup(tagint **my_update_mega_glove, int iupdate)
   // if so, add atom to my list via create_atom()
   // initialize additional info about the atoms
   // set group mask to "all" plus fix group
-  int preID; // new equivalences index
+  int preID; // new amap index
   int add_count = 0;
   for (int m = 0; m < twomol->natoms; m++) {
-    if (rxns[rxnID].atom[m].created == 1) {
+    if (rxns[rxnID].atoms[m].created == 1) {
       // increase atom count
       add_count++;
       preID = onemol->natoms+add_count;
@@ -3980,11 +3977,11 @@ int FixBondReact::insert_atoms_setup(tagint **my_update_mega_glove, int iupdate)
         myaddatom.v[2] = myv[2]/vnorm*vtnorm;
         addatoms.push_back(myaddatom);
       }
-      // globally update mega_glove and equivalences
+      // globally update mega_glove and amap
       MPI_Allreduce(MPI_IN_PLACE,&root,1,MPI_INT,MPI_SUM,world);
       MPI_Bcast(&my_update_mega_glove[preID][iupdate],1,MPI_LMP_TAGINT,root,world);
-      equivalences[m][0][rxnID] = m+1;
-      equivalences[m][1][rxnID] = preID;
+      rxns[rxnID].atoms[m].amap[0] = m+1;
+      rxns[rxnID].atoms[m].amap[1] = preID;
       reverse_equiv[preID-1][0][rxnID] = preID;
       reverse_equiv[preID-1][1][rxnID] = m+1;
     }
@@ -4120,7 +4117,7 @@ void FixBondReact::read_map_file(int myrxn)
   // error check
   for (int i = 0; i < onemol->natoms; i++) {
     int my_equiv = reverse_equiv[i][1][myrxn];
-    if (rxns[myrxn].atom[my_equiv-1].created == 1)
+    if (rxns[myrxn].atoms[my_equiv-1].created == 1)
       error->all(FLERR,"Fix bond/react: Created atoms cannot also be listed in Equivalences section\n");
   }
 
@@ -4140,7 +4137,7 @@ void FixBondReact::EdgeIDs(char *line, int myrxn)
     if (rv != 1) error->one(FLERR, "EdgeIDs section is incorrectly formatted");
     if (tmp > onemol->natoms)
       error->one(FLERR,"Fix bond/react: Invalid template atom ID in map file");
-    rxns[myrxn].atom[tmp-1].edge = 1;
+    rxns[myrxn].atoms[tmp-1].edge = 1;
   }
 }
 
@@ -4154,8 +4151,8 @@ void FixBondReact::Equivalences(char *line, int myrxn)
     if (tmp1 > onemol->natoms || tmp2 > twomol->natoms)
       error->one(FLERR,"Fix bond/react: Invalid template atom ID in map file");
     //equivalences is-> clmn 1: post-reacted, clmn 2: pre-reacted
-    equivalences[tmp2-1][0][myrxn] = tmp2;
-    equivalences[tmp2-1][1][myrxn] = tmp1;
+    rxns[myrxn].atoms[tmp2-1].amap[0] = tmp2;
+    rxns[myrxn].atoms[tmp2-1].amap[1] = tmp1;
     //reverse_equiv is-> clmn 1: pre-reacted, clmn 2: post-reacted
     reverse_equiv[tmp1-1][0][myrxn] = tmp1;
     reverse_equiv[tmp1-1][1][myrxn] = tmp2;
@@ -4163,8 +4160,8 @@ void FixBondReact::Equivalences(char *line, int myrxn)
   // sanity check for one-to-one mapping for equivalences
   for (int i = 0; i < twomol->natoms; i++)
     for (int j = i+1; j < twomol->natoms; j++)
-      if (equivalences[i][0][myrxn] == equivalences[j][0][myrxn] ||
-          equivalences[i][1][myrxn] == equivalences[j][1][myrxn])
+      if (rxns[myrxn].atoms[i].amap[0] == rxns[myrxn].atoms[j].amap[0] ||
+          rxns[myrxn].atoms[i].amap[1] == rxns[myrxn].atoms[j].amap[1])
         error->one(FLERR,"Fix bond/react: Repeated atoms IDs in Equivalences section");
 }
 
@@ -4177,7 +4174,7 @@ void FixBondReact::DeleteAtoms(char *line, int myrxn)
     if (rv != 1) error->one(FLERR, "DeleteIDs section is incorrectly formatted");
     if (tmp > onemol->natoms)
       error->one(FLERR,"Fix bond/react: Invalid template atom ID in map file");
-    rxns[myrxn].atom[tmp-1].deleted = 1;
+    rxns[myrxn].atoms[tmp-1].deleted = 1;
   }
 }
 
@@ -4191,7 +4188,7 @@ void FixBondReact::CreateAtoms(char *line, int myrxn)
     if (rv != 1) error->one(FLERR, "CreateIDs section is incorrectly formatted");
     if (tmp > twomol->natoms)
       error->one(FLERR,"Fix bond/react: Invalid atom ID in CreateIDs section of map file");
-    rxns[myrxn].atom[tmp-1].created = 1;
+    rxns[myrxn].atoms[tmp-1].created = 1;
   }
   if (twomol->xflag == 0)
     error->one(FLERR,"Fix bond/react: 'Coords' section required in post-reaction template when creating new atoms");
@@ -4201,9 +4198,9 @@ void FixBondReact::CustomCharges(int ifragment, int myrxn)
 {
   for (int i = 0; i < onemol->natoms; i++)
     if (onemol->fragmentmask[ifragment][i])
-      rxns[myrxn].atom[i].recharged = 1;
+      rxns[myrxn].atoms[i].recharged = 1;
     else
-      rxns[myrxn].atom[i].recharged = 0;
+      rxns[myrxn].atoms[i].recharged = 0;
 }
 
 void FixBondReact::ChiralCenters(char *line, int myrxn)
@@ -4215,7 +4212,7 @@ void FixBondReact::ChiralCenters(char *line, int myrxn)
     if (rv != 1) error->one(FLERR, "ChiralIDs section is incorrectly formatted");
     if (tmp > onemol->natoms)
       error->one(FLERR,"Fix bond/react: Invalid template atom ID in map file");
-    rxns[myrxn].atom[tmp-1].chiral[0] = 1;
+    rxns[myrxn].atoms[tmp-1].chiral[0] = 1;
     if (onemol->xflag == 0)
       error->one(FLERR,"Fix bond/react: Molecule template 'Coords' section required for chiralIDs keyword");
     if ((int) onemol_nxspecial[tmp-1][0] != 4)
@@ -4230,13 +4227,13 @@ void FixBondReact::ChiralCenters(char *line, int myrxn)
     // record order of atom types, and coords
     double my4coords[12];
     for (int j = 0; j < 4; j++) {
-      rxns[myrxn].atom[tmp-1].chiral[j+2] = onemol->type[onemol_xspecial[tmp-1][j]-1];
+      rxns[myrxn].atoms[tmp-1].chiral[j+2] = onemol->type[onemol_xspecial[tmp-1][j]-1];
       for (int k = 0; k < 3; k++) {
         my4coords[3*j+k] = onemol->x[onemol_xspecial[tmp-1][j]-1][k];
       }
     }
     // get orientation
-    rxns[myrxn].atom[tmp-1].chiral[1] = get_chirality(my4coords);
+    rxns[myrxn].atoms[tmp-1].chiral[1] = get_chirality(my4coords);
   }
 }
 

@@ -82,6 +82,8 @@ class FixBondReact : public Fix {
     int created;                  // true if atom in post-reacted template to create
     int newmolid;                 // for molmap option: mol IDs in post, but not in pre, re-indexed from 1
     std::array<int, 6> chiral;    // pre-react chiral atoms. 1) flag 2) orientation 3-4) ordered atom types
+    std::array<int, 2> amap;      // atom map between reactant and product templates
+    std::array<int, 2> ramap;     // reverse amap
   };
   struct Reaction {
     std::string name, constraintstr;
@@ -106,7 +108,7 @@ class FixBondReact : public Fix {
     int nconstraints;
     int v_nevery, v_rmin, v_rmax, v_prob; // ID of variable, -1 if static
     int nnewmolids;            // number of unique new molids needed for each reaction
-    std::vector<ReactionAtomFlags> atom;
+    std::vector<ReactionAtomFlags> atoms;
   };
   std::vector<Reaction> rxns;
 
@@ -152,7 +154,6 @@ class FixBondReact : public Fix {
   tagint **restore;      // contains info about restore points
   int *pioneer_count;    // counts pioneers
 
-  int ***equivalences;       // relation between pre- and post-reacted templates
   int ***reverse_equiv;      // re-ordered equivalences
 
   int **nxspecial, **onemol_nxspecial, **twomol_nxspecial;    // full number of 1-4 neighbors
