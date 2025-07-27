@@ -97,7 +97,6 @@ class FixBondReact : public Fix {
     double rminsq, rmaxsq;
     double fraction;
     double mol_total_charge;      // sum of charges of post-reaction atoms whose charges are updated
-    int reacted_mol; // 2delete
     int reaction_count, reaction_count_total;
     int local_rxn_count, ghostly_rxn_count;
     int max_rxn, nlocalkeep, nghostlykeep;
@@ -125,7 +124,6 @@ class FixBondReact : public Fix {
   int allnattempt;
   tagint ***attempt;
 
-  class Molecule *twomol;      // post-reacted molecule template
   Fix *fix1;                   // nve/limit used to relax reaction sites
   Fix *fix2;                   // properties/atom used to indicate 1) relaxing atoms
                                //                                  2) to which 'react' atom belongs
@@ -215,7 +213,7 @@ class FixBondReact : public Fix {
 
   void far_partner();
   void close_partner();
-  void get_molxspecials(Molecule *);
+  void get_molxspecials(Reaction);
   void find_landlocked_atoms(Reaction &);
   void glove_ghostcheck();
   void ghost_glovecast();
