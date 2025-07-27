@@ -156,9 +156,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   vvec = nullptr;
 
   nxspecial = nullptr;
-  onemol_nxspecial = nullptr;
   xspecial = nullptr;
-  onemol_xspecial = nullptr;
 
   // these group names are reserved for use exclusively by bond/react
   master_group = (char *) "bond_react_MASTER_group";
@@ -493,7 +491,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     open(files[i]);
     rxns[i].reactant->check_attributes();
     rxns[i].product->check_attributes();
-    get_molxspecials(rxns[i]);
     read_map_file(i);
     fclose(fp);
     rxns[i].iatomtype = rxns[i].reactant->type[rxns[i].ibonding-1];
@@ -543,13 +540,12 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   // if so, we don't need non-bonded neighbor list
   for (auto &rxn : rxns) {
     rxn.closeneigh = -1; // indicates will search non-bonded neighbors
-    get_molxspecials(rxn);
-    for (int k = 0; k < onemol_nxspecial[rxn.ibonding-1][2]; k++) {
-      if (onemol_xspecial[rxn.ibonding-1][k] == rxn.jbonding) {
+    for (int k = 0; k < rxn.reactant->nspecial[rxn.ibonding-1][2]; k++) {
+      if (rxn.reactant->special[rxn.ibonding-1][k] == rxn.jbonding) {
         rxn.closeneigh = 2; // index for 1-4 neighbor
-        if (k < onemol_nxspecial[rxn.ibonding-1][1])
+        if (k < rxn.reactant->nspecial[rxn.ibonding-1][1])
           rxn.closeneigh = 1; // index for 1-3 neighbor
-        if (k < onemol_nxspecial[rxn.ibonding-1][0])
+        if (k < rxn.reactant->nspecial[rxn.ibonding-1][0])
           rxn.closeneigh = 0; // index for 1-2 neighbor
         break;
       }
@@ -1255,8 +1251,6 @@ void FixBondReact::superimpose_algorithm()
   for (rxnID = 0; rxnID < nreacts; rxnID++) {
     for (lcl_inst = 0; lcl_inst < nattempt[rxnID]; lcl_inst++) {
 
-      get_molxspecials(rxns[rxnID]);
-
       status = PROCEED;
 
       glove_counter = 0;
@@ -1281,11 +1275,11 @@ void FixBondReact::superimpose_algorithm()
       glove_counter++;
 
       // special case, only two atoms in reaction templates
-      // then: bonding onemol_nxspecials guaranteed to be equal, and either 0 or 1
+      // then: bonding reactant nspecials guaranteed to be equal, and either 0 or 1
       if (glove_counter == rxns[rxnID].reactant->natoms) {
         tagint local_atom1 = atom->map(glove[myibonding-1][1]);
         tagint local_atom2 = atom->map(glove[myjbonding-1][1]);
-        if ( (nxspecial[local_atom1][0] == onemol_nxspecial[myibonding-1][0] &&
+        if ( (nxspecial[local_atom1][0] == rxns[rxnID].reactant->nspecial[myibonding-1][0] &&
               nxspecial[local_atom2][0] == nxspecial[local_atom1][0]) &&
              (nxspecial[local_atom1][0] == 0 ||
               xspecial[local_atom1][0] == atom->tag[local_atom2]) &&
@@ -1310,11 +1304,11 @@ void FixBondReact::superimpose_algorithm()
       for (int i = 0; i < max_natoms; i++)
         pioneer_count[i] = 0;
 
-      for (int i = 0; i < onemol_nxspecial[myibonding-1][0]; i++)
-        pioneer_count[onemol_xspecial[myibonding-1][i]-1]++;
+      for (int i = 0; i < rxns[rxnID].reactant->nspecial[myibonding-1][0]; i++)
+        pioneer_count[rxns[rxnID].reactant->special[myibonding-1][i]-1]++;
 
-      for (int i = 0; i < onemol_nxspecial[myjbonding-1][0]; i++)
-        pioneer_count[onemol_xspecial[myjbonding-1][i]-1]++;
+      for (int i = 0; i < rxns[rxnID].reactant->nspecial[myjbonding-1][0]; i++)
+        pioneer_count[rxns[rxnID].reactant->special[myjbonding-1][i]-1]++;
 
 
       int hang_catch = 0;
@@ -1325,7 +1319,7 @@ void FixBondReact::superimpose_algorithm()
         }
 
         for (int i = 0; i < rxns[rxnID].reactant->natoms; i++) {
-          if (glove[i][0] != 0 && pioneer_count[i] < onemol_nxspecial[i][0] && rxns[rxnID].atoms[i].edge == 0) {
+          if (glove[i][0] != 0 && pioneer_count[i] < rxns[rxnID].reactant->nspecial[i][0] && rxns[rxnID].atoms[i].edge == 0) {
             pioneers[i] = 1;
           }
         }
@@ -1502,7 +1496,7 @@ void FixBondReact::superimpose_algorithm()
 void FixBondReact::make_a_guess()
 {
   int *type = atom->type;
-  int nfirst_neighs = onemol_nxspecial[pion][0];
+  int nfirst_neighs = rxns[rxnID].reactant->nspecial[pion][0];
 
   // per-atom property indicating if in bond/react master group
   int flag,cols;
@@ -1531,7 +1525,7 @@ void FixBondReact::make_a_guess()
     if (status != PROCEED) return;
   }
 
-  nfirst_neighs = onemol_nxspecial[pion][0];
+  nfirst_neighs = rxns[rxnID].reactant->nspecial[pion][0];
 
   //  check if any of first neighbors are in bond_react_MASTER_group
   //  if so, this constitutes a fail
@@ -1577,7 +1571,7 @@ void FixBondReact::make_a_guess()
   }
 
   for (int i = 0; i < nfirst_neighs; i++) {
-    mol_ntypes[(int)rxns[rxnID].reactant->type[(int)onemol_xspecial[pion][i]-1]-1]++;
+    mol_ntypes[(int)rxns[rxnID].reactant->type[(int)rxns[rxnID].reactant->special[pion][i]-1]-1]++;
     lcl_ntypes[(int)type[(int)atom->map(xspecial[atom->map(glove[pion][1])][i])]-1]++; //added -1
   }
 
@@ -1604,7 +1598,7 @@ void FixBondReact::make_a_guess()
 
 void FixBondReact::neighbor_loop()
 {
-  int nfirst_neighs = onemol_nxspecial[pion][0];
+  int nfirst_neighs = rxns[rxnID].reactant->nspecial[pion][0];
 
   if (status == RESTORE) {
     check_a_neighbor();
@@ -1612,7 +1606,7 @@ void FixBondReact::neighbor_loop()
   }
 
   for (neigh = 0; neigh < nfirst_neighs; neigh++) {
-    if (glove[(int)onemol_xspecial[pion][neigh]-1][0] == 0) {
+    if (glove[(int)rxns[rxnID].reactant->special[pion][neigh]-1][0] == 0) {
       check_a_neighbor();
     }
   }
@@ -1627,15 +1621,15 @@ void FixBondReact::neighbor_loop()
 void FixBondReact::check_a_neighbor()
 {
   int *type = atom->type;
-  int nfirst_neighs = onemol_nxspecial[pion][0];
+  int nfirst_neighs = rxns[rxnID].reactant->nspecial[pion][0];
 
   if (status != RESTORE) {
     // special consideration for hydrogen atoms (and all first neighbors bonded to no other atoms) (and aren't edge atoms)
-    if (onemol_nxspecial[(int)onemol_xspecial[pion][neigh]-1][0] == 1 && rxns[rxnID].atoms[(int)onemol_xspecial[pion][neigh]-1].edge == 0) {
+    if (rxns[rxnID].reactant->nspecial[(int)rxns[rxnID].reactant->special[pion][neigh]-1][0] == 1 && rxns[rxnID].atoms[(int)rxns[rxnID].reactant->special[pion][neigh]-1].edge == 0) {
 
       for (int i = 0; i < nfirst_neighs; i++) {
 
-        if (type[(int)atom->map(xspecial[(int)atom->map(glove[pion][1])][i])] == rxns[rxnID].reactant->type[(int)onemol_xspecial[pion][neigh]-1] &&
+        if (type[(int)atom->map(xspecial[(int)atom->map(glove[pion][1])][i])] == rxns[rxnID].reactant->type[(int)rxns[rxnID].reactant->special[pion][neigh]-1] &&
             nxspecial[(int)atom->map(xspecial[(int)atom->map(glove[pion][1])][i])][0] == 1) {
 
           int already_assigned = 0;
@@ -1647,16 +1641,16 @@ void FixBondReact::check_a_neighbor()
           }
 
           if (already_assigned == 0) {
-            glove[(int)onemol_xspecial[pion][neigh]-1][0] = onemol_xspecial[pion][neigh];
-            glove[(int)onemol_xspecial[pion][neigh]-1][1] = xspecial[(int)atom->map(glove[pion][1])][i];
+            glove[(int)rxns[rxnID].reactant->special[pion][neigh]-1][0] = rxns[rxnID].reactant->special[pion][neigh];
+            glove[(int)rxns[rxnID].reactant->special[pion][neigh]-1][1] = xspecial[(int)atom->map(glove[pion][1])][i];
 
             //another check for ghost atoms. perhaps remove the one in make_a_guess
-            if (atom->map(glove[(int)onemol_xspecial[pion][neigh]-1][1]) < 0) {
+            if (atom->map(glove[(int)rxns[rxnID].reactant->special[pion][neigh]-1][1]) < 0) {
               error->one(FLERR,"Fix bond/react: Fix bond/react needs ghost atoms from further away");
             }
 
-            for (int j = 0; j < onemol_nxspecial[onemol_xspecial[pion][neigh]-1][0]; j++) {
-              pioneer_count[onemol_xspecial[onemol_xspecial[pion][neigh]-1][j]-1]++;
+            for (int j = 0; j < rxns[rxnID].reactant->nspecial[rxns[rxnID].reactant->special[pion][neigh]-1][0]; j++) {
+              pioneer_count[rxns[rxnID].reactant->special[rxns[rxnID].reactant->special[pion][neigh]-1][j]-1]++;
             }
 
             glove_counter++;
@@ -1687,7 +1681,7 @@ void FixBondReact::check_a_neighbor()
 
   for (int i = 0; i < nfirst_neighs; i++) {
 
-    if (type[atom->map((int)xspecial[(int)atom->map(glove[pion][1])][i])] == rxns[rxnID].reactant->type[(int)onemol_xspecial[pion][neigh]-1]) {
+    if (type[atom->map((int)xspecial[(int)atom->map(glove[pion][1])][i])] == rxns[rxnID].reactant->type[(int)rxns[rxnID].reactant->special[pion][neigh]-1]) {
       int already_assigned = 0;
 
       //check if a first neighbor of the pioneer is already assigned to pre-reacted template
@@ -1699,16 +1693,16 @@ void FixBondReact::check_a_neighbor()
       }
 
       if (already_assigned == 0) {
-        glove[(int)onemol_xspecial[pion][neigh]-1][0] = onemol_xspecial[pion][neigh];
-        glove[(int)onemol_xspecial[pion][neigh]-1][1] = xspecial[(int)atom->map(glove[pion][1])][i];
+        glove[(int)rxns[rxnID].reactant->special[pion][neigh]-1][0] = rxns[rxnID].reactant->special[pion][neigh];
+        glove[(int)rxns[rxnID].reactant->special[pion][neigh]-1][1] = xspecial[(int)atom->map(glove[pion][1])][i];
 
         //another check for ghost atoms. perhaps remove the one in make_a_guess
-        if (atom->map(glove[(int)onemol_xspecial[pion][neigh]-1][1]) < 0) {
+        if (atom->map(glove[(int)rxns[rxnID].reactant->special[pion][neigh]-1][1]) < 0) {
           error->one(FLERR,"Fix bond/react: Fix bond/react needs ghost atoms from further away");
         }
 
-        for (int ii = 0; ii < onemol_nxspecial[onemol_xspecial[pion][neigh]-1][0]; ii++) {
-          pioneer_count[onemol_xspecial[onemol_xspecial[pion][neigh]-1][ii]-1]++;
+        for (int ii = 0; ii < rxns[rxnID].reactant->nspecial[rxns[rxnID].reactant->special[pion][neigh]-1][0]; ii++) {
+          pioneer_count[rxns[rxnID].reactant->special[rxns[rxnID].reactant->special[pion][neigh]-1][ii]-1]++;
         }
 
         glove_counter++;
@@ -1734,7 +1728,7 @@ void FixBondReact::check_a_neighbor()
 
 void FixBondReact::crosscheck_the_neighbor()
 {
-  int nfirst_neighs = onemol_nxspecial[pion][0];
+  int nfirst_neighs = rxns[rxnID].reactant->nspecial[pion][0];
 
   if (status == RESTORE) {
     inner_crosscheck_loop();
@@ -1742,8 +1736,8 @@ void FixBondReact::crosscheck_the_neighbor()
   }
 
   for (trace = 0; trace < nfirst_neighs; trace++) {
-    if (neigh!=trace && rxns[rxnID].reactant->type[(int)onemol_xspecial[pion][neigh]-1] == rxns[rxnID].reactant->type[(int)onemol_xspecial[pion][trace]-1] &&
-        glove[onemol_xspecial[pion][trace]-1][0] == 0) {
+    if (neigh!=trace && rxns[rxnID].reactant->type[(int)rxns[rxnID].reactant->special[pion][neigh]-1] == rxns[rxnID].reactant->type[(int)rxns[rxnID].reactant->special[pion][trace]-1] &&
+        glove[rxns[rxnID].reactant->special[pion][trace]-1][0] == 0) {
 
       if (avail_guesses == MAXGUESS) {
         error->warning(FLERR,"Fix bond/react: Fix bond/react failed because MAXGUESS set too small. ask developer for info");
@@ -1779,11 +1773,11 @@ void FixBondReact::inner_crosscheck_loop()
   int *type = atom->type;
   // arbitrarily limited to 5 identical first neighbors
   tagint tag_choices[5];
-  int nfirst_neighs = onemol_nxspecial[pion][0];
+  int nfirst_neighs = rxns[rxnID].reactant->nspecial[pion][0];
 
   int num_choices = 0;
   for (int i = 0; i < nfirst_neighs; i++) {
-    if (type[(int)atom->map(xspecial[atom->map(glove[pion][1])][i])] == rxns[rxnID].reactant->type[(int)onemol_xspecial[pion][neigh]-1]) {
+    if (type[(int)atom->map(xspecial[atom->map(glove[pion][1])][i])] == rxns[rxnID].reactant->type[(int)rxns[rxnID].reactant->special[pion][neigh]-1]) {
       if (num_choices == 5) { // here failed because too many identical first neighbors. but really no limit if situation arises
         status = GUESSFAIL;
         return;
@@ -1822,22 +1816,22 @@ void FixBondReact::inner_crosscheck_loop()
         return;
       }
     } else {
-      glove[onemol_xspecial[pion][neigh]-1][0] = onemol_xspecial[pion][neigh];
-      glove[onemol_xspecial[pion][neigh]-1][1] = tag_choices[i];
+      glove[rxns[rxnID].reactant->special[pion][neigh]-1][0] = rxns[rxnID].reactant->special[pion][neigh];
+      glove[rxns[rxnID].reactant->special[pion][neigh]-1][1] = tag_choices[i];
       guess_branch[avail_guesses-1]--;
       break;
     }
   }
 
   //another check for ghost atoms. perhaps remove the one in make_a_guess
-  if (atom->map(glove[(int)onemol_xspecial[pion][neigh]-1][1]) < 0) {
+  if (atom->map(glove[(int)rxns[rxnID].reactant->special[pion][neigh]-1][1]) < 0) {
     error->one(FLERR,"Fix bond/react: Fix bond/react needs ghost atoms from further away");
   }
 
   if (guess_branch[avail_guesses-1] == 0) avail_guesses--;
 
-  for (int i = 0; i < onemol_nxspecial[onemol_xspecial[pion][neigh]-1][0]; i++) {
-    pioneer_count[onemol_xspecial[onemol_xspecial[pion][neigh]-1][i]-1]++;
+  for (int i = 0; i < rxns[rxnID].reactant->nspecial[rxns[rxnID].reactant->special[pion][neigh]-1][0]; i++) {
+    pioneer_count[rxns[rxnID].reactant->special[rxns[rxnID].reactant->special[pion][neigh]-1][i]-1]++;
   }
   glove_counter++;
   if (glove_counter == rxns[rxnID].reactant->natoms) {
@@ -1862,13 +1856,13 @@ int FixBondReact::ring_check()
   // otherwise, atoms at 'end' of symmetric ring can behave like edge atoms
   for (int i = 0; i < rxns[rxnID].reactant->natoms; i++)
     if (rxns[rxnID].atoms[i].edge == 0 &&
-        onemol_nxspecial[i][0] != nxspecial[atom->map(glove[i][1])][0])
+        rxns[rxnID].reactant->nspecial[i][0] != nxspecial[atom->map(glove[i][1])][0])
       return 0;
 
   for (int i = 0; i < rxns[rxnID].reactant->natoms; i++) {
-    for (int j = 0; j < onemol_nxspecial[i][0]; j++) {
+    for (int j = 0; j < rxns[rxnID].reactant->nspecial[i][0]; j++) {
       int ring_fail = 1;
-      int ispecial = onemol_xspecial[i][j];
+      int ispecial = rxns[rxnID].reactant->special[i][j];
       for (int k = 0; k < nxspecial[atom->map(glove[i][1])][0]; k++) {
         if (xspecial[atom->map(glove[i][1])][k] == glove[ispecial-1][1]) {
           ring_fail = 0;
@@ -2501,17 +2495,6 @@ int FixBondReact::get_chirality(double four_coords[12])
 }
 
 /* ----------------------------------------------------------------------
-  Get xspecials for current molecule templates
-  may need correction when specials defined explicitly in molecule templates
-------------------------------------------------------------------------- */
-
-void FixBondReact::get_molxspecials(Reaction rxn)
-{
-  onemol_nxspecial = rxn.reactant->nspecial;
-  onemol_xspecial = rxn.reactant->special;
-}
-
-/* ----------------------------------------------------------------------
   Determine which pre-reacted template atoms are at least three bonds
   away from edge atoms.
 ------------------------------------------------------------------------- */
@@ -2611,7 +2594,7 @@ void FixBondReact::find_landlocked_atoms(Reaction &rxn)
   if (comm->me == 0)
     for (int i = 0; i < rxn.product->natoms; i++) {
       if ((rxn.atoms[i].created == 0) &&
-          (rxn.product->nspecial[i][0] != onemol_nxspecial[rxn.atoms[i].amap[1]-1][0]) &&
+          (rxn.product->nspecial[i][0] != rxn.reactant->nspecial[rxn.atoms[i].amap[1]-1][0]) &&
           (rxn.atoms[i].landlocked == 0)) {
         warnflag = 1;
         break;
@@ -2627,8 +2610,8 @@ void FixBondReact::find_landlocked_atoms(Reaction &rxn)
         int oneneighID = rxn.atoms[rxn.product->special[i][j]-1].amap[1];
         int ii = rxn.atoms[i].amap[1] - 1;
         thereflag = 0;
-        for (int k = 0; k < onemol_nxspecial[ii][0]; k++) {
-          if (oneneighID == onemol_xspecial[ii][k]) {
+        for (int k = 0; k < rxn.reactant->nspecial[ii][0]; k++) {
+          if (oneneighID == rxn.reactant->special[ii][k]) {
             thereflag = 1;
             break;
           }
@@ -4183,21 +4166,21 @@ void FixBondReact::ChiralCenters(char *line, int myrxn)
     rxns[myrxn].atoms[tmp-1].chiral[0] = 1;
     if (rxns[myrxn].reactant->xflag == 0)
       error->one(FLERR,"Fix bond/react: Molecule template 'Coords' section required for chiralIDs keyword");
-    if ((int) onemol_nxspecial[tmp-1][0] != 4)
+    if ((int) rxns[myrxn].reactant->nspecial[tmp-1][0] != 4)
       error->one(FLERR,"Fix bond/react: Chiral atoms must have exactly four first neighbors");
     for (int j = 0; j < 4; j++) {
       for (int k = j+1; k < 4; k++) {
-        if (rxns[myrxn].reactant->type[onemol_xspecial[tmp-1][j]-1] ==
-            rxns[myrxn].reactant->type[onemol_xspecial[tmp-1][k]-1])
+        if (rxns[myrxn].reactant->type[rxns[myrxn].reactant->special[tmp-1][j]-1] ==
+            rxns[myrxn].reactant->type[rxns[myrxn].reactant->special[tmp-1][k]-1])
           error->one(FLERR,"Fix bond/react: First neighbors of chiral atoms must be of mutually different types");
       }
     }
     // record order of atom types, and coords
     double my4coords[12];
     for (int j = 0; j < 4; j++) {
-      rxns[myrxn].atoms[tmp-1].chiral[j+2] = rxns[myrxn].reactant->type[onemol_xspecial[tmp-1][j]-1];
+      rxns[myrxn].atoms[tmp-1].chiral[j+2] = rxns[myrxn].reactant->type[rxns[myrxn].reactant->special[tmp-1][j]-1];
       for (int k = 0; k < 3; k++) {
-        my4coords[3*j+k] = rxns[myrxn].reactant->x[onemol_xspecial[tmp-1][j]-1][k];
+        my4coords[3*j+k] = rxns[myrxn].reactant->x[rxns[myrxn].reactant->special[tmp-1][j]-1][k];
       }
     }
     // get orientation

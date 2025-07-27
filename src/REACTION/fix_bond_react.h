@@ -154,8 +154,8 @@ class FixBondReact : public Fix {
   tagint **restore;      // contains info about restore points
   int *pioneer_count;    // counts pioneers
 
-  int **nxspecial, **onemol_nxspecial;    // full number of 1-4 neighbors
-  tagint **xspecial, **onemol_xspecial;    // full 1-4 neighbor list
+  int **nxspecial;       // full number of 1-4 neighbors
+  tagint **xspecial;     // full 1-4 neighbor list
 
   int pion, neigh, trace;    // important indices for various loops. required for restore points
   int lcl_inst;              // reaction instance
@@ -213,7 +213,6 @@ class FixBondReact : public Fix {
 
   void far_partner();
   void close_partner();
-  void get_molxspecials(Reaction);
   void find_landlocked_atoms(Reaction &);
   void glove_ghostcheck();
   void ghost_glovecast();
