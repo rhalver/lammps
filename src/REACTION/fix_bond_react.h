@@ -143,6 +143,7 @@ class FixBondReact : public Fix {
   char *master_group;      // group containing relaxing atoms from all fix rxns
   char *exclude_group;     // group for system-wide thermostat
 
+  Reaction *rxnptr; // for reverse_comm
   int countflag, commflag;
   int nlevels_respa;
 
@@ -212,8 +213,8 @@ class FixBondReact : public Fix {
   void readline(char *);
   void parse_keyword(int, char *, char *);
 
-  void far_partner();
-  void close_partner();
+  void far_partner(Reaction &);
+  void close_partner(Reaction &);
   void find_landlocked_atoms(Reaction &);
   void glove_ghostcheck();
   void ghost_glovecast();

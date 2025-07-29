@@ -891,10 +891,10 @@ void FixBondReact::post_integrate()
   }
 
   int j;
-  for (rxnID = 0; rxnID < nreacts; rxnID++) {
-    if ((update->ntimestep % rxns[rxnID].nevery) ||
-        (rxns[rxnID].max_rxn <= rxns[rxnID].reaction_count_total) ||
-        (rate_limits_flag[rxnID] == 0)) continue;
+  for (auto &rxn : rxns) {
+    if ((update->ntimestep % rxn.nevery) ||
+        (rxn.max_rxn <= rxn.reaction_count_total) ||
+        (rate_limits_flag[rxn.ID] == 0)) continue;
 
     for (int ii = 0; ii < nall; ii++) {
       partner[ii] = 0;
@@ -904,14 +904,15 @@ void FixBondReact::post_integrate()
     }
 
     // fork between far and close_partner here
-    if (rxns[rxnID].closeneigh < 0) {
-      far_partner();
+    rxnptr = &rxn; // for reverse_comm
+    if (rxn.closeneigh < 0) {
+      far_partner(rxn);
       // reverse comm of distsq and partner
       // not needed if newton_pair off since I,J pair was seen by both procs
       commflag = 2;
       if (force->newton_pair) comm->reverse_comm(this);
     } else {
-      close_partner();
+      close_partner(rxn);
       commflag = 2;
       comm->reverse_comm(this);
     }
@@ -965,26 +966,26 @@ void FixBondReact::post_integrate()
 
       j = atom->map(finalpartner[i]);
       if (tag[i] < tag[j]) {
-        if (nattempt[rxnID] > maxattempt-2) {
+        if (nattempt[rxn.ID] > maxattempt-2) {
           maxattempt += DELTA;
           // third dim of 'attempt': bond/react integer ID
           memory->grow(attempt,maxattempt,2,nreacts,"bond/react:attempt");
         }
         // to ensure types remain in same order
-        if (rxns[rxnID].iatomtype == type[i]) {
-          attempt[nattempt[rxnID]][0][rxnID] = tag[i];
-          attempt[nattempt[rxnID]][1][rxnID] = finalpartner[i];
-          nattempt[rxnID]++;
+        if (rxn.iatomtype == type[i]) {
+          attempt[nattempt[rxn.ID]][0][rxn.ID] = tag[i];
+          attempt[nattempt[rxn.ID]][1][rxn.ID] = finalpartner[i];
+          nattempt[rxn.ID]++;
           // add another attempt if initiator atoms are same type
-          if (rxns[rxnID].iatomtype == rxns[rxnID].jatomtype) {
-            attempt[nattempt[rxnID]][0][rxnID] = finalpartner[i];
-            attempt[nattempt[rxnID]][1][rxnID] = tag[i];
-            nattempt[rxnID]++;
+          if (rxn.iatomtype == rxn.jatomtype) {
+            attempt[nattempt[rxn.ID]][0][rxn.ID] = finalpartner[i];
+            attempt[nattempt[rxn.ID]][1][rxn.ID] = tag[i];
+            nattempt[rxn.ID]++;
           }
         } else {
-          attempt[nattempt[rxnID]][0][rxnID] = finalpartner[i];
-          attempt[nattempt[rxnID]][1][rxnID] = tag[i];
-          nattempt[rxnID]++;
+          attempt[nattempt[rxn.ID]][0][rxn.ID] = finalpartner[i];
+          attempt[nattempt[rxn.ID]][1][rxn.ID] = tag[i];
+          nattempt[rxn.ID]++;
         }
       }
     }
@@ -1019,7 +1020,7 @@ void FixBondReact::post_integrate()
   Search non-bonded neighbor lists if bonding atoms are not in special list
 ------------------------------------------------------------------------- */
 
-void FixBondReact::far_partner()
+void FixBondReact::far_partner(Reaction &rxn)
 {
   int inum,jnum,itype,jtype,possible;
   double xtmp,ytmp,ztmp,delx,dely,delz,rsq;
@@ -1047,7 +1048,7 @@ void FixBondReact::far_partner()
 
   for (int ii = 0; ii < inum; ii++) {
     i = ilist[ii];
-    if (!(mask[i] & rxns[rxnID].groupbits)) continue;
+    if (!(mask[i] & rxn.groupbits)) continue;
     if (i_limit_tags[i] != 0) continue;
     itype = type[i];
     xtmp = x[i][0];
@@ -1059,7 +1060,7 @@ void FixBondReact::far_partner()
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
       j &= NEIGHMASK;
-      if (!(mask[j] & rxns[rxnID].groupbits)) {
+      if (!(mask[j] & rxn.groupbits)) {
         continue;
       }
 
@@ -1067,17 +1068,17 @@ void FixBondReact::far_partner()
         continue;
       }
 
-      if (rxns[rxnID].molecule_keyword == INTER) {
+      if (rxn.molecule_keyword == INTER) {
         if (atom->molecule[i] == atom->molecule[j]) continue;
-      } else if (rxns[rxnID].molecule_keyword == INTRA) {
+      } else if (rxn.molecule_keyword == INTRA) {
         if (atom->molecule[i] != atom->molecule[j]) continue;
       }
 
       jtype = type[j];
       possible = 0;
-      if (itype == rxns[rxnID].iatomtype && jtype == rxns[rxnID].jatomtype) {
+      if (itype == rxn.iatomtype && jtype == rxn.jatomtype) {
         possible = 1;
-      } else if (itype == rxns[rxnID].jatomtype && jtype == rxns[rxnID].iatomtype) {
+      } else if (itype == rxn.jatomtype && jtype == rxn.iatomtype) {
         possible = 1;
       }
 
@@ -1094,15 +1095,15 @@ void FixBondReact::far_partner()
       domain->minimum_image(FLERR, delx,dely,delz); // ghost location fix
       rsq = delx*delx + dely*dely + delz*delz;
 
-      if (rxns[rxnID].v_rmin > -1) {
-        double cutoff = input->variable->compute_equal(rxns[rxnID].v_rmin);
-        rxns[rxnID].rminsq = cutoff*cutoff;
+      if (rxn.v_rmin > -1) {
+        double cutoff = input->variable->compute_equal(rxn.v_rmin);
+        rxn.rminsq = cutoff*cutoff;
       }
-      if (rxns[rxnID].v_rmax > -1) {
-        double cutoff = input->variable->compute_equal(rxns[rxnID].v_rmax);
-        rxns[rxnID].rmaxsq = cutoff*cutoff;
+      if (rxn.v_rmax > -1) {
+        double cutoff = input->variable->compute_equal(rxn.v_rmax);
+        rxn.rmaxsq = cutoff*cutoff;
       }
-      if (rsq >= rxns[rxnID].rmaxsq || rsq <= rxns[rxnID].rminsq) {
+      if (rsq >= rxn.rmaxsq || rsq <= rxn.rminsq) {
         continue;
       }
       if (rsq < distsq[i][1]) {
@@ -1121,7 +1122,7 @@ void FixBondReact::far_partner()
   Slightly simpler to find bonding partner when a close neighbor
 ------------------------------------------------------------------------- */
 
-void FixBondReact::close_partner()
+void FixBondReact::close_partner(Reaction &rxn)
 {
   int n,i1,i2,itype,jtype;
   double delx,dely,delz,rsq;
@@ -1140,21 +1141,21 @@ void FixBondReact::close_partner()
   for (int ii = 0; ii < atom->nlocal; ii++) {
     itype = type[ii];
     n = 0;
-    if (rxns[rxnID].closeneigh != 0)
-      n = nxspecial[ii][rxns[rxnID].closeneigh-1];
-    for (; n < nxspecial[ii][rxns[rxnID].closeneigh]; n++) {
+    if (rxn.closeneigh != 0)
+      n = nxspecial[ii][rxn.closeneigh-1];
+    for (; n < nxspecial[ii][rxn.closeneigh]; n++) {
       i1 = ii;
       i2 = atom->map(xspecial[ii][n]);
       jtype = type[i2];
-      if (!(mask[i1] & rxns[rxnID].groupbits)) continue;
-      if (!(mask[i2] & rxns[rxnID].groupbits)) continue;
+      if (!(mask[i1] & rxn.groupbits)) continue;
+      if (!(mask[i2] & rxn.groupbits)) continue;
       if (i_limit_tags[i1] != 0) continue;
       if (i_limit_tags[i2] != 0) continue;
-      if (itype != rxns[rxnID].iatomtype || jtype != rxns[rxnID].jatomtype) continue;
+      if (itype != rxn.iatomtype || jtype != rxn.jatomtype) continue;
 
-      if (rxns[rxnID].molecule_keyword == INTER) {
+      if (rxn.molecule_keyword == INTER) {
         if (atom->molecule[i1] == atom->molecule[i2]) continue;
-      } else if (rxns[rxnID].molecule_keyword == INTRA) {
+      } else if (rxn.molecule_keyword == INTRA) {
         if (atom->molecule[i1] != atom->molecule[i2]) continue;
       }
 
@@ -1164,17 +1165,17 @@ void FixBondReact::close_partner()
       domain->minimum_image(FLERR, delx,dely,delz); // ghost location fix
       rsq = delx*delx + dely*dely + delz*delz;
 
-      if (rxns[rxnID].v_rmin > -1) {
-        double cutoff = input->variable->compute_equal(rxns[rxnID].v_rmin);
-        rxns[rxnID].rminsq = cutoff*cutoff;
+      if (rxn.v_rmin > -1) {
+        double cutoff = input->variable->compute_equal(rxn.v_rmin);
+        rxn.rminsq = cutoff*cutoff;
       }
-      if (rxns[rxnID].v_rmax > -1) {
-        double cutoff = input->variable->compute_equal(rxns[rxnID].v_rmax);
-        rxns[rxnID].rmaxsq = cutoff*cutoff;
+      if (rxn.v_rmax > -1) {
+        double cutoff = input->variable->compute_equal(rxn.v_rmax);
+        rxn.rmaxsq = cutoff*cutoff;
       }
-      if (rsq >= rxns[rxnID].rmaxsq || rsq <= rxns[rxnID].rminsq) continue;
+      if (rsq >= rxn.rmaxsq || rsq <= rxn.rminsq) continue;
 
-      if (rxns[rxnID].closeneigh == 0) {
+      if (rxn.closeneigh == 0) {
         if (rsq > distsq[i1][0]) {
           partner[i1] = tag[i2];
           distsq[i1][0] = rsq;
@@ -4470,7 +4471,7 @@ int FixBondReact::pack_reverse_comm(int n, int first, double *buf)
 
   for (i = first; i < last; i++) {
     buf[m++] = ubuf(partner[i]).d;
-    if (rxns[rxnID].closeneigh != 0)
+    if (rxnptr->closeneigh != 0)
       buf[m++] = distsq[i][1];
     else
       buf[m++] = distsq[i][0];
@@ -4488,7 +4489,7 @@ void FixBondReact::unpack_reverse_comm(int n, int *list, double *buf)
 
   for (i = 0; i < n; i++) {
     j = list[i];
-    if (rxns[rxnID].closeneigh != 0) {
+    if (rxnptr->closeneigh != 0) {
       if (buf[m+1] < distsq[j][1]) {
         partner[j] = (tagint) ubuf(buf[m++]).i;
         distsq[j][1] = buf[m++];
