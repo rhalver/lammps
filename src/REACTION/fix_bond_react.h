@@ -67,7 +67,6 @@ class FixBondReact : public Fix {
   RESET_MOL_IDS molid_mode;
   int custom_exclude_flag;
   int rescale_charges_anyflag; // indicates if any reactions do charge rescaling
-  int maxnconstraints;
   int nrxnfunction;
   std::vector<std::string> rxnfunclist;     // lists current special rxn function
   std::vector<int> peratomflag; // 1 if special rxn function uses per-atom variable (vs. per-bond)
@@ -85,6 +84,13 @@ class FixBondReact : public Fix {
     std::array<int, 6> chiral;    // pre-react chiral atoms. 1) flag 2) orientation 3-4) ordered atom types
     std::array<int, 2> amap;      // atom map: clmn 1 = product atom IDs, clmn 2: reactant atom IDs
     std::array<int, 2> ramap;     // reverse amap
+  };
+  struct Constraint {
+    int type;
+    int id[MAXCONIDS];
+    int idtype[MAXCONIDS];
+    double par[MAXCONPAR];
+    std::string str;
   };
   struct Reaction {
     int ID;
@@ -113,8 +119,16 @@ class FixBondReact : public Fix {
     int v_nevery, v_rmin, v_rmax, v_prob; // ID of variable, -1 if static
     int nnewmolids;               // number of unique new molids needed for each reaction
     std::vector<ReactionAtomFlags> atoms;
+    std::vector<Constraint> constraints;
   };
   std::vector<Reaction> rxns;
+
+  int ncustomvars;
+  std::vector<std::string> customvarstrs;
+  int nvvec;
+  double **vvec;    // per-atom vector to store custom constraint atom-style variable values
+  class Compute *cperbond;    // pointer to 'compute bond/local' used by custom constraint ('rxnbond' function)
+  std::map<std::set<tagint>, int> atoms2bond;    // maps atom pair to index of local bond array
 
   int nmax;          // max num local atoms
   int max_natoms;    // max natoms in a molecule template
@@ -232,21 +246,6 @@ class FixBondReact : public Fix {
     int nratelimits;
   };
   Set *set;
-
-  struct Constraint {
-    int type;
-    int id[MAXCONIDS];
-    int idtype[MAXCONIDS];
-    double par[MAXCONPAR];
-    std::string str;
-  };
-  int ncustomvars;
-  std::vector<std::string> customvarstrs;
-  int nvvec;
-  double **vvec;    // per-atom vector to store custom constraint atom-style variable values
-  class Compute *cperbond;    // pointer to 'compute bond/local' used by custom constraint ('rxnbond' function)
-  std::map<std::set<tagint>, int> atoms2bond;    // maps atom pair to index of local bond array
-  std::vector<std::vector<Constraint>> constraints;
 
   tagint addatomtag;
   struct AddAtom {
