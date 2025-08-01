@@ -58,7 +58,6 @@ class FixBondReact : public Fix {
 
  private:
   int newton_bond;
-  int nreacts;
   FILE *fp;
   tagint lastcheck;
   int stabilization_flag;
@@ -136,10 +135,10 @@ class FixBondReact : public Fix {
   int max_natoms;    // max natoms in a molecule template
   tagint *partner, *finalpartner;
   double **distsq;
-  int *nattempt;
+  int *nattempt; // tofix
   int maxattempt;
   int allnattempt;
-  tagint ***attempt;
+  tagint ***attempt; // tofix
 
   Fix *fix1;                   // nve/limit used to relax reaction sites
   Fix *fix2;                   // properties/atom used to indicate 1) relaxing atoms
@@ -242,7 +241,7 @@ class FixBondReact : public Fix {
 
   // store restart data
   struct Set {
-    int nreacts;
+    int nrxns;
     char rxn_name[MAXNAME];
     int reaction_count_total;
     int nratelimits;

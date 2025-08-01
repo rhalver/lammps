@@ -158,19 +158,19 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR, Error::NOLASTLINE, "Only one instance of fix bond/react allowed at a time");
 
   // let's find number of reactions specified
-  nreacts = 0;
+  int nrxns = 0;
   for (int i = 3; i < narg; i++) {
     if (strcmp(arg[i],"react") == 0) {
-      nreacts++;
+      nrxns++;
       i = i + 6; // skip past mandatory arguments
       if (i > narg) utils::missing_cmd_args(FLERR,"fix bond/react react", error);
     }
   }
 
-  if (nreacts == 0)
+  if (nrxns == 0)
     error->all(FLERR, Error::NOLASTLINE, "Fix bond/react is missing mandatory 'react' keyword");
 
-  size_vector = nreacts;
+  size_vector = nrxns;
 
   int iarg = 3;
   stabilization_flag = 0;
@@ -229,8 +229,8 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     reset_mol_ids->create_computes(id,group->names[igroup]);
   }
 
-  // set up common variables as vectors of length 'nreacts'
-  rxns.resize(nreacts);
+  // set up common variables as vectors of length 'nrxns'
+  rxns.resize(nrxns);
 
   rescale_charges_anyflag = 0;
   int id = 0;
@@ -409,9 +409,9 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   for (auto &rlm : rate_limits) {
     for (int i = 0; i < rlm.Nrxns; i++) {
       int existflag = 0;
-      for (int j = 0; j < nreacts; j++) {
-        if (rlm.rxn_names[i] == rxns[j].name) {
-          rlm.rxnIDs.push_back(j);
+      for (auto &rxn : rxns) {
+        if (rlm.rxn_names[i] == rxn.name) {
+          rlm.rxnIDs.push_back(rxn.ID);
           existflag = 1;
           break;
         }
@@ -539,9 +539,9 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
 
   // initialize Marsaglia RNG with processor-unique seed ('prob' keyword)
 
-  random = new RanMars*[nreacts];
-  for (int i = 0; i < nreacts; i++) {
-    random[i] = new RanMars(lmp,rxns[i].seed + comm->me);
+  random = new RanMars*[rxns.size()];
+  for (auto &rxn : rxns) {
+    random[rxn.ID] = new RanMars(lmp, rxn.seed + comm->me);
   }
 
   // set comm sizes needed by this fix
@@ -584,22 +584,18 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   custom_exclude_flag = 0;
 
   // used to store restart info
-  set = new Set[nreacts];
-  memset(set,0,nreacts*sizeof(Set));
+  set = new Set[rxns.size()];
+  memset(set,0,rxns.size()*sizeof(Set));
 }
 
 /* ---------------------------------------------------------------------- */
 
 FixBondReact::~FixBondReact()
 {
-  for (int i = 0; i < narrhenius; i++) {
-    delete rrhandom[i];
-  }
+  for (int i = 0; i < narrhenius; i++) delete rrhandom[i];
   delete[] rrhandom;
 
-  for (int i = 0; i < nreacts; i++) {
-    delete random[i];
-  }
+  for (int i = 0; i < rxns.size(); i++) delete random[i];
   delete[] random;
 
   delete reset_mol_ids;
@@ -838,11 +834,11 @@ void FixBondReact::post_integrate()
     memory->create(partner,nmax,"bond/react:partner");
     memory->create(finalpartner,nmax,"bond/react:finalpartner");
     memory->create(distsq,nmax,2,"bond/react:distsq");
-    memory->create(nattempt,nreacts,"bond/react:nattempt");
+    memory->create(nattempt,rxns.size(),"bond/react:nattempt");
   }
 
   // reset 'attempt' counts
-  for (int i = 0; i < nreacts; i++) {
+  for (int i = 0; i < rxns.size(); i++) {
     nattempt[i] = 0;
   }
   // reset per-bond compute map flag
@@ -865,7 +861,7 @@ void FixBondReact::post_integrate()
   xspecial = atom->special;
 
   // check if we are over rate_limits limits
-  std::vector<int> rate_limits_flag(nreacts, 1);
+  std::vector<int> rate_limits_flag(rxns.size(), 1);
   for (auto &rlm : rate_limits) {
     int myrxn_count = rlm.store_rxn_counts[rlm.Nsteps-1];
     int nrxns_delta, my_nrate;
@@ -960,7 +956,7 @@ void FixBondReact::post_integrate()
         if (nattempt[rxn.ID] > maxattempt-2) {
           maxattempt += DELTA;
           // third dim of 'attempt': bond/react integer ID
-          memory->grow(attempt,maxattempt,2,nreacts,"bond/react:attempt");
+          memory->grow(attempt,maxattempt,2,rxns.size(),"bond/react:attempt");
         }
         // to ensure types remain in same order
         if (rxn.iatomtype == type[i]) {
@@ -986,7 +982,7 @@ void FixBondReact::post_integrate()
   int some_chance;
 
   allnattempt = 0;
-  for (int i = 0; i < nreacts; i++)
+  for (int i = 0; i < rxns.size(); i++)
     allnattempt += nattempt[i];
 
   MPI_Allreduce(&allnattempt,&some_chance,1,MPI_INT,MPI_SUM,world);
@@ -1360,21 +1356,21 @@ void FixBondReact::superimpose_algorithm()
   glove_ghostcheck(); // split into 'local' and 'global'
   ghost_glovecast(); // consolidate all mega_gloves to all processors
 
-  std::vector<int> mpi_send(nreacts), mpi_recv(nreacts);
+  std::vector<int> mpi_send(rxns.size()), mpi_recv(rxns.size());
   for (auto &rxn : rxns) mpi_send[rxn.ID] = rxn.local_rxn_count;
-  MPI_Allreduce(mpi_send.data(), mpi_recv.data(), nreacts, MPI_INT, MPI_SUM, world);
+  MPI_Allreduce(mpi_send.data(), mpi_recv.data(), rxns.size(), MPI_INT, MPI_SUM, world);
   for (auto &rxn : rxns) rxn.reaction_count = mpi_send[rxn.ID];
 
   int rxnflag = 0;
   int *delta_rxn;
-  memory->create(delta_rxn, nreacts, "bond/react:delta_rxn");
+  memory->create(delta_rxn, rxns.size(), "bond/react:delta_rxn");
   if (comm->me == 0)
-    for (int i = 0; i < nreacts; i++) {
-      delta_rxn[i] = rxns[i].reaction_count + rxns[i].ghostly_rxn_count;
-      rxnflag += delta_rxn[i];
+    for (auto &rxn : rxns) {
+      delta_rxn[rxn.ID] = rxn.reaction_count + rxn.ghostly_rxn_count;
+      rxnflag += delta_rxn[rxn.ID];
     }
 
-  MPI_Bcast(&delta_rxn[0], nreacts, MPI_INT, 0, world);
+  MPI_Bcast(&delta_rxn[0], rxns.size(), MPI_INT, 0, world);
   MPI_Bcast(&rxnflag, 1, MPI_INT, 0, world);
 
   if (!rxnflag) return;
@@ -1383,7 +1379,7 @@ void FixBondReact::superimpose_algorithm()
   std::random_device rnd;
   std::minstd_rand park_rng(rnd());
 
-  std::vector<int> oversteps(nreacts, 0);
+  std::vector<int> oversteps(rxns.size(), 0);
   if (comm->me == 0) {
     // check if we overstepped our reaction limit, via either max_rxn or rate_limit
     for (auto &rxn : rxns) {
@@ -1415,7 +1411,7 @@ void FixBondReact::superimpose_algorithm()
               for (int j = 0; j < delta_rxn[i]; j++)
                 dummy_list.push_back(i);
             std::shuffle(dummy_list.begin(), dummy_list.end(), park_rng);
-            std::vector<int> rate_limit_overstep(nreacts,0);
+            std::vector<int> rate_limit_overstep(rxns.size(),0);
             for (int i = 0; i < rate_limit_overstep_sum; i++)
               rate_limit_overstep[dummy_list[i]]++;
             for (auto &rxn : rxns)
@@ -1425,7 +1421,7 @@ void FixBondReact::superimpose_algorithm()
       }
     }
   }
-  MPI_Bcast(oversteps.data(),nreacts,MPI_INT,0,world);
+  MPI_Bcast(oversteps.data(),rxns.size(),MPI_INT,0,world);
 
   for (auto &rxn : rxns) {
     if (oversteps[rxn.ID] > 0) {
@@ -2974,8 +2970,8 @@ void FixBondReact::update_everything()
 
   for (int pass = 0; pass < 2; pass++) {
     update_num_mega = 0;
-    int *noccur = new int[nreacts];
-    for (int i = 0; i < nreacts; i++) noccur[i] = 0;
+    int *noccur = new int[rxns.size()];
+    for (int i = 0; i < rxns.size(); i++) noccur[i] = 0;
     if (pass == 0) {
       for (int i = 0; i < local_num_mega; i++) {
         auto &rxn = rxns[(int) local_mega_glove[0][i]];
@@ -2998,7 +2994,7 @@ void FixBondReact::update_everything()
         if (rxn.rescale_charges_flag) sim_total_charges[update_num_mega] = local_mega_glove[1][i];
         update_num_mega++;
       }
-      MPI_Allreduce(MPI_IN_PLACE, &noccur[0], nreacts, MPI_INT, MPI_SUM, world);
+      MPI_Allreduce(MPI_IN_PLACE, &noccur[0], rxns.size(), MPI_INT, MPI_SUM, world);
       for (auto &rxn : rxns) rxn.reaction_count_total += noccur[rxn.ID];
     } else if (pass == 1) {
       for (int i = 0; i < global_megasize; i++) {
@@ -4492,10 +4488,10 @@ void FixBondReact::unpack_reverse_comm(int n, int *list, double *buf)
 void FixBondReact::write_restart(FILE *fp)
 {
   int revision = 2;
-  set[0].nreacts = nreacts;
+  set[0].nrxns = rxns.size();
   set[0].nratelimits = rate_limits.size();
 
-  for (int i = 0; i < nreacts; i++) {
+  for (int i = 0; i < rxns.size(); i++) {
     set[i].reaction_count_total = rxns[i].reaction_count_total;
 
     strncpy(set[i].rxn_name,rxns[i].name.c_str(),MAXNAME-1);
@@ -4521,10 +4517,10 @@ void FixBondReact::write_restart(FILE *fp)
   }
 
   if (comm->me == 0) {
-    int size = nreacts*sizeof(Set)+(rbufcount+2)*sizeof(int);
+    int size = rxns.size()*sizeof(Set)+(rbufcount+2)*sizeof(int);
     fwrite(&size,sizeof(int),1,fp);
     fwrite(&revision,sizeof(int),1,fp);
-    fwrite(set,sizeof(Set),nreacts,fp);
+    fwrite(set,sizeof(Set),rxns.size(),fp);
     fwrite(&rbufcount,sizeof(int),1,fp);
     if (rbufcount) fwrite(rbuf,sizeof(int),rbufcount,fp);
   }
@@ -4538,7 +4534,7 @@ void FixBondReact::write_restart(FILE *fp)
 
 void FixBondReact::restart(char *buf)
 {
-  int revision, r_nreacts, r_nratelimits, ibufcount;
+  int revision, r_nrxns, r_nratelimits, ibufcount;
   int iptr = 0;
   int *ibuf;
 
@@ -4548,11 +4544,11 @@ void FixBondReact::restart(char *buf)
   } else revision = 0;
 
   Set *set_restart = (Set *) &buf[iptr];
-  r_nreacts = set_restart[0].nreacts;
-  iptr += sizeof(Set)*r_nreacts;
+  r_nrxns = set_restart[0].nrxns;
+  iptr += sizeof(Set)*r_nrxns;
 
-  for (int i = 0; i < r_nreacts; i++)
-    for (int j = 0; j < nreacts; j++)
+  for (int i = 0; i < r_nrxns; i++)
+    for (int j = 0; j < rxns.size(); j++)
       if (strcmp(set_restart[i].rxn_name,rxns[j].name.c_str()) == 0)
         rxns[j].reaction_count_total = set_restart[i].reaction_count_total;
 
