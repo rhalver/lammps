@@ -121,6 +121,7 @@ class FixBondReact : public Fix {
     int nnewmolids;               // number of unique new molids needed for each reaction
     std::vector<ReactionAtomFlags> atoms;
     std::vector<Constraint> constraints;
+    std::vector<std::array<tagint, 2>> attempts; // 1st column: 2nd column:
   };
   std::vector<Reaction> rxns;
 
@@ -135,10 +136,7 @@ class FixBondReact : public Fix {
   int max_natoms;    // max natoms in a molecule template
   tagint *partner, *finalpartner;
   double **distsq;
-  int *nattempt; // tofix
-  int maxattempt;
   int allnattempt;
-  tagint ***attempt; // tofix
 
   Fix *fix1;                   // nve/limit used to relax reaction sites
   Fix *fix2;                   // properties/atom used to indicate 1) relaxing atoms
@@ -175,7 +173,6 @@ class FixBondReact : public Fix {
   tagint **xspecial;     // full 1-4 neighbor list
 
   int pion, neigh, trace;    // important indices for various loops. required for restore points
-  int lcl_inst;              // reaction instance
   tagint **glove;            // 1st colmn: pre-reacted template, 2nd colmn: global IDs
   // for all mega_gloves: first row is the ID of bond/react
   // 'cuff' leaves room for additional values carried around

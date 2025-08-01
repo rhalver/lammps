@@ -86,7 +86,6 @@ static const char cite_fix_bond_react[] =
     "}\n\n";
 
 static constexpr double BIG = 1.0e20;
-static constexpr int DELTA = 16;
 static constexpr int MAXGUESS = 20;      // max # of guesses allowed by superimpose algorithm
 static constexpr int MAXCONARGS = 14;    // max # of arguments for any type of constraint + rxnID
 
@@ -554,9 +553,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   nmax = 0;
   partner = finalpartner = nullptr;
   distsq = nullptr;
-  maxattempt = 0;
-  attempt = nullptr;
-  nattempt = nullptr;
   allnattempt = 0;
   my_num_mega = 0;
   local_num_mega = 0;
@@ -602,9 +598,7 @@ FixBondReact::~FixBondReact()
 
   memory->destroy(partner);
   memory->destroy(finalpartner);
-  memory->destroy(nattempt);
   memory->destroy(distsq);
-  memory->destroy(attempt);
   if (vvec != nullptr) memory->destroy(vvec);
 
   if (attempted_rxn == 1) {
@@ -829,18 +823,14 @@ void FixBondReact::post_integrate()
     memory->destroy(partner);
     memory->destroy(finalpartner);
     memory->destroy(distsq);
-    memory->destroy(nattempt);
     nmax = atom->nmax;
     memory->create(partner,nmax,"bond/react:partner");
     memory->create(finalpartner,nmax,"bond/react:finalpartner");
     memory->create(distsq,nmax,2,"bond/react:distsq");
-    memory->create(nattempt,rxns.size(),"bond/react:nattempt");
   }
 
-  // reset 'attempt' counts
-  for (int i = 0; i < rxns.size(); i++) {
-    nattempt[i] = 0;
-  }
+  // reset 'rxn_attempt' counts
+  for (auto &rxn : rxns) rxn.attempts.clear();
   // reset per-bond compute map flag
   atoms2bondflag = 0;
 
@@ -953,26 +943,13 @@ void FixBondReact::post_integrate()
 
       j = atom->map(finalpartner[i]);
       if (tag[i] < tag[j]) {
-        if (nattempt[rxn.ID] > maxattempt-2) {
-          maxattempt += DELTA;
-          // third dim of 'attempt': bond/react integer ID
-          memory->grow(attempt,maxattempt,2,rxns.size(),"bond/react:attempt");
-        }
         // to ensure types remain in same order
         if (rxn.iatomtype == type[i]) {
-          attempt[nattempt[rxn.ID]][0][rxn.ID] = tag[i];
-          attempt[nattempt[rxn.ID]][1][rxn.ID] = finalpartner[i];
-          nattempt[rxn.ID]++;
+          rxn.attempts.push_back({tag[i], finalpartner[i]});
           // add another attempt if initiator atoms are same type
-          if (rxn.iatomtype == rxn.jatomtype) {
-            attempt[nattempt[rxn.ID]][0][rxn.ID] = finalpartner[i];
-            attempt[nattempt[rxn.ID]][1][rxn.ID] = tag[i];
-            nattempt[rxn.ID]++;
-          }
+          if (rxn.iatomtype == rxn.jatomtype) rxn.attempts.push_back({finalpartner[i], tag[i]});
         } else {
-          attempt[nattempt[rxn.ID]][0][rxn.ID] = finalpartner[i];
-          attempt[nattempt[rxn.ID]][1][rxn.ID] = tag[i];
-          nattempt[rxn.ID]++;
+          rxn.attempts.push_back({finalpartner[i], tag[i]});
         }
       }
     }
@@ -982,8 +959,8 @@ void FixBondReact::post_integrate()
   int some_chance;
 
   allnattempt = 0;
-  for (int i = 0; i < rxns.size(); i++)
-    allnattempt += nattempt[i];
+  for (auto &rxn : rxns)
+    allnattempt += rxn.attempts.size();
 
   MPI_Allreduce(&allnattempt,&some_chance,1,MPI_INT,MPI_SUM,world);
   if (!some_chance) {
@@ -1231,7 +1208,7 @@ void FixBondReact::superimpose_algorithm()
 
   // let's finally begin the superimpose loop
   for (auto &rxn : rxns) {
-    for (lcl_inst = 0; lcl_inst < nattempt[rxn.ID]; lcl_inst++) {
+    for (auto &rxn_attempt : rxn.attempts) {
 
       status = PROCEED;
 
@@ -1250,10 +1227,10 @@ void FixBondReact::superimpose_algorithm()
       int myjbonding = rxn.jbonding;
 
       glove[myibonding-1][0] = myibonding;
-      glove[myibonding-1][1] = attempt[lcl_inst][0][rxn.ID];
+      glove[myibonding-1][1] = rxn_attempt[0];
       glove_counter++;
       glove[myjbonding-1][0] = myjbonding;
-      glove[myjbonding-1][1] = attempt[lcl_inst][1][rxn.ID];
+      glove[myjbonding-1][1] = rxn_attempt[1];
       glove_counter++;
 
       // special case, only two atoms in reaction templates
