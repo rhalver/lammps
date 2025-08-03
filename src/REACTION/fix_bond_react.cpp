@@ -131,7 +131,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   xspecial = nullptr;
 
   // these group names are reserved for use exclusively by bond/react
-  master_group = (char *) "bond_react_MASTER_group";
+  master_group = "bond_react_MASTER_group";
 
   // by using fixed group names, only one instance of fix bond/react is allowed.
   if (modify->get_fix_by_style("^bond/react").size() != 0)
@@ -165,7 +165,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       if (stabilization_flag) {
         if (iarg+4 > narg)
           utils::missing_cmd_args(FLERR, "fix bond/react stabilization yes", error);
-        exclude_group = utils::strdup(arg[iarg+2]);
+        exclude_group = arg[iarg+2];
         nve_limit_xmax = arg[iarg+3];
         iarg += 4;
       } else iarg += 2;
@@ -554,10 +554,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   // these are merely loop indices that became important
   pion = neigh = trace = 0;
 
-  id_fix1 = nullptr;
-  id_fix2 = nullptr;
-  id_fix3 = nullptr;
-  statted_id = nullptr;
   custom_exclude_flag = 0;
 
   // used to store restart info
@@ -596,27 +592,18 @@ FixBondReact::~FixBondReact()
 
   if (stabilization_flag == 1) {
     // delete fixes if not already deleted
-    if (id_fix1 && modify->get_fix_by_id(id_fix1)) modify->delete_fix(id_fix1);
-    delete[] id_fix1;
-
-    if (id_fix3 && modify->get_fix_by_id(id_fix3)) modify->delete_fix(id_fix3);
-    delete[] id_fix3;
+    if (!id_fix1.empty() && modify->get_fix_by_id(id_fix1)) modify->delete_fix(id_fix1);
+    if (!id_fix3.empty() && modify->get_fix_by_id(id_fix3)) modify->delete_fix(id_fix3);
   }
+  if (!id_fix2.empty() && modify->get_fix_by_id(id_fix2)) modify->delete_fix(id_fix2);
 
-  if (id_fix2 && modify->get_fix_by_id(id_fix2)) modify->delete_fix(id_fix2);
-  delete[] id_fix2;
-
-  delete[] statted_id;
   delete[] guess_branch;
   delete[] pioneer_count;
   delete[] set;
 
   if (group) {
-    group->assign(std::string(master_group) + " delete");
-    if (stabilization_flag == 1) {
-      group->assign(std::string(exclude_group) + " delete");
-      delete[] exclude_group;
-    }
+    group->assign(master_group + " delete");
+    if (stabilization_flag == 1) group->assign(exclude_group + " delete");
   }
 }
 
@@ -641,14 +628,13 @@ it will have the name 'i_limit_tags' and will be intitialized to 0 (not in group
 void FixBondReact::post_constructor()
 {
   // let's add the limit_tags per-atom property fix
-  id_fix2 = utils::strdup("bond_react_props_internal");
+  id_fix2 = "bond_react_props_internal";
   if (!modify->get_fix_by_id(id_fix2))
-    fix2 = modify->add_fix(std::string(id_fix2) +
-                           " all property/atom i_limit_tags i_react_tags ghost yes");
+    fix2 = modify->add_fix(id_fix2 + " all property/atom i_limit_tags i_react_tags ghost yes");
 
   // create master_group if not already existing
   // NOTE: limit_tags and react_tags automaticaly intitialized to zero (unless read from restart)
-  group->find_or_create(master_group);
+  group->find_or_create(master_group.c_str());
   std::string cmd = fmt::format("{} dynamic all property limit_tags",master_group);
   group->assign(cmd);
 
@@ -658,27 +644,23 @@ void FixBondReact::post_constructor()
     if (groupid == -1 || group->dynamic[groupid] == 0) {
 
       // create stabilization per-atom property
-      id_fix3 = utils::strdup("bond_react_stabilization_internal");
+      id_fix3 = "bond_react_stabilization_internal";
       if (!modify->get_fix_by_id(id_fix3))
-        fix3 = modify->add_fix(std::string(id_fix3) +
-                               " all property/atom i_statted_tags ghost yes");
+        fix3 = modify->add_fix(id_fix3 + " all property/atom i_statted_tags ghost yes");
 
-      statted_id = utils::strdup("statted_tags");
+      statted_id = "statted_tags";
 
       // if static group exists, use as parent group
       // also, rename dynamic exclude_group by appending '_REACT'
-      char *exclude_PARENT_group;
-      exclude_PARENT_group = utils::strdup(exclude_group);
-      delete[] exclude_group;
-      exclude_group = utils::strdup(std::string(exclude_PARENT_group)+"_REACT");
+      std::string exclude_PARENT_group = exclude_group;
+      exclude_group = exclude_PARENT_group + "_REACT";
 
-      group->find_or_create(exclude_group);
+      group->find_or_create(exclude_group.c_str());
       if (groupid == -1)
-        cmd = fmt::format("{} dynamic all property statted_tags",exclude_group);
+        cmd = fmt::format("{} dynamic all property statted_tags", exclude_group);
       else
-        cmd = fmt::format("{} dynamic {} property statted_tags",exclude_group,exclude_PARENT_group);
+        cmd = fmt::format("{} dynamic {} property statted_tags", exclude_group, exclude_PARENT_group);
       group->assign(cmd);
-      delete[] exclude_PARENT_group;
 
       // on to statted_tags (system-wide thermostat)
       // initialize per-atom statted_flags to 1
@@ -695,7 +677,7 @@ void FixBondReact::post_constructor()
       // sleeping code, for future capabilities
       custom_exclude_flag = 1;
       // first we have to find correct fix group reference
-      Fix *fix = modify->get_fix_by_id(std::string("GROUP_")+exclude_group);
+      Fix *fix = modify->get_fix_by_id("GROUP_" + exclude_group);
 
       // this returns names of corresponding property
       int unused;
@@ -703,7 +685,7 @@ void FixBondReact::post_constructor()
       idprop = (char *) fix->extract("property",unused);
       if (idprop == nullptr)
         error->all(FLERR,"Exclude group must be a per-atom property group");
-      statted_id = utils::strdup(idprop);
+      statted_id = idprop;
 
       // initialize per-atom statted_tags to 1
       // need to correct for smooth restarts
@@ -715,10 +697,9 @@ void FixBondReact::post_constructor()
     }
 
     // let's create a new nve/limit fix to limit newly reacted atoms
-    id_fix1 = utils::strdup("bond_react_MASTER_nve_limit");
+    id_fix1 = "bond_react_MASTER_nve_limit";
     if (!modify->get_fix_by_id(id_fix1))
-      fix1 = modify->add_fix(fmt::format("{} {} nve/limit  {}",
-                                         id_fix1,master_group,nve_limit_xmax));
+      fix1 = modify->add_fix(fmt::format("{} {} nve/limit {}", id_fix1, master_group, nve_limit_xmax));
   }
 }
 
@@ -2708,7 +2689,7 @@ void FixBondReact::unlimit_bond()
 
   int *i_statted_tags;
   if (stabilization_flag == 1) {
-    int index2 = atom->find_custom(statted_id,flag,cols);
+    int index2 = atom->find_custom(statted_id.c_str(),flag,cols);
     i_statted_tags = atom->ivector[index2];
   }
 
@@ -2911,7 +2892,7 @@ void FixBondReact::update_everything()
 
   int *i_statted_tags;
   if (stabilization_flag == 1) {
-    int index2 = atom->find_custom(statted_id,flag,cols);
+    int index2 = atom->find_custom(statted_id.c_str(),flag,cols);
     i_statted_tags = atom->ivector[index2];
   }
 
