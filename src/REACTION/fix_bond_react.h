@@ -155,13 +155,13 @@ class FixBondReact : public Fix {
   class NeighList *list;
   class ResetAtomsMol *reset_mol_ids;                      // class for resetting mol IDs
 
-  std::string nve_limit_xmax;                                    // indicates max distance allowed to move when relaxing
-  std::string id_fix1;                                           // id of internally created fix nve/limit
-  std::string id_fix2;                                           // id of internally created fix per-atom properties
-  std::string id_fix3;                                           // id of internally created 'stabilization group' per-atom property fix
-  std::string statted_id;                                        // name of 'stabilization group' per-atom property
-  std::string master_group;                                      // group containing relaxing atoms from all fix rxns
-  std::string exclude_group;                                     // group for system-wide thermostat
+  std::string nve_limit_xmax;                              // indicates max distance allowed to move when relaxing
+  std::string id_fix1;                                     // id of internally created fix nve/limit
+  std::string id_fix2;                                     // id of internally created fix per-atom properties
+  std::string id_fix3;                                     // id of internally created 'stabilization group' per-atom property fix
+  std::string statted_id;                                  // name of 'stabilization group' per-atom property
+  std::string master_group;                                // group containing relaxing atoms from all fix rxns
+  std::string exclude_group;                               // group for system-wide thermostat
 
   Reaction *rxnptr;                                        // for reverse_comm
   int countflag, commflag;
@@ -170,8 +170,8 @@ class FixBondReact : public Fix {
   int nedge, nequivalent, nchiral;                         // # edge, equivalent atoms in mapping file
   int ndelete, ncreate;                                    // # atoms to delete, create
   int avail_guesses;                                       // num of restore points available
-  int *guess_branch;                                       // used when there is more than two choices when guessing
-  int *pioneer_count;                                      // counts pioneers
+  std::vector<int> guess_branch;                           // used when there is more than two choices when guessing
+  std::vector<int> pioneer_count;                          // counts pioneers
   struct RestoreAtom {
     tagint glove, pioneer_count, pioneers;
   };

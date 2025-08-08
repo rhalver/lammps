@@ -542,8 +542,8 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   global_megasize = 0;
   avail_guesses = 0;
   glove_counter = 0;
-  guess_branch = new int[MAXGUESS]();
-  pioneer_count = new int[max_natoms];
+  guess_branch.resize(MAXGUESS, 0);
+  pioneer_count.resize(max_natoms);
   global_mega_glove = nullptr;
 
   // these are merely loop indices that became important
@@ -581,8 +581,6 @@ FixBondReact::~FixBondReact()
   }
   if (!id_fix2.empty() && modify->get_fix_by_id(id_fix2)) modify->delete_fix(id_fix2);
 
-  delete[] guess_branch;
-  delete[] pioneer_count;
   delete[] set;
 
   if (group) {
@@ -1152,10 +1150,7 @@ void FixBondReact::superimpose_algorithm()
 
       glove_counter = 0;
       std::fill(glove.begin(), glove.end(), 0);
-
-      for (int i = 0; i < MAXGUESS; i++) {
-        guess_branch[i] = 0;
-      }
+      std::fill(guess_branch.begin(), guess_branch.end(), 0);
 
       glove[rxn.ibonding-1] = rxn_attempt[0];
       glove_counter++;
@@ -2859,7 +2854,6 @@ void FixBondReact::update_everything()
   tagint **update_mega_glove;
   // for now, keeping rxnID in update_mega_glove, but not rest of cuff in update_mega_glove
   int maxmega = MAX(local_num_mega,global_megasize);
-  //std::vector<std::vector<tagint>> update_mega_glove(max_natoms+1, std::vector<tagint>(maxmega));
   memory->create(update_mega_glove,max_natoms+1,maxmega,"bond/react:update_mega_glove");
 
   double *sim_total_charges;
