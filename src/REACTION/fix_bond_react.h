@@ -78,30 +78,6 @@ class FixBondReact : public Fix {
   int narrhenius;
   Status status;
 
-  struct ReactionAtomFlags {
-    int edge;                                              // true if atom in molecule template has incorrect valency
-    int landlocked;                                        // true if atom is at least three bonds away from edge atoms
-    int recharged;                                         // true if atom whose charge should be updated
-    int deleted;                                           // true if atom in pre-reacted template to delete
-    int created;                                           // true if atom in post-reacted template to create
-    int newmolid;                                          // for molmap option: mol IDs in post, but not in pre, re-indexed from 1
-    std::array<int, 6> chiral;                             // pre-react chiral atoms. 1) flag 2) orientation 3-4) ordered atom types
-    std::array<int, 2> amap;                               // atom map: clmn 1 = product atom IDs, clmn 2: reactant atom IDs
-    std::array<int, 2> ramap;                              // reverse amap
-  };
-  struct Constraint {
-    int ID;
-    enum class Type { DISTANCE, ANGLE, DIHEDRAL,
-                      ARRHENIUS, RMSD, CUSTOM };
-    enum class IDType { ATOM, FRAG };
-    static constexpr int MAXCONIDS = 4;                    // max # of IDs used by any constraint
-    Type type;
-    std::array<int, MAXCONIDS> ids;
-    std::array<IDType, MAXCONIDS> idtypes{};
-    std::array<double, 5> par;                              // max # of constraint parameters = 5
-    std::string str;
-    bool satisfied;
-  };
   struct Reaction {
     int ID;
     class Molecule *reactant;                              // pre-reacted molecule template
@@ -127,9 +103,35 @@ class FixBondReact : public Fix {
     Molecule_Keys molecule_keyword;
     int v_nevery, v_rmin, v_rmax, v_prob;                  // ID of variable, -1 if static
     int nnewmolids;                                        // number of unique new molids needed for each reaction
-    std::vector<ReactionAtomFlags> atoms;
-    std::vector<Constraint> constraints;
     std::vector<std::array<tagint, 2>> attempts;           // stores sim atom IDs of initiator atoms
+
+    struct ReactionAtomFlags {
+      int edge;                                            // true if atom in molecule template has incorrect valency
+      int landlocked;                                      // true if atom is at least three bonds away from edge atoms
+      int recharged;                                       // true if atom whose charge should be updated
+      int deleted;                                         // true if atom in pre-reacted template to delete
+      int created;                                         // true if atom in post-reacted template to create
+      int newmolid;                                        // for molmap option: mol IDs in post, but not in pre, re-indexed from 1
+      std::array<int, 6> chiral;                           // pre-react chiral atoms. 1) flag 2) orientation 3-4) ordered atom types
+      std::array<int, 2> amap;                             // atom map: clmn 1 = product atom IDs, clmn 2: reactant atom IDs
+      std::array<int, 2> ramap;                            // reverse amap
+    };
+    std::vector<ReactionAtomFlags> atoms;
+
+    struct Constraint {
+      int ID;
+      enum class Type { DISTANCE, ANGLE, DIHEDRAL,
+                        ARRHENIUS, RMSD, CUSTOM };
+      enum class IDType { ATOM, FRAG };
+      static constexpr int MAXCONIDS = 4;                  // max # of IDs used by any constraint
+      Type type;
+      std::array<int, MAXCONIDS> ids;
+      std::array<IDType, MAXCONIDS> idtypes{};
+      std::array<double, 5> par;                           // max # of constraint parameters = 5
+      std::string str;
+      bool satisfied;
+    };
+    std::vector<Constraint> constraints;
   };
   std::vector<Reaction> rxns;
 
@@ -172,11 +174,11 @@ class FixBondReact : public Fix {
   int avail_guesses;                                       // num of restore points available
   std::vector<int> guess_branch;                           // used when there is more than two choices when guessing
   std::vector<int> pioneer_count;                          // counts pioneers
-  struct RestoreAtom {
-    tagint glove, pioneer_count, pioneers;
-  };
   struct RestorePoint {
     int pion, neigh, trace, glove_counter;
+    struct RestoreAtom {
+      tagint glove, pioneer_count, pioneers;
+    };
     std::vector<RestoreAtom> restore_atoms;
   };
   std::vector<RestorePoint> restore_pts;
@@ -210,7 +212,7 @@ class FixBondReact : public Fix {
   void CustomCharges(int, Reaction &);
   void ChiralCenters(char *, Reaction &);
   void ReadConstraints(char *, Reaction &);
-  void readID(char *, Constraint &, Reaction &, int);
+  void readID(char *, Reaction::Constraint &, Reaction &, int);
 
   void superimpose_algorithm();
   void make_a_guess(Reaction &);
@@ -220,7 +222,7 @@ class FixBondReact : public Fix {
   void inner_crosscheck_loop(Reaction &);
   int ring_check(Reaction &);
   int check_constraints(Reaction &);
-  void get_IDcoords(Constraint::IDType, int, double *, Molecule *);
+  void get_IDcoords(Reaction::Constraint::IDType, int, double *, Molecule *);
   double get_temperature(std::vector<tagint>);
   double get_totalcharge(Reaction &);
   void customvarnames();                                          // get per-atom variables names used by custom constraint

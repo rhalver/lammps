@@ -491,7 +491,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   int tmp = 0;
   for (auto &rxn : rxns) {
     for (auto &constraint : rxn.constraints) {
-      if (constraint.type == Constraint::Type::ARRHENIUS) {
+      if (constraint.type == Reaction::Constraint::Type::ARRHENIUS) {
         rrhandom[tmp++] = new RanMars(lmp,(int) constraint.par[4] + comm->me);
       }
     }
@@ -1769,7 +1769,7 @@ int FixBondReact::check_constraints(Reaction &rxn)
   for (auto &constraint : rxn.constraints) constraint.satisfied = true;
 
   for (auto &constraint : rxn.constraints) {
-    if (constraint.type == Constraint::Type::DISTANCE) {
+    if (constraint.type == Reaction::Constraint::Type::DISTANCE) {
       get_IDcoords(constraint.idtypes[0], constraint.ids[0], x1, rxn.reactant);
       get_IDcoords(constraint.idtypes[1], constraint.ids[1], x2, rxn.reactant);
       delx = x1[0] - x2[0];
@@ -1778,7 +1778,7 @@ int FixBondReact::check_constraints(Reaction &rxn)
       domain->minimum_image(FLERR, delx,dely,delz); // ghost location fix
       rsq = delx*delx + dely*dely + delz*delz;
       if (rsq < constraint.par[0] || rsq > constraint.par[1]) constraint.satisfied = false;
-    } else if (constraint.type == Constraint::Type::ANGLE) {
+    } else if (constraint.type == Reaction::Constraint::Type::ANGLE) {
       get_IDcoords(constraint.idtypes[0], constraint.ids[0], x1, rxn.reactant);
       get_IDcoords(constraint.idtypes[1], constraint.ids[1], x2, rxn.reactant);
       get_IDcoords(constraint.idtypes[2], constraint.ids[2], x3, rxn.reactant);
@@ -1805,7 +1805,7 @@ int FixBondReact::check_constraints(Reaction &rxn)
       if (c > 1.0) c = 1.0;
       if (c < -1.0) c = -1.0;
       if (acos(c) < constraint.par[0] || acos(c) > constraint.par[1]) constraint.satisfied = false;
-    } else if (constraint.type == Constraint::Type::DIHEDRAL) {
+    } else if (constraint.type == Reaction::Constraint::Type::DIHEDRAL) {
       // phi calculation from dihedral style harmonic
       get_IDcoords(constraint.idtypes[0], constraint.ids[0], x1, rxn.reactant);
       get_IDcoords(constraint.idtypes[1], constraint.ids[1], x2, rxn.reactant);
@@ -1868,13 +1868,13 @@ int FixBondReact::check_constraints(Reaction &rxn)
         if (phi > constraint.par[2] || phi < constraint.par[3]) ANDgate = 1;
       }
       if (ANDgate != 1) constraint.satisfied = false;
-    } else if (constraint.type == Constraint::Type::ARRHENIUS) {
+    } else if (constraint.type == Reaction::Constraint::Type::ARRHENIUS) {
       std::vector<tagint> myglove(glove.begin(), glove.begin() + rxn.reactant->natoms);
       t = get_temperature(myglove);
       prrhob = constraint.par[1]*pow(t,constraint.par[2])*
         exp(-constraint.par[3]/(force->boltz*t));
       if (prrhob < rrhandom[(int) constraint.par[0]]->uniform()) constraint.satisfied = false;
-    } else if (constraint.type == Constraint::Type::RMSD) {
+    } else if (constraint.type == Reaction::Constraint::Type::RMSD) {
       // call superpose
       int iatom;
       int iref = -1; // choose first atom as reference
@@ -1921,7 +1921,7 @@ int FixBondReact::check_constraints(Reaction &rxn)
       memory->destroy(xfrozen);
       memory->destroy(xmobile);
       if (rmsd > constraint.par[0]) constraint.satisfied = false;
-    } else if (constraint.type == Constraint::Type::CUSTOM) {
+    } else if (constraint.type == Reaction::Constraint::Type::CUSTOM) {
       constraint.satisfied = custom_constraint(constraint.str, rxn);
     }
   }
@@ -1969,10 +1969,10 @@ fragment: given pre-reacted molID (reactant) and fragID,
           return geometric center (of mapped simulation atoms)
 ------------------------------------------------------------------------- */
 
-void FixBondReact::get_IDcoords(Constraint::IDType idtype, int myID, double *center, Molecule *mol)
+void FixBondReact::get_IDcoords(Reaction::Constraint::IDType idtype, int myID, double *center, Molecule *mol)
 {
   double **x = atom->x;
-  if (idtype == Constraint::IDType::ATOM) {
+  if (idtype == Reaction::Constraint::IDType::ATOM) {
     int iatom = atom->map(glove[myID-1]);
     for (int i = 0; i < 3; i++)
       center[i] = x[iatom][i];
@@ -2068,7 +2068,7 @@ void FixBondReact::customvarnames()
 
   for (auto &rxn : rxns) {
     for (auto &constraint : rxn.constraints) {
-      if (constraint.type == Constraint::Type::CUSTOM) {
+      if (constraint.type == Reaction::Constraint::Type::CUSTOM) {
         varstr = constraint.str;
         prev3 = -1;
         while (true) {
@@ -4101,7 +4101,7 @@ void FixBondReact::ReadConstraints(char *line, Reaction &rxn)
     rv = sscanf(line,"%s",constraint_type);
     if (rv != 1) error->one(FLERR, "Constraints section is incorrectly formatted");
     if (strcmp(constraint_type,"distance") == 0) {
-      constraint.type = Constraint::Type::DISTANCE;
+      constraint.type = Reaction::Constraint::Type::DISTANCE;
       rv = sscanf(line,"%*s %s %s %lg %lg",strargs[0],strargs[1],&tmp[0],&tmp[1]);
       if (rv != 4) error->one(FLERR, "Distance constraint is incorrectly formatted");
       readID(strargs[0], constraint, rxn, 0);
@@ -4110,7 +4110,7 @@ void FixBondReact::ReadConstraints(char *line, Reaction &rxn)
       constraint.par[0] = tmp[0]*tmp[0]; // using square of distance
       constraint.par[1] = tmp[1]*tmp[1];
     } else if (strcmp(constraint_type,"angle") == 0) {
-      constraint.type = Constraint::Type::ANGLE;
+      constraint.type = Reaction::Constraint::Type::ANGLE;
       rv = sscanf(line,"%*s %s %s %s %lg %lg",strargs[0],strargs[1],strargs[2],&tmp[0],&tmp[1]);
       if (rv != 5) error->one(FLERR, "Angle constraint is incorrectly formatted");
       readID(strargs[0], constraint, rxn, 0);
@@ -4119,7 +4119,7 @@ void FixBondReact::ReadConstraints(char *line, Reaction &rxn)
       constraint.par[0] = tmp[0]/180.0 * MY_PI;
       constraint.par[1] = tmp[1]/180.0 * MY_PI;
     } else if (strcmp(constraint_type,"dihedral") == 0) {
-      constraint.type = Constraint::Type::DIHEDRAL;
+      constraint.type = Reaction::Constraint::Type::DIHEDRAL;
       tmp[2] = 181.0; // impossible range
       tmp[3] = 182.0;
       rv = sscanf(line,"%*s %s %s %s %s %lg %lg %lg %lg",strargs[0],strargs[1],
@@ -4134,7 +4134,7 @@ void FixBondReact::ReadConstraints(char *line, Reaction &rxn)
       constraint.par[2] = tmp[2]/180.0 * MY_PI;
       constraint.par[3] = tmp[3]/180.0 * MY_PI;
     } else if (strcmp(constraint_type,"arrhenius") == 0) {
-      constraint.type = Constraint::Type::ARRHENIUS;
+      constraint.type = Reaction::Constraint::Type::ARRHENIUS;
       constraint.par[0] = narrhenius++;
       rv = sscanf(line,"%*s %lg %lg %lg %lg",&tmp[0],&tmp[1],&tmp[2],&tmp[3]);
       if (rv != 4) error->one(FLERR, "Arrhenius constraint is incorrectly formatted");
@@ -4143,7 +4143,7 @@ void FixBondReact::ReadConstraints(char *line, Reaction &rxn)
       constraint.par[3] = tmp[2];
       constraint.par[4] = tmp[3];
     } else if (strcmp(constraint_type,"rmsd") == 0) {
-      constraint.type = Constraint::Type::RMSD;
+      constraint.type = Reaction::Constraint::Type::RMSD;
       strcpy(strargs[0],"0");
       rv = sscanf(line,"%*s %lg %s",&tmp[0],strargs[0]);
       if (rv != 1 && rv != 2) error->one(FLERR, "RMSD constraint is incorrectly formatted");
@@ -4155,7 +4155,7 @@ void FixBondReact::ReadConstraints(char *line, Reaction &rxn)
         else constraint.ids[0] = ifragment;
       }
     } else if (strcmp(constraint_type,"custom") == 0) {
-      constraint.type = Constraint::Type::CUSTOM;
+      constraint.type = Reaction::Constraint::Type::CUSTOM;
       std::vector<std::string> args = utils::split_words(line);
       constraint.str = args[1];
     } else error->one(FLERR,"Fix bond/react: Illegal constraint type in 'Constraints' section of map file");
@@ -4170,16 +4170,16 @@ if ID starts with character, assume it is a pre-reaction molecule fragment ID
 otherwise, it is a pre-reaction atom ID
 ---------------------------------------------------------------------- */
 
-void FixBondReact::readID(char *strarg, Constraint &constraint, Reaction &rxn, int i)
+void FixBondReact::readID(char *strarg, Reaction::Constraint &constraint, Reaction &rxn, int i)
 {
   if (isalpha(strarg[0])) {
-    constraint.idtypes[i] = Constraint::IDType::FRAG; // fragment vs. atom ID flag
+    constraint.idtypes[i] = Reaction::Constraint::IDType::FRAG; // fragment vs. atom ID flag
     int ifragment = rxn.reactant->findfragment(strarg);
     if (ifragment < 0)
       error->one(FLERR,"Fix bond/react: Molecule fragment {} does not exist", strarg);
     constraint.ids[i] = ifragment;
   } else {
-    constraint.idtypes[i] = Constraint::IDType::ATOM; // fragment vs. atom ID flag
+    constraint.idtypes[i] = Reaction::Constraint::IDType::ATOM; // fragment vs. atom ID flag
     int iatom = utils::inumeric(FLERR, strarg, true, lmp);
     if (iatom > rxn.reactant->natoms)
       error->one(FLERR,"Fix bond/react: Invalid template atom ID {} in map file", strarg);
