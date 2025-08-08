@@ -172,9 +172,15 @@ class FixBondReact : public Fix {
   int attempted_rxn;                                       // there was an attempt!
   int avail_guesses;                                       // num of restore points available
   int *guess_branch;                                       // used when there is more than two choices when guessing
-  int **restore_pt;                                        // contains info about restore points
-  tagint **restore;                                        // contains info about restore points
   int *pioneer_count;                                      // counts pioneers
+  struct RestoreAtom {
+    tagint glove, pioneer_count, pioneers;
+  };
+  struct RestorePoint {
+    int pion, neigh, trace, glove_counter;
+    std::vector<RestoreAtom> restore_atoms;
+  };
+  std::vector<RestorePoint> restore_pts;
 
   int **nxspecial;                                         // full number of 1-4 neighbors
   tagint **xspecial;                                       // full 1-4 neighbor list

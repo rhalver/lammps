@@ -538,7 +538,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   my_num_mega = 0;
   local_num_mega = 0;
   ghostly_num_mega = 0;
-  restore =  nullptr;
 
   // zero out stats
   global_megasize = 0;
@@ -579,8 +578,6 @@ FixBondReact::~FixBondReact()
   if (vvec != nullptr) memory->destroy(vvec);
 
   if (attempted_rxn == 1) {
-    memory->destroy(restore_pt);
-    memory->destroy(restore);
     memory->destroy(pioneers);
     memory->destroy(my_mega_glove);
     memory->destroy(local_mega_glove);
@@ -1153,8 +1150,6 @@ void FixBondReact::superimpose_algorithm()
   // trace: once you choose a first neighbor, you then check for other nieghbors of same type
 
   if (attempted_rxn == 1) {
-    memory->destroy(restore_pt);
-    memory->destroy(restore);
     memory->destroy(pioneers);
     memory->destroy(my_mega_glove);
     memory->destroy(local_mega_glove);
@@ -1162,11 +1157,11 @@ void FixBondReact::superimpose_algorithm()
   }
 
   glove.resize(max_natoms);
+  restore_pts.resize(MAXGUESS);
+  for (auto &restore_pt : restore_pts) restore_pt.restore_atoms.resize(max_natoms);
   //my_mega_glove.resize(allnattempt); // resize outer vector
   //for (auto &myvec : my_mega_glove) myvec.resize(max_natoms+cuff, 0);
-  memory->create(restore_pt,MAXGUESS,4,"bond/react:restore_pt");
   memory->create(pioneers,max_natoms,"bond/react:pioneers");
-  memory->create(restore,max_natoms,MAXGUESS*4,"bond/react:restore");
   memory->create(my_mega_glove,max_natoms+cuff,allnattempt,"bond/react:my_mega_glove");
 
   for (int i = 0; i < max_natoms+cuff; i++)
@@ -1429,14 +1424,14 @@ void FixBondReact::make_a_guess(Reaction &rxn)
   if (status == Status::GUESSFAIL && avail_guesses > 0) {
     // load restore point
     for (int i = 0; i < rxn.reactant->natoms; i++) {
-      glove[i] = restore[i][(avail_guesses*4)-3];
-      pioneer_count[i] = restore[i][(avail_guesses*4)-2];
-      pioneers[i] = restore[i][(avail_guesses*4)-1];
+      glove[i] = restore_pts[avail_guesses-1].restore_atoms[i].glove;
+      pioneer_count[i] = restore_pts[avail_guesses-1].restore_atoms[i].pioneer_count;
+      pioneers[i] = restore_pts[avail_guesses-1].restore_atoms[i].pioneers;
     }
-    pion = restore_pt[avail_guesses-1][0];
-    neigh = restore_pt[avail_guesses-1][1];
-    trace = restore_pt[avail_guesses-1][2];
-    glove_counter = restore_pt[avail_guesses-1][3];
+    pion = restore_pts[avail_guesses-1].pion;
+    neigh = restore_pts[avail_guesses-1].neigh;
+    trace = restore_pts[avail_guesses-1].trace;
+    glove_counter = restore_pts[avail_guesses-1].glove_counter;
     status = Status::RESTORE;
     neighbor_loop(rxn);
     if (status != Status::PROCEED) return;
@@ -1661,14 +1656,14 @@ void FixBondReact::crosscheck_the_neighbor(Reaction &rxn)
       }
       avail_guesses++;
       for (int i = 0; i < rxn.reactant->natoms; i++) {
-        restore[i][(avail_guesses*4)-3] = glove[i];
-        restore[i][(avail_guesses*4)-2] = pioneer_count[i];
-        restore[i][(avail_guesses*4)-1] = pioneers[i];
-        restore_pt[avail_guesses-1][0] = pion;
-        restore_pt[avail_guesses-1][1] = neigh;
-        restore_pt[avail_guesses-1][2] = trace;
-        restore_pt[avail_guesses-1][3] = glove_counter;
+        restore_pts[avail_guesses-1].restore_atoms[i].glove = glove[i];
+        restore_pts[avail_guesses-1].restore_atoms[i].pioneer_count = pioneer_count[i];
+        restore_pts[avail_guesses-1].restore_atoms[i].pioneers = pioneers[i];
       }
+      restore_pts[avail_guesses-1].pion = pion;
+      restore_pts[avail_guesses-1].neigh = neigh;
+      restore_pts[avail_guesses-1].trace = trace;
+      restore_pts[avail_guesses-1].glove_counter = glove_counter;
 
       inner_crosscheck_loop(rxn);
       return;
