@@ -103,7 +103,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   newton_bond = force->newton_bond;
 
   restart_global = 1;
-  attempted_rxn = 0;
   force_reneighbor = 1;
   next_reneighbor = -1;
   vector_flag = 1;
@@ -545,10 +544,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   glove_counter = 0;
   guess_branch = new int[MAXGUESS]();
   pioneer_count = new int[max_natoms];
-  my_mega_glove = nullptr;
-  local_mega_glove = nullptr;
-  ghostly_mega_glove = nullptr;
-  global_mega_glove = nullptr;
 
   // these are merely loop indices that became important
   pion = neigh = trace = 0;
@@ -576,15 +571,6 @@ FixBondReact::~FixBondReact()
   memory->destroy(finalpartner);
   memory->destroy(distsq);
   if (vvec != nullptr) memory->destroy(vvec);
-
-  if (attempted_rxn == 1) {
-    memory->destroy(pioneers);
-    memory->destroy(my_mega_glove);
-    memory->destroy(local_mega_glove);
-    memory->destroy(ghostly_mega_glove);
-  }
-
-  memory->destroy(global_mega_glove);
 
   if (stabilization_flag == 1) {
     // delete fixes if not already deleted
@@ -1149,26 +1135,12 @@ void FixBondReact::superimpose_algorithm()
   // 'trace' retraces the first nieghbors
   // trace: once you choose a first neighbor, you then check for other nieghbors of same type
 
-  if (attempted_rxn == 1) {
-    memory->destroy(pioneers);
-    memory->destroy(my_mega_glove);
-    memory->destroy(local_mega_glove);
-    memory->destroy(ghostly_mega_glove);
-  }
-
   glove.resize(max_natoms);
   restore_pts.resize(MAXGUESS);
   for (auto &restore_pt : restore_pts) restore_pt.restore_atoms.resize(max_natoms);
-  //my_mega_glove.resize(allnattempt); // resize outer vector
-  //for (auto &myvec : my_mega_glove) myvec.resize(max_natoms+cuff, 0);
-  memory->create(pioneers,max_natoms,"bond/react:pioneers");
-  memory->create(my_mega_glove,max_natoms+cuff,allnattempt,"bond/react:my_mega_glove");
-
-  for (int i = 0; i < max_natoms+cuff; i++)
-    for (int j = 0; j < allnattempt; j++)
-      my_mega_glove[i][j] = 0.0;
-
-  attempted_rxn = 1;
+  pioneers.resize(max_natoms);
+  my_mega_glove.resize(max_natoms+cuff); // mega_glove indexing seems inside-out
+  for (auto &vec : my_mega_glove) vec.resize(allnattempt, 0);
 
   // let's finally begin the superimpose loop
   for (auto &rxn : rxns) {
@@ -1274,15 +1246,10 @@ void FixBondReact::superimpose_algorithm()
 
   global_megasize = 0;
 
-  memory->create(local_mega_glove,max_natoms+cuff,my_num_mega,"bond/react:local_mega_glove");
-  memory->create(ghostly_mega_glove,max_natoms+cuff,my_num_mega,"bond/react:ghostly_mega_glove");
-
-  for (int i = 0; i < max_natoms+cuff; i++) {
-    for (int j = 0; j < my_num_mega; j++) {
-      local_mega_glove[i][j] = 0.0;
-      ghostly_mega_glove[i][j] = 0.0;
-    }
-  }
+  local_mega_glove.resize(max_natoms+cuff); // mega_glove indexing seems inside-out
+  for (auto &vec : local_mega_glove) vec.resize(my_num_mega, 0);
+  ghostly_mega_glove.resize(max_natoms+cuff); // mega_glove indexing seems inside-out
+  for (auto &vec : ghostly_mega_glove) vec.resize(my_num_mega, 0);
 
   dedup_mega_gloves(Dedup_Modes::LOCAL); // make sure atoms aren't added to more than one reaction
   glove_ghostcheck(); // split into 'local' and 'global'
@@ -2784,12 +2751,8 @@ void FixBondReact::ghost_glovecast()
   MPI_Type_create_resized (columnunsized, 0, sizeof(double), &column);
   MPI_Type_commit(&column);
 
-  memory->destroy(global_mega_glove);
-  memory->create(global_mega_glove,max_natoms+cuff,global_megasize,"bond/react:global_mega_glove");
-
-  for (int i = 0; i < max_natoms+cuff; i++)
-    for (int j = 0; j < global_megasize; j++)
-      global_mega_glove[i][j] = 0;
+  global_mega_glove.resize(max_natoms+cuff); // mega_glove indexing seems inside-out
+  for (auto &vec : global_mega_glove) vec.resize(global_megasize, 0);
 
   if (ghostly_num_mega > 0) {
     for (int i = 0; i < max_natoms+cuff; i++) {

@@ -169,7 +169,6 @@ class FixBondReact : public Fix {
 
   int nedge, nequivalent, nchiral;                         // # edge, equivalent atoms in mapping file
   int ndelete, ncreate;                                    // # atoms to delete, create
-  int attempted_rxn;                                       // there was an attempt!
   int avail_guesses;                                       // num of restore points available
   int *guess_branch;                                       // used when there is more than two choices when guessing
   int *pioneer_count;                                      // counts pioneers
@@ -188,17 +187,17 @@ class FixBondReact : public Fix {
   int pion, neigh, trace;                                  // important indices for various loops. required for restore points
   std::vector<tagint> glove;                               // global IDs. index is pre-reaction ID-1, value is mapped sim atom ID
   int cuff;                                                // extra space in mega_gloves: default = 1, w/ rescale_charges_flag = 2
-  double **my_mega_glove;                                  // local + ghostly reaction instances. for all mega_gloves: first row = rxnID.
-  double **local_mega_glove;                               // consolidation of local reaction instances
-  double **ghostly_mega_glove;                             // consolidation of nonlocal reaction instances
-  double **global_mega_glove;                              // consolidation (inter-processor) of gloves containing nonlocal atoms
+  std::vector<std::vector<double>> my_mega_glove;          // local + ghostly reaction instances. for all mega_gloves: first row = rxnID.
+  std::vector<std::vector<double>> local_mega_glove;       // consolidation of local reaction instances
+  std::vector<std::vector<double>> ghostly_mega_glove;     // consolidation of nonlocal reaction instances
+  std::vector<std::vector<double>> global_mega_glove;      // consolidation (inter-processor) of gloves containing nonlocal atoms
 
   int *localsendlist;                                      // indicates ghosts of other procs
   int my_num_mega;                                         // local + ghostly reaction instances (on this proc)
   int local_num_mega;                                      // num of local reaction instances
   int ghostly_num_mega;                                    // num of ghostly reaction instances
   int global_megasize;                                     // num of reaction instances in global_mega_glove
-  int *pioneers;                                           // during Superimpose Algorithm, atoms which have been assigned,
+  std::vector<int> pioneers;                               // during Superimpose Algorithm, atoms which have been assigned,
                                                            // but whose first neighbors haven't
   int glove_counter;                                       // used to determine when to terminate Superimpose Algorithm
 
