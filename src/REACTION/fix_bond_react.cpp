@@ -544,6 +544,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   glove_counter = 0;
   guess_branch = new int[MAXGUESS]();
   pioneer_count = new int[max_natoms];
+  global_mega_glove = nullptr;
 
   // these are merely loop indices that became important
   pion = neigh = trace = 0;
@@ -571,6 +572,7 @@ FixBondReact::~FixBondReact()
   memory->destroy(finalpartner);
   memory->destroy(distsq);
   if (vvec != nullptr) memory->destroy(vvec);
+  memory->destroy(global_mega_glove);
 
   if (stabilization_flag == 1) {
     // delete fixes if not already deleted
@@ -2751,8 +2753,12 @@ void FixBondReact::ghost_glovecast()
   MPI_Type_create_resized (columnunsized, 0, sizeof(double), &column);
   MPI_Type_commit(&column);
 
-  global_mega_glove.resize(max_natoms+cuff); // mega_glove indexing seems inside-out
-  for (auto &vec : global_mega_glove) vec.resize(global_megasize, 0);
+  memory->destroy(global_mega_glove);
+  memory->create(global_mega_glove,max_natoms+cuff,global_megasize,"bond/react:global_mega_glove");
+
+  for (int i = 0; i < max_natoms+cuff; i++)
+    for (int j = 0; j < global_megasize; j++)
+      global_mega_glove[i][j] = 0;
 
   if (ghostly_num_mega > 0) {
     for (int i = 0; i < max_natoms+cuff; i++) {

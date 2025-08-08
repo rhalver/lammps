@@ -190,7 +190,7 @@ class FixBondReact : public Fix {
   std::vector<std::vector<double>> my_mega_glove;          // local + ghostly reaction instances. for all mega_gloves: first row = rxnID.
   std::vector<std::vector<double>> local_mega_glove;       // consolidation of local reaction instances
   std::vector<std::vector<double>> ghostly_mega_glove;     // consolidation of nonlocal reaction instances
-  std::vector<std::vector<double>> global_mega_glove;      // consolidation (inter-processor) of gloves containing nonlocal atoms
+  double **global_mega_glove;                              // consolidation (inter-processor) of gloves containing nonlocal atoms
 
   int *localsendlist;                                      // indicates ghosts of other procs
   int my_num_mega;                                         // local + ghostly reaction instances (on this proc)
