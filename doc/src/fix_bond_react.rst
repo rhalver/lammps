@@ -18,7 +18,7 @@ Syntax
 * bond/react = style name of this fix command
 * the common keyword/values may be appended directly after 'bond/react'
 * common keywords apply to all reaction specifications
-* common_keyword = *stabilization* or *reset_mol_ids*
+* common_keyword = *stabilization* or *reset_mol_ids* or *rate_limit* or *max_rxn*
 
   .. parsed-literal::
 
@@ -37,6 +37,11 @@ Syntax
          react-IDs = names of the reactions to include in rate limit
          Nlimit = maximum number of reactions allowed to occur within interval
          Nsteps = the interval (number of timesteps) over which to count reactions
+       *max_rxn* value = Nrxns react-ID_1 ... react-ID_N Nlimit Nsteps
+         Nrxns = number of reactions to include in rate limit
+         react-IDs = names of the reactions to include in rate limit
+         Nlimit = maximum number of reactions allowed to occur within interval
+         N = maximum number of reactions allowed to occur
 
 * react = mandatory argument indicating new reaction specification
 * react-ID = user-assigned name for the reaction
@@ -48,15 +53,13 @@ Syntax
 * template-ID(post-reacted) = ID of a molecule template containing post-reaction topology
 * map_file = name of file specifying corresponding atom-IDs in the pre- and post-reacted templates
 * zero or more individual keyword/value pairs may be appended to each react argument
-* individual_keyword = *prob* or *max_rxn* or *stabilize_steps* or *custom_charges* or *rescale_charges* or *molecule* or *modify_create*
+* individual_keyword = *prob* or *stabilize_steps* or *custom_charges* or *rescale_charges* or *molecule* or *modify_create*
 
   .. parsed-literal::
 
          *prob* values = fraction seed
            fraction = initiate reaction with this probability if otherwise eligible
            seed = random number seed (positive integer)
-         *max_rxn* value = N
-           N = maximum number of reactions allowed to occur
          *stabilize_steps* value = timesteps
            timesteps = number of time steps to apply the internally-created :doc:`nve/limit <fix_nve_limit>` fix to reacting atoms
          *custom_charges* value = *no* or fragment-ID
@@ -224,11 +227,19 @@ data file. The number of reactions to sum over is specified by Nrxns, and
 the reactions are listed by reaction name (react-ID). The number of
 reaction occurrences is calculated by summing over the listed reactions.
 This sum is limited to Nlimit, which can be specified with an equal-style
-:doc:`variable <variable>`. Reaction occurences are chosen randomly from
+:doc:`variable <variable>`. Reaction occurrences are chosen randomly from
 all eligible reaction sites of all listed reactions. Multiple *rate_limit*
 keywords can be specified. This keyword is useful when multiple *react*
 arguments define similar types of reactions, and the relative rates between
 two or more types of reactions must be enforced.
+
+The *max_rxn* keyword can enforce an upper limit on the overall number of
+one or more reactions. The number of reactions to sum over is specified by
+Nrxns, and the reactions are listed by reaction name (react-ID). The number
+of reaction occurrences is calculated by summing over the listed reactions.
+This sum is limited to N. Reaction occurrences are chosen randomly from all
+eligible reaction sites of all listed reactions. Multiple *max_rxn* keywords
+can be specified.
 
 The following comments pertain to each *react* argument (in other
 words, they can be customized for each reaction, or reaction step):
@@ -684,8 +695,7 @@ actually occurs. The fraction setting must be a value between 0.0 and
 1.0, and can be specified with an equal-style :doc:`variable <variable>`.
 A uniform random number between 0.0 and 1.0 is generated and the
 eligible reaction only occurs if the random number is less than the
-fraction. Up to :math:`N` reactions are permitted to occur, as optionally
-specified by the *max_rxn* keyword.
+fraction.
 
 The *stabilize_steps* keyword allows for the specification of how many
 time steps a reaction site is stabilized before being returned to the
