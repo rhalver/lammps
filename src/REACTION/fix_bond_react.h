@@ -93,7 +93,7 @@ class FixBondReact : public Fix {
     double mol_total_charge;                               // sum of charges of post-reaction atoms whose charges are updated
     int reaction_count, reaction_count_total;
     int local_rxn_count, ghostly_rxn_count;
-    int max_rxn, nlocalkeep, nghostlykeep;
+    int nlocalkeep, nghostlykeep;
     int seed, limit_duration;
     int stabilize_steps_flag;
     int custom_charges_fragid;
@@ -121,10 +121,9 @@ class FixBondReact : public Fix {
     struct Constraint {
       int ID;
       enum class Type { DISTANCE, ANGLE, DIHEDRAL,
-                        ARRHENIUS, RMSD, CUSTOM };
+                        ARRHENIUS, RMSD, CUSTOM } type;
       enum class IDType { ATOM, FRAG };
       static constexpr int MAXCONIDS = 4;                  // max # of IDs used by any constraint
-      Type type;
       std::array<int, MAXCONIDS> ids;
       std::array<IDType, MAXCONIDS> idtypes{};
       std::array<double, 5> par;                           // max # of constraint parameters = 5
@@ -273,6 +272,13 @@ class FixBondReact : public Fix {
     std::deque<int> store_rxn_counts;
   };
   std::vector<RateLimit> rate_limits;
+
+  struct MaxRxnLimit {
+    int Nrxns, max_rxn;
+    std::vector<int> rxnIDs;
+    std::vector<std::string> rxn_names;
+  };
+  std::vector<MaxRxnLimit> max_rxn_limits;
 
   // DEBUG
 

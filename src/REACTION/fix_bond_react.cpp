@@ -176,6 +176,20 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       else if (str == "molmap") molid_mode = Reset_Mol_IDs::MOLMAP;
       else error->all(FLERR, iarg+1, "Unknown option {} for 'reset_mol_ids' keyword", str);
       iarg += 2;
+    } else if (strcmp(arg[iarg],"max_rxn") == 0) {
+      if (iarg+1 > narg) utils::missing_cmd_args(FLERR,"fix bond/react max_rxn", error);
+      struct MaxRxnLimit maxlimit;
+      maxlimit.Nrxns = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      if (iarg+maxlimit.Nrxns+3 > narg) utils::missing_cmd_args(FLERR,"fix bond/react max_rxn", error);
+      for (int i = 0; i < maxlimit.Nrxns; i++) {
+        std::string tmpstr = arg[iarg+2+i];
+        maxlimit.rxn_names.push_back(tmpstr);
+      }
+      maxlimit.max_rxn = utils::inumeric(FLERR,arg[iarg+maxlimit.Nrxns+2],false,lmp);
+      if (maxlimit.max_rxn < 0) error->all(FLERR, iarg, "Illegal fix bond/react command: "
+                                         "'max_rxn' cannot be negative");
+      max_rxn_limits.push_back(maxlimit);
+      iarg += maxlimit.Nrxns+3;
     } else if (strcmp(arg[iarg],"rate_limit") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit", error);
       struct RateLimit rlm;
@@ -217,7 +231,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     rxn.ID = id++;
     rxn.fraction = 1.0;
     rxn.seed = 12345;
-    rxn.max_rxn = INT_MAX;
     rxn.stabilize_steps_flag = 0;
     rxn.custom_charges_fragid = -1;
     rxn.rescale_charges_flag = 0;
@@ -312,13 +325,6 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
         if (rxn.seed <= 0) error->all(FLERR,"Illegal fix bond/react command: "
                                        "probability seed must be positive");
         iarg += 3;
-      } else if (strcmp(arg[iarg],"max_rxn") == 0) {
-        if (iarg+2 > narg) error->all(FLERR,"Illegal fix bond/react command: "
-                                      "'max_rxn' has too few arguments");
-        rxn.max_rxn = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
-        if (rxn.max_rxn < 0) error->all(FLERR,"Illegal fix bond/react command: "
-                                         "'max_rxn' cannot be negative");
-        iarg += 2;
       } else if (strcmp(arg[iarg],"stabilize_steps") == 0) {
         if (stabilization_flag == 0) error->all(FLERR,"Stabilize_steps keyword "
                                                 "used without stabilization keyword");
@@ -398,6 +404,19 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       if (existflag == 0) error->all(FLERR, "Fix bond/react: Invalid reaction name {} listed for rate_limit", rlm.rxn_names[i]);
     }
     rlm.store_rxn_counts.assign(rlm.Nsteps,-1);
+  }
+  for (auto &maxlimit : max_rxn_limits) {
+    for (int i = 0; i < maxlimit.Nrxns; i++) {
+      int existflag = 0;
+      for (auto &rxn : rxns) {
+        if (maxlimit.rxn_names[i] == rxn.name) {
+          maxlimit.rxnIDs.push_back(rxn.ID);
+          existflag = 1;
+          break;
+        }
+      }
+      if (existflag == 0) error->all(FLERR, "Fix bond/react: Invalid reaction name {} listed for rate_limit", maxlimit.rxn_names[i]);
+    }
   }
 
   max_natoms = 0; // the number of atoms in largest molecule template
@@ -795,7 +814,7 @@ void FixBondReact::post_integrate()
   xspecial = atom->special;
 
   // check if we are over rate_limits limits
-  std::vector<int> rate_limits_flag(rxns.size(), 1);
+  std::vector<int> rxn_limit_flag(rxns.size(), 1);
   for (auto &rlm : rate_limits) {
     int myrxn_count = rlm.store_rxn_counts[rlm.Nsteps-1];
     int nrxns_delta, my_nrate;
@@ -808,14 +827,19 @@ void FixBondReact::post_integrate()
       } else my_nrate = rlm.Nlimit;
     }
     if (myrxn_count == -1 || nrxns_delta >= my_nrate)
-      for (auto i : rlm.rxnIDs) rate_limits_flag[i] = 0;
+      for (auto i : rlm.rxnIDs) rxn_limit_flag[i] = 0;
+  }
+  for (auto &maxlimit : max_rxn_limits) {
+    int rxn_count_sum = 0;
+    for (auto i : maxlimit.rxnIDs) rxn_count_sum += rxns[i].reaction_count_total;
+    if (rxn_count_sum >= maxlimit.max_rxn)
+      for (auto i : maxlimit.rxnIDs) rxn_limit_flag[i] = 0;
   }
 
   int j;
   for (auto &rxn : rxns) {
     if ((update->ntimestep % rxn.nevery) ||
-        (rxn.max_rxn <= rxn.reaction_count_total) ||
-        (rate_limits_flag[rxn.ID] == 0)) continue;
+        (rxn_limit_flag[rxn.ID] == 0)) continue;
 
     for (int ii = 0; ii < nall; ii++) {
       partner[ii] = 0;
@@ -1278,9 +1302,30 @@ void FixBondReact::superimpose_algorithm()
   std::vector<int> oversteps(rxns.size(), 0);
   if (comm->me == 0) {
     // check if we overstepped our reaction limit, via either max_rxn or rate_limit
-    for (auto &rxn : rxns) {
-      int max_rxn_overstep = rxn.reaction_count_total + delta_rxn[rxn.ID] - rxn.max_rxn;
-      oversteps[rxn.ID] = MAX(oversteps[rxn.ID],max_rxn_overstep);
+    for (auto maxlimit : max_rxn_limits) {
+      int rxn_count_sum = 0;
+      int delta_rxn_sum = 0;
+      for (auto i : maxlimit.rxnIDs) {
+        rxn_count_sum += rxns[i].reaction_count_total;
+        delta_rxn_sum += delta_rxn[i];
+      }
+      int max_limit_overstep_sum = rxn_count_sum + delta_rxn_sum - maxlimit.max_rxn;
+      if (max_limit_overstep_sum > 0) {
+        if (maxlimit.Nrxns == 1) {
+          oversteps[maxlimit.rxnIDs[0]] = MAX(oversteps[maxlimit.rxnIDs[0]], max_limit_overstep_sum);
+        } else {
+          std::vector<int> dummy_list;
+          for (auto i : maxlimit.rxnIDs)
+            for (int j = 0; j < delta_rxn[i]; j++)
+              dummy_list.push_back(i);
+          std::shuffle(dummy_list.begin(), dummy_list.end(), park_rng);
+          std::vector<int> max_limit_overstep(rxns.size(),0);
+          for (int i = 0; i < max_limit_overstep_sum; i++)
+            max_limit_overstep[dummy_list[i]]++;
+          for (auto &rxn : rxns)
+            oversteps[rxn.ID] = MAX(oversteps[rxn.ID], max_limit_overstep[rxn.ID]);
+        }
+      }
     }
 
     for (auto rlm : rate_limits) {
