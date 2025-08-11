@@ -40,7 +40,6 @@
 #include <cmath>
 #include <cstring>
 #include <exception>
-#include <iostream>
 #include <algorithm>
 
 using namespace LAMMPS_NS;
@@ -113,7 +112,6 @@ FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
     } else error->all(FLERR,"Illegal fix ttm command");
   }
 
-
   // error check
 
   if (seed <= 0)
@@ -169,12 +167,13 @@ FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
 
 FixTTMThermal::~FixTTMThermal()
 {
-  delete [] infile;
+  delete[] infile;
+  delete[] e_propert_file;
 
   delete random;
 
-  delete [] gfactor1;
-  delete [] gfactor2;
+  delete[] gfactor1;
+  delete[] gfactor2;
 
   memory->destroy(flangevin);
 
@@ -202,7 +201,6 @@ void FixTTMThermal::post_constructor()
     for (iy = 0; iy < nygrid; iy++)
       for (ix = 0; ix < nxgrid; ix++)
         T_electron[iz][iy][ix] = tinit;
-
 
   // zero net_energy_transfer_all
   // in case compute_vector accesses it on timestep 0
@@ -373,12 +371,10 @@ void FixTTMThermal::end_of_step()
   double dyinv = nygrid/domain->yprd;
   double dzinv = nzgrid/domain->zprd;
 
-
   for (iz = 0; iz < nzgrid; iz++)
     for (iy = 0; iy < nygrid; iy++)
       for (ix = 0; ix < nxgrid; ix++)
         net_energy_transfer[iz][iy][ix] = 0.0;
-
 
   for (int i = 0; i < nlocal; i++)
     if (mask[i] & groupbit) {
@@ -431,8 +427,6 @@ void FixTTMThermal::end_of_step()
     if (num_inner_timesteps > 1000000)
       error->warning(FLERR,"Too many inner timesteps in fix ttm");
   }
-
-
 
   // finite difference iterations to update T_electron
 
@@ -614,9 +608,6 @@ void FixTTMThermal::read_electron_temperatures(const std::string &filename)
         int iz = values.next_int() - 1;
         double T_tmp  = values.next_double();
 
-
-
-
         // check correctness of input data
 
         if ((ix < 0) || (ix >= nxgrid) || (iy < 0) || (iy >= nygrid) || (iz < 0) || (iz >= nzgrid))
@@ -642,8 +633,10 @@ void FixTTMThermal::read_electron_temperatures(const std::string &filename)
 
     memory->destroy(T_initial_set);
   }
+
   MPI_Bcast(&T_electron[0][0][0],ngridtotal,MPI_DOUBLE,0,world);
 }
+
 /* ----------------------------------------------------------------------
    write out current electron temperatures to user-specified file
    only written by proc 0
@@ -656,7 +649,7 @@ void FixTTMThermal::write_electron_temperatures(const std::string &filename)
   FILE *fp = fopen(filename.c_str(),"w");
   if (!fp) error->one(FLERR,"Fix ttm could not open output file {}: {}",
                       filename,utils::getsyserror());
-  fmt::print(fp,"# DATE: {} UNITS: {} COMMENT: Electron temperature "
+  utils::print(fp,"# DATE: {} UNITS: {} COMMENT: Electron temperature "
              "{}x{}x{} grid at step {}. Created by fix {}\n #Grid       X,Y,Z	Temperature\n", utils::current_date(),
              update->unit_style, nxgrid, nygrid, nzgrid, update->ntimestep, style);
 
@@ -714,7 +707,7 @@ void FixTTMThermal::write_restart(FILE *fp)
 void FixTTMThermal::restart(char *buf)
 {
   int n = 0;
-  auto rlist = (double *) buf;
+  auto *rlist = (double *) buf;
 
   // check that restart grid size is same as current grid size
 
