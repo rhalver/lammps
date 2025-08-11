@@ -4,19 +4,19 @@ boundary        p p p
 
 variable        latc  equal 2.87
 lattice         bcc ${latc}
-variable 	xmax equal   10.0
-variable 	xmin equal  -10.0
-variable 	ymax equal   10.0
-variable 	ymin equal  -10.0
-variable 	zmax equal   10.0
-variable 	zmin equal  -10.0
+variable        xmax equal   10.0
+variable        xmin equal  -10.0
+variable        ymax equal   10.0
+variable        ymin equal  -10.0
+variable        zmax equal   10.0
+variable        zmin equal  -10.0
 
-region 		sim_box block ${xmin} ${xmax} ${ymin} ${ymax} ${zmin} ${zmax} &
+region          sim_box block ${xmin} ${xmax} ${ymin} ${ymax} ${zmin} ${zmax} &
                 units lattice
-create_box 	1 sim_box
-region 		atom_box block ${xmin} ${xmax} ${ymin} ${ymax} ${zmin} ${zmax} &
+create_box      1 sim_box
+region          atom_box block ${xmin} ${xmax} ${ymin} ${ymax} ${zmin} ${zmax} &
                 units lattice
-create_atoms 	1 region atom_box
+create_atoms    1 region atom_box
 
 mass            1 55.845
 

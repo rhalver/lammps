@@ -16,11 +16,11 @@
    Contributing authors: Original fix ttm
                          Paul Crozier (SNL)
                          Carolyn Phillips (University of Michigan)
-                         
+
                          ttm/thermal
                          Bradly Baer (Vanderbilt University)
                          D. Greg Walker (Vanderbilt University)
-                         
+
 ------------------------------------------------------------------------- */
 
 
@@ -65,7 +65,7 @@ FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
   net_energy_transfer(nullptr), net_energy_transfer_all(nullptr) ,
   gamma_p_grid(nullptr), inductive_response_grid(nullptr),
   c_e_grid(nullptr), k_e_grid(nullptr)
- 
+
 {
   if (narg < 8) error->all(FLERR,"Illegal fix ttm command");
   vector_flag = 1;
@@ -75,16 +75,16 @@ FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
   nevery = 1;
   restart_peratom = 1;
   restart_global = 1;
-  
+
   e_property_file = nullptr;
-  
+
   seed = utils::inumeric(FLERR,arg[3],false,lmp);
   e_property_file = utils::strdup(arg[4]);
   nxgrid = utils::inumeric(FLERR,arg[5],false,lmp);
   nygrid = utils::inumeric(FLERR,arg[6],false,lmp);
   nzgrid = utils::inumeric(FLERR,arg[7],false,lmp);
-  
-  
+
+
   inductive_power = 0.0;
   tinit = 0.0;
   infile = outfile = nullptr;
@@ -112,7 +112,7 @@ FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
       iarg += 3;
     } else error->all(FLERR,"Illegal fix ttm command");
   }
-  
+
 
   // error check
 
@@ -158,7 +158,7 @@ FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
 
   atom->add_callback(Atom::GROW);
   atom->add_callback(Atom::RESTART);
-  
+
   // determines which class deallocate_grid() is called from
 
   deallocate_flag = 0;
@@ -202,17 +202,17 @@ void FixTTMThermal::post_constructor()
     for (iy = 0; iy < nygrid; iy++)
       for (ix = 0; ix < nxgrid; ix++)
         T_electron[iz][iy][ix] = tinit;
-        
-  
+
+
   // zero net_energy_transfer_all
   // in case compute_vector accesses it on timestep 0
 
   outflag = 0;
   memset(&net_energy_transfer_all[0][0][0],0,ngridtotal*sizeof(double));
-  
+
   // set electron grid properties from file
   read_electron_properties(e_property_file);
-  
+
   // set initial electron temperatures from user input file
 
   if (infile) read_electron_temperatures(infile);
@@ -320,25 +320,25 @@ void FixTTMThermal::post_force(int /*vflag*/)
 
       if (T_electron[iz][iy][ix] < 0)
         error->one(FLERR,"Electronic temperature dropped below zero");
-	//Come back and check this for scaling
+        //Come back and check this for scaling
       for (int i = 1; i <= atom->ntypes; i++) {
-	    gfactor1[i] = - gamma_p_grid[iz][iy][ix] / force->ftm2v;
-	    gfactor2[i] = sqrt(24.0*force->boltz*gamma_p_grid[iz][iy][ix]/update->dt/force->mvv2e) / force->ftm2v;
-	  }
+            gfactor1[i] = - gamma_p_grid[iz][iy][ix] / force->ftm2v;
+            gfactor2[i] = sqrt(24.0*force->boltz*gamma_p_grid[iz][iy][ix]/update->dt/force->mvv2e) / force->ftm2v;
+          }
 
       double tsqrt = sqrt(T_electron[iz][iy][ix]);
 
       gamma1 = gfactor1[type[i]];
       gamma2 = gfactor2[type[i]] * tsqrt;
       if (T_electron[iz][iy][ix] > 1e-5) {
-			flangevin[i][0] = gamma1*v[i][0] + gamma2*(random->uniform()-0.5);
-			flangevin[i][1] = gamma1*v[i][1] + gamma2*(random->uniform()-0.5);
-			flangevin[i][2] = gamma1*v[i][2] + gamma2*(random->uniform()-0.5);
+                        flangevin[i][0] = gamma1*v[i][0] + gamma2*(random->uniform()-0.5);
+                        flangevin[i][1] = gamma1*v[i][1] + gamma2*(random->uniform()-0.5);
+                        flangevin[i][2] = gamma1*v[i][2] + gamma2*(random->uniform()-0.5);
 
-			f[i][0] += flangevin[i][0];
-			f[i][1] += flangevin[i][1];
-			f[i][2] += flangevin[i][2];
-		}
+                        f[i][0] += flangevin[i][0];
+                        f[i][1] += flangevin[i][1];
+                        f[i][2] += flangevin[i][2];
+                }
     }
   }
 }
@@ -372,13 +372,13 @@ void FixTTMThermal::end_of_step()
   double dxinv = nxgrid/domain->xprd;
   double dyinv = nygrid/domain->yprd;
   double dzinv = nzgrid/domain->zprd;
-  
+
 
   for (iz = 0; iz < nzgrid; iz++)
     for (iy = 0; iy < nygrid; iy++)
       for (ix = 0; ix < nxgrid; ix++)
         net_energy_transfer[iz][iy][ix] = 0.0;
-	
+
 
   for (int i = 0; i < nlocal; i++)
     if (mask[i] & groupbit) {
@@ -412,14 +412,14 @@ void FixTTMThermal::end_of_step()
   int num_inner_timesteps = 1;
   double inner_dt = update->dt;
   double voxel_coeff =(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz);
-  
+
   std::vector<double> grid_fourier(nzgrid * nygrid * nxgrid);
   int index = 0;  // Location unimportant, only max value
     for (iz = 0; iz < nzgrid; iz++)
       for (iy = 0; iy < nygrid; iy++)
         for (ix = 0; ix < nxgrid; ix++)
         grid_fourier[index++] = 2.0/c_e_grid[iz][iy][ix]*(k_e_grid[iz][iy][ix]*voxel_coeff);
-        
+
   double fourier_max = *std::max_element(grid_fourier.begin(), grid_fourier.end());
 
   double stability_criterion = 1.0 - fourier_max*inner_dt;
@@ -460,50 +460,50 @@ void FixTTMThermal::end_of_step()
           if (xleft == -1) xleft = nxgrid - 1;
           if (yleft == -1) yleft = nygrid - 1;
           if (zleft == -1) zleft = nzgrid - 1;
-		  
-		  // Initialize flags for vacuum
-		  int left = 1;
-		  int right =1;
-		  int in = 1;
-		  int out = 1;
-		  int up = 1;
-		  int down = 1;
-		  
-		  // Set flags to 0 if vaccum
-		  if (T_electron[iz][iy][xleft] < 1e-5) left = 0; 
-		  if (T_electron[iz][iy][xright] < 1e-5) right = 0; 
-		  if (T_electron[iz][yright][ix] < 1e-5) in = 0; 
-		  if (T_electron[iz][yleft][ix] < 1e-5) out = 0; 
-		  if (T_electron[zright][iy][ix] < 1e-5) up = 0; 
-		  if (T_electron[zleft][iy][ix] < 1e-5) down = 0; 
-		  
-		  if (T_electron[iz][iy][ix] > 1e-5) {
+
+                  // Initialize flags for vacuum
+                  int left = 1;
+                  int right =1;
+                  int in = 1;
+                  int out = 1;
+                  int up = 1;
+                  int down = 1;
+
+                  // Set flags to 0 if vaccum
+                  if (T_electron[iz][iy][xleft] < 1e-5) left = 0;
+                  if (T_electron[iz][iy][xright] < 1e-5) right = 0;
+                  if (T_electron[iz][yright][ix] < 1e-5) in = 0;
+                  if (T_electron[iz][yleft][ix] < 1e-5) out = 0;
+                  if (T_electron[zright][iy][ix] < 1e-5) up = 0;
+                  if (T_electron[zleft][iy][ix] < 1e-5) down = 0;
+
+                  if (T_electron[iz][iy][ix] > 1e-5) {
           T_electron[iz][iy][ix] =
             T_electron_old[iz][iy][ix] + inner_dt/c_e_grid[iz][iy][ix]*(
-			(safe_effective_kappa(k_e_grid[iz][iy][xleft],k_e_grid[iz][iy][ix]))*
-			(T_electron_old[iz][iy][xleft]-T_electron_old[iz][iy][ix])/dx/dx*left +
-			
-			(safe_effective_kappa(k_e_grid[iz][iy][xright],k_e_grid[iz][iy][ix]))*
-			(T_electron_old[iz][iy][xright]-T_electron_old[iz][iy][ix])/dx/dx*right +
-			
-			(safe_effective_kappa(k_e_grid[iz][yleft][ix],k_e_grid[iz][iy][ix]))*
-			(T_electron_old[iz][yleft][ix]-T_electron_old[iz][iy][ix])/dy/dy*out +
-			
-			(safe_effective_kappa(k_e_grid[iz][yright][ix],k_e_grid[iz][iy][ix]))*
-			(T_electron_old[iz][yright][ix]-T_electron_old[iz][iy][ix])/dy/dy*in +
-			
-			(safe_effective_kappa(k_e_grid[zleft][iy][ix],k_e_grid[iz][iy][ix]))*
-			(T_electron_old[zleft][iy][ix]-T_electron_old[iz][iy][ix])/dz/dz*down +
-			
-			(safe_effective_kappa(k_e_grid[zright][iy][ix],k_e_grid[iz][iy][ix]))*
-			(T_electron_old[zright][iy][ix]-T_electron_old[iz][iy][ix])/dz/dz*up
-			
-			-(net_energy_transfer_all[iz][iy][ix])/(del_vol)
-			+(inductive_power*inductive_response_grid[iz][iy][ix]));}
-		}
-		
+                        (safe_effective_kappa(k_e_grid[iz][iy][xleft],k_e_grid[iz][iy][ix]))*
+                        (T_electron_old[iz][iy][xleft]-T_electron_old[iz][iy][ix])/dx/dx*left +
+
+                        (safe_effective_kappa(k_e_grid[iz][iy][xright],k_e_grid[iz][iy][ix]))*
+                        (T_electron_old[iz][iy][xright]-T_electron_old[iz][iy][ix])/dx/dx*right +
+
+                        (safe_effective_kappa(k_e_grid[iz][yleft][ix],k_e_grid[iz][iy][ix]))*
+                        (T_electron_old[iz][yleft][ix]-T_electron_old[iz][iy][ix])/dy/dy*out +
+
+                        (safe_effective_kappa(k_e_grid[iz][yright][ix],k_e_grid[iz][iy][ix]))*
+                        (T_electron_old[iz][yright][ix]-T_electron_old[iz][iy][ix])/dy/dy*in +
+
+                        (safe_effective_kappa(k_e_grid[zleft][iy][ix],k_e_grid[iz][iy][ix]))*
+                        (T_electron_old[zleft][iy][ix]-T_electron_old[iz][iy][ix])/dz/dz*down +
+
+                        (safe_effective_kappa(k_e_grid[zright][iy][ix],k_e_grid[iz][iy][ix]))*
+                        (T_electron_old[zright][iy][ix]-T_electron_old[iz][iy][ix])/dz/dz*up
+
+                        -(net_energy_transfer_all[iz][iy][ix])/(del_vol)
+                        +(inductive_power*inductive_response_grid[iz][iy][ix]));}
+                }
+
   }
-  
+
   // output of grid electron temperatures to file
   if (outfile && (update->ntimestep % outevery == 0))
     write_electron_temperatures(fmt::format("{}.{}",outfile,update->ntimestep));
@@ -536,12 +536,12 @@ void FixTTMThermal::read_electron_properties(const std::string &filename)
         int ix = values.next_int() - 1;
         int iy = values.next_int() - 1;
         int iz = values.next_int() - 1;
-        double c_e_tmp  = values.next_double(); 
-        double k_e_tmp  = values.next_double(); 
+        double c_e_tmp  = values.next_double();
+        double k_e_tmp  = values.next_double();
         double gamma_p_tmp  = values.next_double();
         double ind_tmp  = values.next_double();
 
-                
+
 
         // check correctness of input data
 
@@ -550,15 +550,15 @@ void FixTTMThermal::read_electron_properties(const std::string &filename)
 
         if (c_e_tmp < 0.0)
           throw TokenizerException("Fix ttm electron specific heat must be > 0.0","");
-          
+
         if (k_e_tmp < 0.0)
           throw TokenizerException("Fix ttm electron conductivity must be > 0.0","");
-          
+
         if (gamma_p_tmp < 0.0)
           throw TokenizerException("Fix ttm electron coupling must be > 0.0","");
-          
+
         if (ind_tmp < 0.0)
-          throw TokenizerException("Fix ttm electron inductive response must be >= 0.0",""); 
+          throw TokenizerException("Fix ttm electron inductive response must be >= 0.0","");
 
         c_e_grid[iz][iy][ix] = c_e_tmp;
         k_e_grid[iz][iy][ix] = k_e_tmp;
@@ -615,7 +615,7 @@ void FixTTMThermal::read_electron_temperatures(const std::string &filename)
         double T_tmp  = values.next_double();
 
 
-                
+
 
         // check correctness of input data
 
@@ -652,12 +652,12 @@ void FixTTMThermal::read_electron_temperatures(const std::string &filename)
 void FixTTMThermal::write_electron_temperatures(const std::string &filename)
 {
   if (comm->me) return;
-  
+
   FILE *fp = fopen(filename.c_str(),"w");
   if (!fp) error->one(FLERR,"Fix ttm could not open output file {}: {}",
                       filename,utils::getsyserror());
   fmt::print(fp,"# DATE: {} UNITS: {} COMMENT: Electron temperature "
-             "{}x{}x{} grid at step {}. Created by fix {}\n #Grid	X,Y,Z	Temperature\n", utils::current_date(),
+             "{}x{}x{} grid at step {}. Created by fix {}\n #Grid       X,Y,Z	Temperature\n", utils::current_date(),
              update->unit_style, nxgrid, nygrid, nzgrid, update->ntimestep, style);
 
   int ix,iy,iz;
@@ -869,7 +869,7 @@ void FixTTMThermal::deallocate_grid()
 {
   memory->destroy(T_electron_old);
   memory->destroy(T_electron);
-  memory->destroy(c_e_grid);  
+  memory->destroy(c_e_grid);
   memory->destroy(k_e_grid);
   memory->destroy(gamma_p_grid);
   memory->destroy(inductive_response_grid);

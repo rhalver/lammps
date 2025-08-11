@@ -49,7 +49,7 @@ Syntax
        Nx = number of thermal solve grid points in the x-direction (positive integer)
        Ny = number of thermal solve grid points in the y-direction (positive integer)
        Nz = number of thermal solve grid points in the z-direction (positive integer)
-       
+
 * remaining arguments for fix ttm/thermal:
 
   .. parsed-literal::
@@ -72,7 +72,7 @@ Syntax
          file.out = filename to write grid temperatures to
 
 * fix ttm/thermal supports an additional keyword: *source*
- 
+
   .. parsed-literal::
        *source* value = source
          source = volumetric heating term applied to electrons (energy/(time\*volume) units)
@@ -86,7 +86,7 @@ Examples
    fix 3 all ttm/grid 123456 1.0 1.0 1.0 1.0 1.0 5.0 5 5 5 infile Te.in
    fix 4 all ttm/mod 34277 parameters.txt 5 5 5 infile T_init outfile 10 T_out
    fix 5 all ttm/thermal 11111 properties.in 10 10 10 source 0.1 infile temps.in outfile 10 temps.out
-   
+
 Example input scripts using these commands can be found in examples/ttm.
 
 Description
@@ -123,9 +123,9 @@ expensive computationally than fix *ttm* because it treats the thermal
 diffusion equation as non-linear.  More details on fix *ttm/mod* are
 given below.
 
-Fix *ttm/thermal* allows for electronic properties to be assigned 
-independently to each TTM grid point and supports external heat sources 
-to the electronic subsystem. More details on fix *ttm/thermal* are 
+Fix *ttm/thermal* allows for electronic properties to be assigned
+independently to each TTM grid point and supports external heat sources
+to the electronic subsystem. More details on fix *ttm/thermal* are
 given below.
 
 Heat transfer between the electronic and atomic subsystems is carried
@@ -268,10 +268,10 @@ units setting in use, grid size and the current timestep.
   reads.  The file has the same format as the file the *infile* option
   reads.
 
-For the fix ttm, fix ttm/mod, and fix ttm/thermal commands, the 
-corresponding atomic temperature for atoms in each grid cell can 
-be computed and output by the :doc:`fix ave/chunk <fix_ave_chunk>` 
-command using the:doc:`compute chunk/atom <compute_chunk_atom>` command 
+For the fix ttm, fix ttm/mod, and fix ttm/thermal commands, the
+corresponding atomic temperature for atoms in each grid cell can
+be computed and output by the :doc:`fix ave/chunk <fix_ave_chunk>`
+command using the:doc:`compute chunk/atom <compute_chunk_atom>` command
 to create a 3d array of chunks consistent with the grid used by this fix.
 
 For the fix ttm/grid command the same thing can be done using the
@@ -392,14 +392,14 @@ have been removed:
   \bigtriangledown (\kappa_\mathrm{eff} \bigtriangledown T_e) -
   g_p (T_e - T_a) + \eta s
 
-where :math:`s` is the applied heating power density and :math:`\eta` is 
-the absorption efficiency (0-1) defined for each ttm grid cell in the 
-*properties.in* file. Also note that compared to the original *fix ttm*, 
-it uses use a volumetric specific heat, :math:`C_\mathrm{vol}` , which 
+where :math:`s` is the applied heating power density and :math:`\eta` is
+the absorption efficiency (0-1) defined for each ttm grid cell in the
+*properties.in* file. Also note that compared to the original *fix ttm*,
+it uses use a volumetric specific heat, :math:`C_\mathrm{vol}` , which
 represents the product of :math:`C_e \rho_e`.
 
-:ref:`(Baer) <Baer>` defined :math:`\kappa_\mathrm{eff}` as an effective 
-electronic thermal conductivity when two adjacent TTM cells (denoted by 
+:ref:`(Baer) <Baer>` defined :math:`\kappa_\mathrm{eff}` as an effective
+electronic thermal conductivity when two adjacent TTM cells (denoted by
 the subscripts *a* and *b*) have different conductivities as:
 
 .. math::
@@ -407,22 +407,22 @@ the subscripts *a* and *b*) have different conductivities as:
   \kappa_\mathrm{eff} = \frac{2 \kappa_a \kappa_b}{\kappa_a + \kappa_b}
 
 The current fix *ttm/thermal* implementation allows TTM simulations with
-TTM cells that do not contain electrons (vacuum or insulators). Similar 
-to *ttm/mod*, the absence of electrons is defined as the grid cells with 
-zero electronic temperature.The numerical scheme does not allow energy 
+TTM cells that do not contain electrons (vacuum or insulators). Similar
+to *ttm/mod*, the absence of electrons is defined as the grid cells with
+zero electronic temperature.The numerical scheme does not allow energy
 exchange with such cells.
 
 
-The fix *ttm/thermal* parameter file *properties_file* uses a similar syntax 
-as the keyword *infile*. The file is read in line by line and each ttm cell's 
-properties are set. Comment lines are allowed and each line should have 
+The fix *ttm/thermal* parameter file *properties_file* uses a similar syntax
+as the keyword *infile*. The file is read in line by line and each ttm cell's
+properties are set. Comment lines are allowed and each line should have
 properties listed in the order:
 
 .. parsed-literal::
 
    ix iy iz C_vol kappa_e gamma_p eta
 
-the grid must match the one declared in the fix and all grid points must have 
+the grid must match the one declared in the fix and all grid points must have
 all properties set or *ttm/thermal* will exit with an error.
 
 ----------
@@ -430,8 +430,8 @@ all properties set or *ttm/thermal* will exit with an error.
 Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-The fix ttm, fix ttm/mod, and fix ttm/thermal commands write the state 
-of the electronic subsystem and the energy exchange between the subsystems 
+The fix ttm, fix ttm/mod, and fix ttm/thermal commands write the state
+of the electronic subsystem and the energy exchange between the subsystems
 to :doc:`binary restart files <restart>`.  The fix ttm/grid command does
 not yet support writing of its distributed grid to a restart file.
 
