@@ -123,6 +123,8 @@ expensive computationally than fix *ttm* because it treats the thermal
 diffusion equation as non-linear.  More details on fix *ttm/mod* are
 given below.
 
+.. versionadded:: TBD
+
 Fix *ttm/thermal* allows for electronic properties to be assigned
 independently to each TTM grid point and supports external heat sources
 to the electronic subsystem. More details on fix *ttm/thermal* are
