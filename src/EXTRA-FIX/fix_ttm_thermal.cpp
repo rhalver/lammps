@@ -168,7 +168,7 @@ FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
 FixTTMThermal::~FixTTMThermal()
 {
   delete[] infile;
-  delete[] e_propert_file;
+  delete[] e_property_file;
 
   delete random;
 
