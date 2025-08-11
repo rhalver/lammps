@@ -393,7 +393,7 @@ have been removed:
   g_p (T_e - T_a) + \eta s
 
 where :math:`s` is the applied heating power density and :math:`\eta` is 
-the absorption efficency (0-1) defined for each ttm grid cell in the 
+the absorption efficiency (0-1) defined for each ttm grid cell in the 
 *properties.in* file. Also note that compared to the original *fix ttm*, 
 it uses use a volumetric specific heat, :math:`C_\mathrm{vol}` , which 
 represents the product of :math:`C_e \rho_e`.
