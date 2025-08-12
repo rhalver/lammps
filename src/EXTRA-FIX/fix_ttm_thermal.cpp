@@ -328,7 +328,7 @@ void FixTTMThermal::post_force(int /*vflag*/)
 
       gamma1 = gfactor1[type[i]];
       gamma2 = gfactor2[type[i]] * tsqrt;
-      if (T_electron[iz][iy][ix] > 1e-5) {
+      if (T_electron[iz][iy][ix] > 0) {
                         flangevin[i][0] = gamma1*v[i][0] + gamma2*(random->uniform()-0.5);
                         flangevin[i][1] = gamma1*v[i][1] + gamma2*(random->uniform()-0.5);
                         flangevin[i][2] = gamma1*v[i][2] + gamma2*(random->uniform()-0.5);
@@ -455,46 +455,48 @@ void FixTTMThermal::end_of_step()
           if (yleft == -1) yleft = nygrid - 1;
           if (zleft == -1) zleft = nzgrid - 1;
 
-                  // Initialize flags for vacuum
-                  int left = 1;
-                  int right =1;
-                  int in = 1;
-                  int out = 1;
-                  int up = 1;
-                  int down = 1;
+          // Initialize flags for vacuum
+          int left = 1;
+          int right =1;
+          int in = 1;
+          int out = 1;
+          int up = 1;
+          int down = 1;
 
-                  // Set flags to 0 if vaccum
-                  if (T_electron[iz][iy][xleft] < 1e-5) left = 0;
-                  if (T_electron[iz][iy][xright] < 1e-5) right = 0;
-                  if (T_electron[iz][yright][ix] < 1e-5) in = 0;
-                  if (T_electron[iz][yleft][ix] < 1e-5) out = 0;
-                  if (T_electron[zright][iy][ix] < 1e-5) up = 0;
-                  if (T_electron[zleft][iy][ix] < 1e-5) down = 0;
+          // Set flags to 0 if vacuum
+          if (T_electron[iz][iy][xleft] == 0) left = 0;
+          if (T_electron[iz][iy][xright] == 0) right = 0;
+          if (T_electron[iz][yright][ix] == 0) in = 0;
+          if (T_electron[iz][yleft][ix] == 0) out = 0;
+          if (T_electron[zright][iy][ix] == 0) up = 0;
+          if (T_electron[zleft][iy][ix] == 0) down = 0;
 
-                  if (T_electron[iz][iy][ix] > 1e-5) {
-          T_electron[iz][iy][ix] =
-            T_electron_old[iz][iy][ix] + inner_dt/c_e_grid[iz][iy][ix]*(
-                        (safe_effective_kappa(k_e_grid[iz][iy][xleft],k_e_grid[iz][iy][ix]))*
-                        (T_electron_old[iz][iy][xleft]-T_electron_old[iz][iy][ix])/dx/dx*left +
+          if (T_electron[iz][iy][ix] > 0) {
+            T_electron[iz][iy][ix] =
+              T_electron_old[iz][iy][ix] + 
+              inner_dt/c_e_grid[iz][iy][ix] *
+              ((safe_effective_kappa(k_e_grid[iz][iy][xleft],k_e_grid[iz][iy][ix]))*
+               (T_electron_old[iz][iy][xleft]-T_electron_old[iz][iy][ix])/dx/dx*left +
 
-                        (safe_effective_kappa(k_e_grid[iz][iy][xright],k_e_grid[iz][iy][ix]))*
-                        (T_electron_old[iz][iy][xright]-T_electron_old[iz][iy][ix])/dx/dx*right +
+               (safe_effective_kappa(k_e_grid[iz][iy][xright],k_e_grid[iz][iy][ix]))*
+               (T_electron_old[iz][iy][xright]-T_electron_old[iz][iy][ix])/dx/dx*right +
 
-                        (safe_effective_kappa(k_e_grid[iz][yleft][ix],k_e_grid[iz][iy][ix]))*
-                        (T_electron_old[iz][yleft][ix]-T_electron_old[iz][iy][ix])/dy/dy*out +
+               (safe_effective_kappa(k_e_grid[iz][yleft][ix],k_e_grid[iz][iy][ix]))*
+               (T_electron_old[iz][yleft][ix]-T_electron_old[iz][iy][ix])/dy/dy*out +
 
-                        (safe_effective_kappa(k_e_grid[iz][yright][ix],k_e_grid[iz][iy][ix]))*
-                        (T_electron_old[iz][yright][ix]-T_electron_old[iz][iy][ix])/dy/dy*in +
+               (safe_effective_kappa(k_e_grid[iz][yright][ix],k_e_grid[iz][iy][ix]))*
+               (T_electron_old[iz][yright][ix]-T_electron_old[iz][iy][ix])/dy/dy*in +
 
-                        (safe_effective_kappa(k_e_grid[zleft][iy][ix],k_e_grid[iz][iy][ix]))*
-                        (T_electron_old[zleft][iy][ix]-T_electron_old[iz][iy][ix])/dz/dz*down +
+               (safe_effective_kappa(k_e_grid[zleft][iy][ix],k_e_grid[iz][iy][ix]))*
+               (T_electron_old[zleft][iy][ix]-T_electron_old[iz][iy][ix])/dz/dz*down +
 
-                        (safe_effective_kappa(k_e_grid[zright][iy][ix],k_e_grid[iz][iy][ix]))*
-                        (T_electron_old[zright][iy][ix]-T_electron_old[iz][iy][ix])/dz/dz*up
+               (safe_effective_kappa(k_e_grid[zright][iy][ix],k_e_grid[iz][iy][ix]))*
+               (T_electron_old[zright][iy][ix]-T_electron_old[iz][iy][ix])/dz/dz*up
 
-                        -(net_energy_transfer_all[iz][iy][ix])/(del_vol)
-                        +(inductive_power*inductive_response_grid[iz][iy][ix]));}
-                }
+               -(net_energy_transfer_all[iz][iy][ix])/(del_vol)
+               +(inductive_power*inductive_response_grid[iz][iy][ix]));
+          }
+        }
 
   }
 
@@ -516,7 +518,7 @@ void FixTTMThermal::read_electron_properties(const std::string &filename)
     memory->create(prop_initial_set,nzgrid,nygrid,nxgrid,"ttm:prop_initial_set");
     memset(&prop_initial_set[0][0][0],0,ngridtotal*sizeof(int));
 
-    // read initial electron temperature values from file
+    // read electron properties from file
     bigint nread = 0;
 
     try {
@@ -811,10 +813,8 @@ double FixTTMThermal::compute_vector(int n)
             T_electron[iz][iy][ix]*c_e_grid[iz][iy][ix]*del_vol;
           transfer_energy +=
             net_energy_transfer_all[iz][iy][ix]*update->dt;
-          //printf("TRANSFER %d %d %d %g\n",ix,iy,iz,transfer_energy);
         }
 
-    //printf("TRANSFER %g\n",transfer_energy);
 
     outflag = 1;
   }
