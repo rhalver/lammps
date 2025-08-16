@@ -169,14 +169,16 @@ class FixBondReact : public Fix {
 
   int nedge, nequivalent, nchiral;                         // # edge, equivalent atoms in mapping file
   int ndelete, ncreate;                                    // # atoms to delete, create
-  int avail_guesses;                                       // num of restore points available
-  std::vector<int> guess_branch;                           // used when there is more than two choices when guessing
 
-  struct StatePoint {
-    int pion, neigh, trace, glove_counter;
-    std::vector<tagint> glove, pioneer_count, pioneers;
+  struct Superimpose {
+    int avail_guesses;                                     // num of restore points available
+    std::vector<int> guess_branch;                         // used when there is more than two choices when guessing
+    struct StatePoint {
+      int pion, neigh, trace, glove_counter;
+      std::vector<tagint> glove, pioneer_count, pioneers;
+    } sp;
   };
-  std::vector<StatePoint> restore_pts;
+  std::vector<Superimpose::StatePoint> restore_pts;
 
   int **nxspecial;                                         // full number of 1-4 neighbors
   tagint **xspecial;                                       // full 1-4 neighbor list
@@ -205,20 +207,20 @@ class FixBondReact : public Fix {
   void readID(char *, Reaction::Constraint &, Reaction &, int);
 
   void superimpose_algorithm();
-  void make_a_guess(Reaction &, StatePoint &);
-  void neighbor_loop(Reaction &, StatePoint &);
-  void check_a_neighbor(Reaction &, StatePoint &);
-  void crosscheck_the_neighbor(Reaction &, StatePoint &);
-  void inner_crosscheck_loop(Reaction &, StatePoint &);
-  int ring_check(Reaction &, std::vector<tagint>);
-  int check_constraints(Reaction &, std::vector<tagint>);
-  void get_IDcoords(Reaction::Constraint::IDType, int, double *, Molecule *, std::vector<tagint>);
-  double get_temperature(std::vector<tagint>);
-  double get_totalcharge(Reaction &, std::vector<tagint>);
+  void make_a_guess(Superimpose &, Reaction &);
+  void neighbor_loop(Superimpose &, Reaction &);
+  void check_a_neighbor(Superimpose &, Reaction &);
+  void crosscheck_the_neighbor(Superimpose &, Reaction &);
+  void inner_crosscheck_loop(Superimpose &, Reaction &);
+  int ring_check(Reaction &, std::vector<tagint> &);
+  int check_constraints(Reaction &, std::vector<tagint> &);
+  void get_IDcoords(Reaction::Constraint::IDType, int, double *, Molecule *, std::vector<tagint> &);
+  double get_temperature(std::vector<tagint> &);
+  double get_totalcharge(Reaction &, std::vector<tagint> &);
   void customvarnames();                                   // get per-atom variables names used by custom constraint
   void get_customvars();                                   // evaluate local values for variables names used by custom constraint
-  bool custom_constraint(const std::string &, Reaction &, std::vector<tagint>);
-  double rxnfunction(const std::string &, const std::string &, const std::string &, Molecule *, std::vector<tagint>);
+  bool custom_constraint(const std::string &, Reaction &, std::vector<tagint> &);
+  double rxnfunction(const std::string &, const std::string &, const std::string &, Molecule *, std::vector<tagint> &);
   void get_atoms2bond(int);
   int get_chirality(double[12]);                           // get handedness given an ordered set of coordinates
 

@@ -556,13 +556,8 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   my_num_mega = 0;
   local_num_mega = 0;
   ghostly_num_mega = 0;
-
-  // zero out stats
   global_megasize = 0;
-  avail_guesses = 0;
-  guess_branch.resize(MAXGUESS, 0);
   global_mega_glove = nullptr;
-
   custom_exclude_flag = 0;
 
   // used to store restart info
@@ -1156,7 +1151,11 @@ void FixBondReact::superimpose_algorithm()
   // glove: global IDs. index indicates is pre-reaction ID-1, value is mapped sim atom ID
   // glove_counter: used to determine when to terminate Superimpose Algorithm
 
-  StatePoint sp;
+  Superimpose super;
+  Superimpose::StatePoint &sp = super.sp;
+  int &avail_guesses = super.avail_guesses;
+  std::vector<int> &guess_branch = super.guess_branch;
+
   sp.glove.resize(max_natoms);
   sp.pioneers.resize(max_natoms);
   sp.pioneer_count.resize(max_natoms);
@@ -1236,7 +1235,7 @@ void FixBondReact::superimpose_algorithm()
         // due to use of restore points, 'pion' index can change in loop
         for (sp.pion = 0; sp.pion < rxn.reactant->natoms; sp.pion++) {
           if (sp.pioneers[sp.pion] || status == Status::GUESSFAIL) {
-            make_a_guess(rxn, sp);
+            make_a_guess(super, rxn);
             if (status == Status::ACCEPT || status == Status::REJECT) break;
           }
         }
@@ -1416,8 +1415,12 @@ void FixBondReact::superimpose_algorithm()
   has failed: check for available restore points.
 ------------------------------------------------------------------------- */
 
-void FixBondReact::make_a_guess(Reaction &rxn, StatePoint &sp)
+void FixBondReact::make_a_guess(Superimpose &super, Reaction &rxn)
 {
+  Superimpose::StatePoint &sp = super.sp;
+  int &avail_guesses = super.avail_guesses;
+  std::vector<int> &guess_branch = super.guess_branch;
+
   int *type = atom->type;
   int nfirst_neighs = rxn.reactant->nspecial[sp.pion][0];
 
@@ -1443,7 +1446,7 @@ void FixBondReact::make_a_guess(Reaction &rxn, StatePoint &sp)
     sp.trace = restore_pts[avail_guesses-1].trace;
     sp.glove_counter = restore_pts[avail_guesses-1].glove_counter;
     status = Status::RESTORE;
-    neighbor_loop(rxn, sp);
+    neighbor_loop(super, rxn);
     if (status != Status::PROCEED) return;
   }
 
@@ -1510,7 +1513,7 @@ void FixBondReact::make_a_guess(Reaction &rxn, StatePoint &sp)
   delete[] lcl_ntypes;
 
   // okay everything seems to be in order. let's assign some ID pairs!!!
-  neighbor_loop(rxn, sp);
+  neighbor_loop(super, rxn);
 }
 
 /* ----------------------------------------------------------------------
@@ -1518,18 +1521,22 @@ void FixBondReact::make_a_guess(Reaction &rxn, StatePoint &sp)
   Prepare appropriately if we are in Restore Mode.
 ------------------------------------------------------------------------- */
 
-void FixBondReact::neighbor_loop(Reaction &rxn, StatePoint &sp)
+void FixBondReact::neighbor_loop(Superimpose &super, Reaction &rxn)
 {
+  Superimpose::StatePoint &sp = super.sp;
+  int &avail_guesses = super.avail_guesses;
+  std::vector<int> &guess_branch = super.guess_branch;
+
   int nfirst_neighs = rxn.reactant->nspecial[sp.pion][0];
 
   if (status == Status::RESTORE) {
-    check_a_neighbor(rxn, sp);
+    check_a_neighbor(super, rxn);
     return;
   }
 
   for (sp.neigh = 0; sp.neigh < nfirst_neighs; sp.neigh++) {
     if (sp.glove[(int)rxn.reactant->special[sp.pion][sp.neigh]-1] == 0) {
-      check_a_neighbor(rxn, sp);
+      check_a_neighbor(super, rxn);
     }
   }
   // status should still = PROCEED
@@ -1540,8 +1547,12 @@ void FixBondReact::neighbor_loop(Reaction &rxn, StatePoint &sp)
   without guessing. If so, do it! If not, call crosscheck_the_nieghbor().
 ------------------------------------------------------------------------- */
 
-void FixBondReact::check_a_neighbor(Reaction &rxn, StatePoint &sp)
+void FixBondReact::check_a_neighbor(Superimpose &super, Reaction &rxn)
 {
+  Superimpose::StatePoint &sp = super.sp;
+  int &avail_guesses = super.avail_guesses;
+  std::vector<int> &guess_branch = super.guess_branch;
+
   int *type = atom->type;
   int nfirst_neighs = rxn.reactant->nspecial[sp.pion][0];
 
@@ -1591,7 +1602,7 @@ void FixBondReact::check_a_neighbor(Reaction &rxn, StatePoint &sp)
     }
   }
 
-  crosscheck_the_neighbor(rxn, sp);
+  crosscheck_the_neighbor(super, rxn);
   if (status != Status::PROCEED) {
     if (status == Status::CONTINUE)
       status = Status::PROCEED;
@@ -1646,12 +1657,16 @@ void FixBondReact::check_a_neighbor(Reaction &rxn, StatePoint &sp)
   guess by recording a restore point.
 ------------------------------------------------------------------------- */
 
-void FixBondReact::crosscheck_the_neighbor(Reaction &rxn, StatePoint &sp)
+void FixBondReact::crosscheck_the_neighbor(Superimpose &super, Reaction &rxn)
 {
+  Superimpose::StatePoint &sp = super.sp;
+  int &avail_guesses = super.avail_guesses;
+  std::vector<int> &guess_branch = super.guess_branch;
+
   int nfirst_neighs = rxn.reactant->nspecial[sp.pion][0];
 
   if (status == Status::RESTORE) {
-    inner_crosscheck_loop(rxn, sp);
+    inner_crosscheck_loop(super, rxn);
     return;
   }
 
@@ -1675,7 +1690,7 @@ void FixBondReact::crosscheck_the_neighbor(Reaction &rxn, StatePoint &sp)
       restore_pts[avail_guesses-1].trace = sp.trace;
       restore_pts[avail_guesses-1].glove_counter = sp.glove_counter;
 
-      inner_crosscheck_loop(rxn, sp);
+      inner_crosscheck_loop(super, rxn);
       return;
     }
   }
@@ -1687,8 +1702,12 @@ void FixBondReact::crosscheck_the_neighbor(Reaction &rxn, StatePoint &sp)
   for this guess, keep track of these.
 ------------------------------------------------------------------------- */
 
-void FixBondReact::inner_crosscheck_loop(Reaction &rxn, StatePoint &sp)
+void FixBondReact::inner_crosscheck_loop(Superimpose &super, Reaction &rxn)
 {
+  Superimpose::StatePoint &sp = super.sp;
+  int &avail_guesses = super.avail_guesses;
+  std::vector<int> &guess_branch = super.guess_branch;
+
   int *type = atom->type;
   // arbitrarily limited to 5 identical first neighbors
   tagint tag_choices[5];
@@ -1765,7 +1784,7 @@ void FixBondReact::inner_crosscheck_loop(Reaction &rxn, StatePoint &sp)
   Necessary for certain ringed structures
 ------------------------------------------------------------------------- */
 
-int FixBondReact::ring_check(Reaction &rxn, std::vector<tagint> glove)
+int FixBondReact::ring_check(Reaction &rxn, std::vector<tagint> &glove)
 {
   // ring_check can be made more efficient by re-introducing 'frozen' atoms
   // 'frozen' atoms have been assigned and also are no longer pioneers
@@ -1797,7 +1816,7 @@ int FixBondReact::ring_check(Reaction &rxn, std::vector<tagint> glove)
 evaluate constraints: return 0 if any aren't satisfied
 ------------------------------------------------------------------------- */
 
-int FixBondReact::check_constraints(Reaction &rxn, std::vector<tagint> glove)
+int FixBondReact::check_constraints(Reaction &rxn, std::vector<tagint> &glove)
 {
   double x1[3],x2[3],x3[3],x4[3];
   double delx,dely,delz,rsq;
@@ -1968,7 +1987,7 @@ int FixBondReact::check_constraints(Reaction &rxn, std::vector<tagint> glove)
       memory->destroy(xmobile);
       if (rmsd > constraint.par[0]) constraint.satisfied = false;
     } else if (constraint.type == Reaction::Constraint::Type::CUSTOM) {
-      constraint.satisfied = custom_constraint(constraint.str, rxn);
+      constraint.satisfied = custom_constraint(constraint.str, rxn, glove);
     }
   }
 
@@ -2016,7 +2035,7 @@ fragment: given pre-reacted molID (reactant) and fragID,
 ------------------------------------------------------------------------- */
 
 void FixBondReact::get_IDcoords(Reaction::Constraint::IDType idtype, int myID,
-                                double *center, Molecule *mol, std::vector<tagint> glove)
+                                double *center, Molecule *mol, std::vector<tagint> &glove)
 {
   double **x = atom->x;
   if (idtype == Reaction::Constraint::IDType::ATOM) {
@@ -2049,7 +2068,7 @@ void FixBondReact::get_IDcoords(Reaction::Constraint::IDType idtype, int myID,
 compute local temperature: average over all atoms in reaction template
 ------------------------------------------------------------------------- */
 
-double FixBondReact::get_temperature(std::vector<tagint> glove)
+double FixBondReact::get_temperature(std::vector<tagint> &glove)
 {
   int i,ilocal;
   double adof = domain->dimension;
@@ -2086,7 +2105,7 @@ double FixBondReact::get_temperature(std::vector<tagint> glove)
 compute sum of partial charges in rxn site, for updated atoms
 ------------------------------------------------------------------------- */
 
-double FixBondReact::get_totalcharge(Reaction &rxn, std::vector<tagint> glove)
+double FixBondReact::get_totalcharge(Reaction &rxn, std::vector<tagint> &glove)
 {
   int j,jj;
   double *q = atom->q;
@@ -2199,7 +2218,7 @@ void FixBondReact::get_customvars()
 evaulate expression for variable constraint
 ------------------------------------------------------------------------- */
 
-bool FixBondReact::custom_constraint(const std::string& varstr, Reaction &rxn, std::vector<tagint> glove)
+bool FixBondReact::custom_constraint(const std::string& varstr, Reaction &rxn, std::vector<tagint> &glove)
 {
   std::size_t pos,pos1,pos2,pos3;
   int irxnfunc;
@@ -2248,7 +2267,7 @@ currently three 'rxn' functions: rxnsum, rxnave, and rxnbond
 ------------------------------------------------------------------------- */
 
 double FixBondReact::rxnfunction(const std::string& rxnfunc, const std::string& varid,
-                                 const std::string& fragid, Molecule *mol, std::vector<tagint> glove)
+                                 const std::string& fragid, Molecule *mol, std::vector<tagint> &glove)
 {
   int ifrag = -1;
   if (fragid != "all") {
