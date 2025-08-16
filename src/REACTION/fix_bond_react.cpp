@@ -1837,7 +1837,7 @@ int FixBondReact::check_constraints(Reaction &rxn, std::vector<tagint> &glove)
       delz = x1[2] - x2[2];
       domain->minimum_image(FLERR, delx,dely,delz); // ghost location fix
       rsq = delx*delx + dely*dely + delz*delz;
-      if (rsq < constraint.par[0] || rsq > constraint.par[1]) constraint.satisfied = false;
+      if (rsq < constraint.distance.rminsq || rsq > constraint.distance.rmaxsq) constraint.satisfied = false;
     } else if (constraint.type == Reaction::Constraint::Type::ANGLE) {
       get_IDcoords(constraint.idtypes[0], constraint.ids[0], x1, rxn.reactant, glove);
       get_IDcoords(constraint.idtypes[1], constraint.ids[1], x2, rxn.reactant, glove);
@@ -1864,7 +1864,7 @@ int FixBondReact::check_constraints(Reaction &rxn, std::vector<tagint> &glove)
       c /= r1*r2;
       if (c > 1.0) c = 1.0;
       if (c < -1.0) c = -1.0;
-      if (acos(c) < constraint.par[0] || acos(c) > constraint.par[1]) constraint.satisfied = false;
+      if (acos(c) < constraint.angle.amin || acos(c) > constraint.angle.amax) constraint.satisfied = false;
     } else if (constraint.type == Reaction::Constraint::Type::DIHEDRAL) {
       // phi calculation from dihedral style harmonic
       get_IDcoords(constraint.idtypes[0], constraint.ids[0], x1, rxn.reactant, glove);
@@ -1917,15 +1917,15 @@ int FixBondReact::check_constraints(Reaction &rxn, std::vector<tagint> &glove)
       phi = atan2(s,c);
 
       ANDgate = 0;
-      if (constraint.par[0] < constraint.par[1]) {
-        if (phi > constraint.par[0] && phi < constraint.par[1]) ANDgate = 1;
+      if (constraint.dihedral.amin < constraint.dihedral.amax) {
+        if (phi > constraint.dihedral.amin && phi < constraint.dihedral.amax) ANDgate = 1;
       } else {
-        if (phi > constraint.par[0] || phi < constraint.par[1]) ANDgate = 1;
+        if (phi > constraint.dihedral.amin || phi < constraint.dihedral.amax) ANDgate = 1;
       }
-      if (constraint.par[2] < constraint.par[3]) {
-        if (phi > constraint.par[2] && phi < constraint.par[3]) ANDgate = 1;
+      if (constraint.diheral.amin2 < constraint.dihedral.amax2) {
+        if (phi > constraint.dihedral.amin2 && phi < constraint.dihedral.amax2) ANDgate = 1;
       } else {
-        if (phi > constraint.par[2] || phi < constraint.par[3]) ANDgate = 1;
+        if (phi > constraint.dihedral.amin2 || phi < constraint.dihedral.amax2) ANDgate = 1;
       }
       if (ANDgate != 1) constraint.satisfied = false;
     } else if (constraint.type == Reaction::Constraint::Type::ARRHENIUS) {
@@ -1980,7 +1980,7 @@ int FixBondReact::check_constraints(Reaction &rxn, std::vector<tagint> &glove)
       double rmsd = superposer.Superpose(xfrozen, xmobile);
       memory->destroy(xfrozen);
       memory->destroy(xmobile);
-      if (rmsd > constraint.par[0]) constraint.satisfied = false;
+      if (rmsd > constraint.RMSD.RMSDmax) constraint.satisfied = false;
     } else if (constraint.type == Reaction::Constraint::Type::CUSTOM) {
       constraint.satisfied = custom_constraint(constraint.str, rxn, glove);
     }
@@ -4167,8 +4167,8 @@ void FixBondReact::ReadConstraints(char *line, Reaction &rxn)
       readID(strargs[0], constraint, rxn, 0);
       readID(strargs[1], constraint, rxn, 1);
       // cutoffs
-      constraint.par[0] = tmp[0]*tmp[0]; // using square of distance
-      constraint.par[1] = tmp[1]*tmp[1];
+      constraint.distance.rminsq = tmp[0]*tmp[0]; // using square of distance
+      constraint.distance.rmaxsq = tmp[1]*tmp[1];
     } else if (strcmp(constraint_type,"angle") == 0) {
       constraint.type = Reaction::Constraint::Type::ANGLE;
       rv = sscanf(line,"%*s %s %s %s %lg %lg",strargs[0],strargs[1],strargs[2],&tmp[0],&tmp[1]);
@@ -4176,8 +4176,8 @@ void FixBondReact::ReadConstraints(char *line, Reaction &rxn)
       readID(strargs[0], constraint, rxn, 0);
       readID(strargs[1], constraint, rxn, 1);
       readID(strargs[2], constraint, rxn, 2);
-      constraint.par[0] = tmp[0]/180.0 * MY_PI;
-      constraint.par[1] = tmp[1]/180.0 * MY_PI;
+      constraint.angle.amin = tmp[0]/180.0 * MY_PI;
+      constraint.angle.amax = tmp[1]/180.0 * MY_PI;
     } else if (strcmp(constraint_type,"dihedral") == 0) {
       constraint.type = Reaction::Constraint::Type::DIHEDRAL;
       tmp[2] = 181.0; // impossible range
@@ -4189,10 +4189,10 @@ void FixBondReact::ReadConstraints(char *line, Reaction &rxn)
       readID(strargs[1], constraint, rxn, 1);
       readID(strargs[2], constraint, rxn, 2);
       readID(strargs[3], constraint, rxn, 3);
-      constraint.par[0] = tmp[0]/180.0 * MY_PI;
-      constraint.par[1] = tmp[1]/180.0 * MY_PI;
-      constraint.par[2] = tmp[2]/180.0 * MY_PI;
-      constraint.par[3] = tmp[3]/180.0 * MY_PI;
+      constraint.dihedral.amin = tmp[0]/180.0 * MY_PI;
+      constraint.dihedral.amax = tmp[1]/180.0 * MY_PI;
+      constraint.dihedral.amin2 = tmp[2]/180.0 * MY_PI;
+      constraint.dihedral.amax2 = tmp[3]/180.0 * MY_PI;
     } else if (strcmp(constraint_type,"arrhenius") == 0) {
       constraint.type = Reaction::Constraint::Type::ARRHENIUS;
       rv = sscanf(line,"%*s %lg %lg %lg %lg",&tmp[0],&tmp[1],&tmp[2],&tmp[3]);
@@ -4206,7 +4206,7 @@ void FixBondReact::ReadConstraints(char *line, Reaction &rxn)
       strcpy(strargs[0],"0");
       rv = sscanf(line,"%*s %lg %s",&tmp[0],strargs[0]);
       if (rv != 1 && rv != 2) error->one(FLERR, "RMSD constraint is incorrectly formatted");
-      constraint.par[0] = tmp[0]; // RMSDmax
+      constraint.RMSD.RMSDmax = tmp[0];
       constraint.ids[0] = -1; // optional molecule fragment
       if (isalpha(strargs[0][0])) {
         int ifragment = rxn.reactant->findfragment(strargs[0]);

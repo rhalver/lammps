@@ -125,8 +125,11 @@ class FixBondReact : public Fix {
       static constexpr int MAXCONIDS = 4;                  // max # of IDs used by any constraint
       std::array<int, MAXCONIDS> ids;
       std::array<IDType, MAXCONIDS> idtypes{};
+      struct Distance { double rminsq, rmaxsq; } distance;
+      struct Angle { double amin, amax; } angle;
+      struct Dihedral { double amin, amax, amin2, amax2; } dihedral;
+      struct RMSD { double RMSDmax; } rmsd;
       struct Arrhenius { double A, n, E_a, seed; } arrhenius;
-      std::array<double, 5> par;                           // max # of constraint parameters = 5
       std::string str;
       bool satisfied;
       class RanMars *rrhandom;                             // random number for Arrhenius constraint
