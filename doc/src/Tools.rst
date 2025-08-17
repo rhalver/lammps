@@ -15,7 +15,7 @@ Sandia which provides tools for doing setup, analysis, plotting, and
 visualization for LAMMPS simulations.
 
 .. _lws: https://www.lammps.org
-.. _pizza: https://lammps.github.io/pizza
+.. _pizza: https://lammps.github.io/pizza/
 .. _python: https://www.python.org
 
 Additional tools included in the LAMMPS distribution are described on
@@ -600,21 +600,23 @@ acceleration is available and enabled by default.
 Prerequisites and portability
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-LAMMPS-GUI is programmed in C++ based on the C++11 standard and using
-the `Qt GUI framework <https://www.qt.io/product/framework>`_.
-Currently, Qt version 5.12 or later is required; Qt 5.15LTS is
-recommended; support for Qt version 6.x is available.  Building LAMMPS
-with CMake is required.
+.. versionchanged:: TBD
+
+LAMMPS-GUI version 1.7 and later is programmed in C++ based on the C++17
+standard and using the `Qt GUI framework
+<https://www.qt.io/product/framework>`_.  Currently, Qt version 5.15LTS
+or later is required; support for Qt version 6.x is available.  Building
+LAMMPS with CMake is required.
 
 The LAMMPS-GUI has been successfully compiled and tested on:
 
-- Ubuntu Linux 20.04LTS x86_64 using GCC 9, Qt version 5.12
-- Fedora Linux 41 x86\_64 using GCC 14 and Clang 17, Qt version 5.15LTS
-- Fedora Linux 41 x86\_64 using GCC 14, Qt version 6.8
-- Apple macOS 12 (Monterey) and macOS 13 (Ventura) with Xcode on arm64 and x86\_64, Qt version 5.15LTS
-- Windows 10 and 11 x86_64 with Visual Studio 2022 and Visual C++ 14.36, Qt version 5.15LTS
+- Ubuntu Linux 22.04LTS x86_64 using GCC 11, Qt version 5.15
+- Fedora Linux 41 x86\_64 using GCC 14 and Clang 17, Qt version 5.15
+- Fedora Linux 42 x86\_64 using GCC 15, Qt version 6.9
+- Apple macOS 12 (Monterey) and macOS 13 (Ventura) with Xcode on arm64 and x86\_64, Qt version 5.15
+- Windows 10 and 11 x86_64 with Visual Studio 2022 and Visual C++ 14.36, Qt version 5.15
 - Windows 10 and 11 x86_64 with Visual Studio 2022 and Visual C++ 14.40, Qt version 6.7
-- Windows 10 and 11 x86_64 with MinGW / GCC 10.0 cross-compiler on Fedora 38, Qt version 5.15LTS
+- Windows 10 and 11 x86_64 with MinGW / GCC 14.2 cross-compiler on Fedora 42, Qt version 5.15
 
 .. _lammps_gui_install:
 
@@ -623,7 +625,7 @@ Pre-compiled executables
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Pre-compiled LAMMPS executable packages that include the GUI are
-currently available from https://download.lammps.org/static or
+currently available from https://download.lammps.org/static/ or
 https://github.com/lammps/lammps/releases.  For Windows, you need to
 download and then run the application installer.  For macOS you download
 and mount the disk image and then drag the application bundle to the
