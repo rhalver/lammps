@@ -758,6 +758,9 @@ void Output::write_molecule_json(FILE *fp, int json_level, int printflag, int *i
     indent.resize(--json_level*tab, ' ');
     fprintf(fp, "%s}\n", indent.c_str());
   }
+  #if !defined(MPI_STUBS)
+  MPI_Type_free(&ParticleStructType);
+  #endif
 }
 
 /* ----------------------------------------------------------------------
