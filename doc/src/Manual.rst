@@ -96,14 +96,13 @@ User Guide
    Install
    Build
    Run_head
+   Errors
    Commands
-   Packages
    Speed
+   Packages
+   Tools
    Howto
    Examples
-   Tools
-   Errors
-
 
 .. _programmer_documentation:
 
