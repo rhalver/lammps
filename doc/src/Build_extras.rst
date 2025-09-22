@@ -666,7 +666,7 @@ They must be specified in uppercase.
       - GPU
       - Intel GPU DG2
 
-This list was last updated for version 4.7.0 of the Kokkos library.
+This list was last updated for version 4.7.1 of the Kokkos library.
 
 .. tabs::
 
