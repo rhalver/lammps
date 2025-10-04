@@ -53,8 +53,8 @@ static constexpr int IDMAX = (1024 * 1024);
 ComputeChunkAtom::ComputeChunkAtom(LAMMPS *lmp, int narg, char **arg) :
     Compute(lmp, narg, arg), chunk_volume_vec(nullptr), coord(nullptr), ichunk(nullptr),
     chunkID(nullptr), cfvid(nullptr), idregion(nullptr), region(nullptr), cchunk(nullptr),
-    fchunk(nullptr), varatom(nullptr), id_fix(nullptr), fixstore(nullptr), lockfix(nullptr),
-    chunk(nullptr), exclude(nullptr)
+    fchunk(nullptr), varatom(nullptr), fixstore(nullptr), lockfix(nullptr), chunk(nullptr),
+    exclude(nullptr)
 {
   if (narg < 4) utils::missing_cmd_args(FLERR, "compute chunk/atom", error);
 
@@ -472,7 +472,6 @@ ComputeChunkAtom::ComputeChunkAtom(LAMMPS *lmp, int narg, char **arg) :
   invoked_setup = -1;
   invoked_ichunk = -1;
 
-  id_fix = nullptr;
   fixstore = nullptr;
 
   maxvar = 0;
@@ -493,8 +492,7 @@ ComputeChunkAtom::~ComputeChunkAtom()
 {
   // check nfix in case all fixes have already been deleted
 
-  if (id_fix && modify->nfix) modify->delete_fix(id_fix);
-  delete[] id_fix;
+  if (id_fix.size() && modify->nfix) modify->delete_fix(id_fix);
 
   memory->destroy(chunk);
   memory->destroy(ichunk);
@@ -583,9 +581,9 @@ void ComputeChunkAtom::init()
   // fixstore initializes all values to 0.0
 
   if ((idsflag == ONCE || lockcount) && !fixstore) {
-    id_fix = utils::strdup(id + std::string("_COMPUTE_STORE"));
     fixstore = dynamic_cast<FixStoreAtom *>(
         modify->add_fix(fmt::format("{} {} STORE/ATOM 1 0 0 1", id_fix, group->names[igroup])));
+    id_fix = std::string(id) + "_COMPUTE_STORE";
   }
 
   if ((idsflag != ONCE && !lockcount) && fixstore) {
