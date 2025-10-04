@@ -567,7 +567,7 @@ void ComputeChunkAtom::init()
   // need to do this if idsflag = ONCE or locks will be used by other commands
   // need to wait until init() so that fix command(s) are in place
   //   they increment lockcount if they lock this compute
-  // fixstore ID = compute-ID + COMPUTE_STORE, fix group = compute group
+  // fixstore ID = compute-ID + COMPUTE_STORE, fix group = all
   // fixstore initializes all values to 0.0
 
   if (((idsflag == ONCE) || ((idsflag == NFREQ) && lockcount)) && !fixstore) {

@@ -24,11 +24,13 @@ using namespace FixConst;
 
 // INTERNAL fix for storing/communicating per-atom values
 // syntax: id group style n1 n2 gflag rflag
+//   group is ignored
 //   N1 = 1, N2 = 0 is per-atom vector, single value per atom
 //   N1 > 1, N2 = 0 is per-atom array, N1 values per atom
 //   N1 > 0, N2 > 0 is per-atom tensor, N1xN2 array per atom
 //   gflag = 0/1, no/yes communicate per-atom values with ghost atoms
 //   rflag = 0/1, no/yes store per-atom values in restart file
+
 
 /* ---------------------------------------------------------------------- */
 
