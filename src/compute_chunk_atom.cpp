@@ -448,16 +448,10 @@ ComputeChunkAtom::ComputeChunkAtom(LAMMPS *lmp, int narg, char **arg) :
   // initialize chunk vector and per-chunk info
 
   nmax = 0;
-  chunk = nullptr;
   nmaxint = -1;
-  ichunk = nullptr;
-  exclude = nullptr;
 
   nchunk = 0;
   chunk_volume_scalar = 1.0;
-  chunk_volume_vec = nullptr;
-  coord = nullptr;
-  chunkID = nullptr;
 
   // computeflag = 1 if this compute might invoke another compute
   // during assign_chunk_ids()
@@ -472,13 +466,9 @@ ComputeChunkAtom::ComputeChunkAtom(LAMMPS *lmp, int narg, char **arg) :
   invoked_setup = -1;
   invoked_ichunk = -1;
 
-  fixstore = nullptr;
-
   maxvar = 0;
-  varatom = nullptr;
 
   lockcount = 0;
-  lockfix = nullptr;
 
   if (which == ArgInfo::MOLECULE)
     molcheck = 1;
