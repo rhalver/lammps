@@ -192,7 +192,8 @@ spring potential:
  E = \epsilon \quad (r - r_c)^2 \qquad r < r_c
 
 For style *wall/harmonic/reversed*, the energy E is given by an attractive-only harmonic
-spring potential of the same form as *wall/harmonic*.
+spring potential of the same form as *wall/harmonic*, 
+as employed for the CMC determination in Barraud et al :ref:`(Barraud) <Barraud>`.
 
 For style *wall/morse*, the energy E is given by a Morse potential:
 
@@ -565,3 +566,7 @@ The option defaults units = lattice, fld = no, and pbc = no.
 
 **(Magda)** Magda, Tirrell, Davis, J Chem Phys, 83, 1888-1901 (1985);
 erratum in JCP 84, 2901 (1986).
+
+.. _Barraud:
+
+**(Barraud)** Barraud, Dalmazzone, Moureta, De Bruin, Creton, Pasquier, Lachet and Nieto-Draghi, Langmuir, 41 (11), 7272-7282 (2025).
