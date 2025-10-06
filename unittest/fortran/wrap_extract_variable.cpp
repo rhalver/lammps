@@ -1,16 +1,14 @@
 // unit tests for extracting compute data from a LAMMPS instance through the
 // Fortran wrapper
 
-#include "lammps.h"
 #include "library.h"
+
 #include "platform.h"
 
 #include <chrono>
 #include <cmath>
-#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <mpi.h>
 #include <string>
 #include <thread>
 
@@ -18,6 +16,11 @@
 
 #define STRINGIFY(val) XSTR(val)
 #define XSTR(val) #val
+
+// forward decl
+namespace LAMMPS_NS {
+class LAMMPS;
+}
 
 // prototypes for Fortran reverse wrapper functions
 extern "C" {
@@ -121,7 +124,7 @@ TEST_F(LAMMPS_extract_variable, loop_pad)
     char str[10];
     char *fstr;
     for (i = 1; i <= 10; i++) {
-        std::sprintf(str, "%02d", i);
+        std::snprintf(str, 10, "%02d", i);
         fstr = f_lammps_extract_variable_loop_pad();
         EXPECT_STREQ(fstr, str);
         std::free(fstr);
@@ -170,7 +173,7 @@ TEST_F(LAMMPS_extract_variable, format)
     char str[16];
     char *fstr;
     for (i = 1; i <= 10; i++) {
-        std::sprintf(str, "%.6G", std::exp(i));
+        std::snprintf(str, 16, "%.6G", std::exp(i));
         fstr = f_lammps_extract_variable_format();
         EXPECT_STREQ(fstr, str);
         std::free(fstr);
@@ -185,7 +188,7 @@ TEST_F(LAMMPS_extract_variable, format_pad)
     char str[16];
     char *fstr;
     for (i = 1; i <= 10; i++) {
-        std::sprintf(str, "%08.6G", std::exp(i));
+        std::snprintf(str, 16, "%08.6G", std::exp(i));
         fstr = f_lammps_extract_variable_format_pad();
         EXPECT_STREQ(fstr, str);
         std::free(fstr);

@@ -21,6 +21,7 @@
 #include "comm.h"
 #include "error.h"
 #include "force.h"
+#include "info.h"
 #include "memory.h"
 #include "neigh_list.h"
 
@@ -32,8 +33,8 @@ using namespace LAMMPS_NS;
 /* ---------------------------------------------------------------------- */
 
 PairPedone::PairPedone(LAMMPS *lmp) :
-    Pair(lmp), d0(nullptr), alpha(nullptr), r0(nullptr), c0(nullptr), pedone1(nullptr),
-    pedone2(nullptr)
+    Pair(lmp), cut(nullptr), d0(nullptr), alpha(nullptr), r0(nullptr), c0(nullptr),
+    pedone1(nullptr), pedone2(nullptr), offset(nullptr)
 {
   writedata = 1;
 }
@@ -189,7 +190,7 @@ void PairPedone::settings(int narg, char **arg)
 
 void PairPedone::coeff(int narg, char **arg)
 {
-  if (narg < 6 || narg > 7) error->all(FLERR, "Incorrect args for pair coefficients");
+  if (narg < 6 || narg > 7) error->all(FLERR, "Incorrect args for pair coefficients" + utils::errorurl(21));
   if (!allocated) allocate();
 
   int ilo, ihi, jlo, jhi;
@@ -217,7 +218,7 @@ void PairPedone::coeff(int narg, char **arg)
     }
   }
 
-  if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
+  if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients" + utils::errorurl(21));
 }
 
 /* ----------------------------------------------------------------------
@@ -226,7 +227,9 @@ void PairPedone::coeff(int narg, char **arg)
 
 double PairPedone::init_one(int i, int j)
 {
-  if (setflag[i][j] == 0) error->all(FLERR, "All pair coeffs are not set");
+  if (setflag[i][j] == 0)
+    error->all(FLERR, Error::NOLASTLINE,
+               "All pair coeffs are not set. Status:\n" + Info::get_pair_coeff_status(lmp));
 
   pedone1[i][j] = 2.0 * d0[i][j] * alpha[i][j];
   pedone2[i][j] = 12.0 * c0[i][j];

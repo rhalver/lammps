@@ -61,6 +61,7 @@ FixIndent::FixIndent(LAMMPS *lmp, int narg, char **arg) :
 
   // read geometry of indenter and optional args
 
+  istyle = NONE;
   int iarg = geometry(narg - 4, &arg[4]) + 4;
   options(narg - iarg, &arg[iarg]);
 
@@ -272,7 +273,7 @@ void FixIndent::post_force(int /*vflag*/)
         delx = x[i][0] - ctr[0];
         dely = x[i][1] - ctr[1];
         delz = x[i][2] - ctr[2];
-        domain->minimum_image(delx, dely, delz);
+        domain->minimum_image(FLERR, delx, dely, delz);
         r = sqrt(delx * delx + dely * dely + delz * delz);
         if (side == OUTSIDE) {
           dr = r - radius;
@@ -312,7 +313,7 @@ void FixIndent::post_force(int /*vflag*/)
       if (mask[i] & groupbit) {
         double del[3] = {x[i][0] - ctr[0], x[i][1] - ctr[1], x[i][2] - ctr[2]};
         del[cdim] = 0;
-        domain->minimum_image(del[0], del[1], del[2]);
+        domain->minimum_image(FLERR, del[0], del[1], del[2]);
         r = sqrt(del[0] * del[0] + del[1] * del[1] + del[2] * del[2]);
         if (side == OUTSIDE) {
           dr = r - radius;
@@ -359,7 +360,7 @@ void FixIndent::post_force(int /*vflag*/)
         delx = x[i][0] - ctr[0];
         dely = x[i][1] - ctr[1];
         delz = x[i][2] - ctr[2];
-        domain->minimum_image(delx, dely, delz);
+        domain->minimum_image(FLERR, delx, dely, delz);
 
         double x0[3] = {delx + ctr[0], dely + ctr[1], delz + ctr[2]};
         r = sqrt(delx * delx + dely * dely + delz * delz);
@@ -474,14 +475,12 @@ int FixIndent::geometry(int narg, char **arg)
 {
   if (narg < 0) utils::missing_cmd_args(FLERR, "fix indent", error);
 
-  istyle = NONE;
   xstr = ystr = zstr = rstr = pstr = nullptr;
   xvalue = yvalue = zvalue = rvalue = pvalue = 0.0;
 
   // sphere
 
   if (strcmp(arg[0], "sphere") == 0) {
-    if (istyle != NONE) error->all(FLERR, "Fix indent requires a single geometry keyword");
     if (5 > narg) utils::missing_cmd_args(FLERR, "fix indent sphere", error);
 
     if (utils::strmatch(arg[1], "^v_")) {
@@ -508,7 +507,6 @@ int FixIndent::geometry(int narg, char **arg)
   // cylinder
 
   if (strcmp(arg[0], "cylinder") == 0) {
-    if (istyle != NONE) error->all(FLERR, "Fix indent requires a single geometry keyword");
     if (5 > narg) utils::missing_cmd_args(FLERR, "fix indent cylinder", error);
 
     if (strcmp(arg[1], "x") == 0) {
@@ -556,7 +554,6 @@ int FixIndent::geometry(int narg, char **arg)
   // cone
 
   if (strcmp(arg[0], "cone") == 0) {
-    if (istyle != NONE) error->all(FLERR, "Fix indent requires a single geometry keyword");
     if (8 > narg) utils::missing_cmd_args(FLERR, "fix indent cone", error);
 
     if (strcmp(arg[1], "x") == 0) {
@@ -619,7 +616,6 @@ int FixIndent::geometry(int narg, char **arg)
   // plane
 
   if (strcmp(arg[0], "plane") == 0) {
-    if (istyle != NONE) error->all(FLERR, "Fix indent requires a single geometry keyword");
     if (4 > narg) utils::missing_cmd_args(FLERR, "fix indent plane", error);
     if (strcmp(arg[1], "x") == 0)
       cdim = 0;
@@ -647,7 +643,7 @@ int FixIndent::geometry(int narg, char **arg)
 
   // invalid istyle arg
 
-  error->all(FLERR, "Unknown fix indent argument: {}", arg[0]);
+  error->all(FLERR, "Unknown fix indent geometry: {}", arg[0]);
 
   return 0;
 }
@@ -704,9 +700,7 @@ bool FixIndent::PointInsideCone(int dir, double *center, double lo, double hi, d
   double dist = sqrt(del[0] * del[0] + del[1] * del[1] + del[2] * del[2]);
   double currentradius = rlo + (x[dir] - lo) * (rhi - rlo) / (hi - lo);
 
-  if (dist > currentradius) return false;
-
-  return true;
+  return dist <= currentradius;
 }
 
 /* ----------------------------------------------------------------------
@@ -761,8 +755,6 @@ void FixIndent::DistanceExteriorPoint(int dir, double *center, double lo, double
   x -= nearest[0];
   y -= nearest[1];
   z -= nearest[2];
-
-  return;
 }
 
 /* ----------------------------------------------------------------------
@@ -816,8 +808,6 @@ void FixIndent::DistanceInteriorPoint(int dir, double *center, double lo, double
     y = point[1];
     z = point[2];
   }
-
-  return;
 }
 
 /* ----------------------------------------------------------------------

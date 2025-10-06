@@ -108,6 +108,7 @@ accelerated styles exist.
 
 * :doc:`none <pair_none>` - turn off pairwise interactions
 * :doc:`hybrid <pair_hybrid>` - multiple styles of pairwise interactions
+* :doc:`hybrid/molecular <pair_hybrid>` - different pair styles for intra- and inter-molecular interactions
 * :doc:`hybrid/overlay <pair_hybrid>` - multiple styles of superposed pairwise interactions
 * :doc:`hybrid/scaled <pair_hybrid>` - multiple styles of scaled superposed pairwise interactions
 * :doc:`zero <pair_zero>` - neighbor list but no interactions
@@ -119,7 +120,6 @@ accelerated styles exist.
 * :doc:`airebo/morse <pair_airebo>` - AIREBO with Morse instead of LJ
 * :doc:`amoeba <pair_amoeba>` -
 * :doc:`atm <pair_atm>` - Axilrod-Teller-Muto potential
-* :doc:`awpmd/cut <pair_awpmd>` - Antisymmetrized Wave Packet MD potential for atoms and electrons
 * :doc:`beck <pair_beck>` - Beck potential
 * :doc:`body/nparticle <pair_body_nparticle>` - interactions between body particles
 * :doc:`body/rounded/polygon <pair_body_rounded_polygon>` - granular-style 2d polygon potential
@@ -150,6 +150,7 @@ accelerated styles exist.
 * :doc:`comb <pair_comb>` - charge-optimized many-body (COMB) potential
 * :doc:`comb3 <pair_comb>` - charge-optimized many-body (COMB3) potential
 * :doc:`cosine/squared <pair_cosine_squared>` - Cooke-Kremer-Deserno membrane model potential
+* :doc:`coul/ctip <pair_coul>` - Charge Transfer Interatomic (Coulomb) Potential
 * :doc:`coul/cut <pair_coul>` - cutoff Coulomb potential
 * :doc:`coul/cut/dielectric <pair_dielectric>` -
 * :doc:`coul/cut/global <pair_coul>` - cutoff Coulomb potential
@@ -170,7 +171,9 @@ accelerated styles exist.
 * :doc:`coul/tt <pair_coul_tt>` - damped charge-dipole Coulomb for Drude dipoles
 * :doc:`coul/wolf <pair_coul>` - Coulomb via Wolf potential
 * :doc:`coul/wolf/cs <pair_cs>` - Coulomb via Wolf potential with core/shell adjustments
+* :doc:`dispersion/d3 <pair_dispersion_d3>` - Dispersion correction for potentials derived from DFT functionals
 * :doc:`dpd <pair_dpd>` - dissipative particle dynamics (DPD)
+* :doc:`dpd/coul/slater/long <pair_dpd_coul_slater_long>` - dissipative particle dynamics (DPD) with electrostatic interactions
 * :doc:`dpd/ext <pair_dpd_ext>` - generalized force field for DPD
 * :doc:`dpd/ext/tstat <pair_dpd_ext>` - pairwise DPD thermostatting  with generalized force field
 * :doc:`dpd/fdt <pair_dpd_fdt>` - DPD for constant temperature and pressure
@@ -184,7 +187,9 @@ accelerated styles exist.
 * :doc:`eam/cd <pair_eam>` - concentration-dependent EAM
 * :doc:`eam/cd/old <pair_eam>` - older two-site model for concentration-dependent EAM
 * :doc:`eam/fs <pair_eam>` - Finnis-Sinclair EAM
+* :doc:`eam/fs/apip <pair_eam_apip>` - :doc:`adaptive precision <Howto_apip>` version of FS EAM, used as fast potential
 * :doc:`eam/he <pair_eam>` - Finnis-Sinclair EAM modified for Helium in metals
+* :doc:`eam/apip <pair_eam_apip>` - :doc:`adaptive-precision <Howto_apip>` version of EAM, used as fast potential
 * :doc:`edip <pair_edip>` - three-body EDIP potential
 * :doc:`edip/multi <pair_edip>` - multi-element EDIP potential
 * :doc:`edpd <pair_mesodpd>` - eDPD particle interactions
@@ -203,7 +208,9 @@ accelerated styles exist.
 * :doc:`gw/zbl <pair_gw>` - Gao-Weber potential with a repulsive ZBL core
 * :doc:`harmonic/cut <pair_harmonic_cut>` - repulsive-only harmonic potential
 * :doc:`hbond/dreiding/lj <pair_hbond_dreiding>` - DREIDING hydrogen bonding LJ potential
+* :doc:`hbond/dreiding/lj/angleoffset <pair_hbond_dreiding>` - DREIDING hydrogen bonding LJ potential with offset for hbond angle
 * :doc:`hbond/dreiding/morse <pair_hbond_dreiding>` - DREIDING hydrogen bonding Morse potential
+* :doc:`hbond/dreiding/morse/angleoffset <pair_hbond_dreiding>` - DREIDING hydrogen bonding Morse potential with offset for hbond angle
 * :doc:`hdnnp <pair_hdnnp>` - High-dimensional neural network potential
 * :doc:`hippo <pair_amoeba>` -
 * :doc:`ilp/graphene/hbn <pair_ilp_graphene_hbn>` - registry-dependent interlayer potential (ILP)
@@ -211,6 +218,9 @@ accelerated styles exist.
 * :doc:`kim <pair_kim>` - interface to potentials provided by KIM project
 * :doc:`kolmogorov/crespi/full <pair_kolmogorov_crespi_full>` - Kolmogorov-Crespi (KC) potential with no simplifications
 * :doc:`kolmogorov/crespi/z <pair_kolmogorov_crespi_z>` - Kolmogorov-Crespi (KC) potential with normals along z-axis
+* :doc:`lambda/input/apip <pair_lambda_input_apip>` - constant as input for the precision calculation of an :doc:`adaptive-precision interatomic potential (APIP) <Howto_apip>`
+* :doc:`lambda/input/csp/apip <pair_lambda_input_apip>` - CSP as input for the precision calculation of an :doc:`adaptive-precision interatomic potential (APIP) <Howto_apip>`
+* :doc:`lambda/zone/apip <pair_lambda_zone_apip>` - transition zone of an :doc:`adaptive-precision interatomic potential <Howto_apip>`
 * :doc:`lcbop <pair_lcbop>` - long-range bond-order potential (LCBOP)
 * :doc:`lebedeva/z <pair_lebedeva_z>` - Lebedeva interlayer potential for graphene with normals along z-axis
 * :doc:`lennard/mdf <pair_mdf>` - LJ potential in A/B form with a taper function
@@ -266,6 +276,7 @@ accelerated styles exist.
 * :doc:`lj/long/dipole/long <pair_dipole>` - long-range LJ and long-range point dipoles
 * :doc:`lj/long/tip4p/long <pair_lj_long>` - long-range LJ and long-range Coulomb for TIP4P water
 * :doc:`lj/mdf <pair_mdf>` - LJ potential with a taper function
+* :doc:`lj/pirani <pair_lj_pirani>` - Improved LJ potential
 * :doc:`lj/relres <pair_lj_relres>` - LJ using multiscale Relative Resolution (RelRes) methodology :ref:`(Chaimovich) <Chaimovich2>`.
 * :doc:`lj/spica <pair_spica>` - LJ for SPICA coarse-graining
 * :doc:`lj/spica/coul/long <pair_spica>` - LJ for SPICA coarse-graining with long-range Coulomb
@@ -290,6 +301,7 @@ accelerated styles exist.
 * :doc:`mesocnt/viscous <pair_mesocnt>` - Mesoscopic vdW potential for (carbon) nanotubes with friction
 * :doc:`mgpt <pair_mgpt>` - Simplified model generalized pseudopotential theory (MGPT) potential
 * :doc:`mie/cut <pair_mie>` - Mie potential
+* :doc:`mliap <pair_mliap>` - Multiple styles of machine-learning potential
 * :doc:`mm3/switch3/coulgauss/long <pair_lj_switch3_coulgauss_long>` - Smoothed MM3 vdW potential with Gaussian electrostatics
 * :doc:`momb <pair_momb>` - Many-Body Metal-Organic (MOMB) force field
 * :doc:`morse <pair_morse>` - Morse potential
@@ -322,6 +334,9 @@ accelerated styles exist.
 * :doc:`oxrna2/xstk <pair_oxrna2>` -
 * :doc:`pace <pair_pace>` - Atomic Cluster Expansion (ACE) machine-learning potential
 * :doc:`pace/extrapolation <pair_pace>` - Atomic Cluster Expansion (ACE) machine-learning potential with extrapolation grades
+* :doc:`pace/apip <pair_pace_apip>` - :doc:`adaptive-precision <Howto_apip>` version of ACE, used as precise potential
+* :doc:`pace/fast/apip <pair_pace_apip>` - :doc:`adaptive-precision <Howto_apip>` version of ACE, used as fast potential
+* :doc:`pace/precise/apip <pair_pace_apip>` - :doc:`adaptive-precision <Howto_apip>` version of ACE, used as precise potential
 * :doc:`pedone <pair_pedone>` - Pedone (PMMCS) potential (non-Coulomb part)
 * :doc:`pod <pair_pod>` - Proper orthogonal decomposition (POD) machine-learning potential
 * :doc:`peri/eps <pair_peri>` - Peridynamic EPS potential
@@ -335,6 +350,8 @@ accelerated styles exist.
 * :doc:`reaxff <pair_reaxff>` - ReaxFF potential
 * :doc:`rebo <pair_airebo>` - Second generation REBO potential of Brenner
 * :doc:`rebomos <pair_rebomos>` - REBOMoS potential for MoS2
+* :doc:`rheo <pair_rheo>` - fluid interactions in RHEO package
+* :doc:`rheo/solid <pair_rheo_solid>` - solid interactions in RHEO package
 * :doc:`resquared <pair_resquared>` - Everaers RE-Squared ellipsoidal potential
 * :doc:`saip/metal <pair_saip_metal>` - Interlayer potential for hetero-junctions formed with hexagonal 2D materials and metal surfaces
 * :doc:`sdpd/taitwater/isothermal <pair_sdpd_taitwater_isothermal>` - Smoothed dissipative particle dynamics for water at isothermal conditions
@@ -345,7 +362,6 @@ accelerated styles exist.
 * :doc:`smd/tri_surface <pair_smd_triangulated_surface>` -
 * :doc:`smd/ulsph <pair_smd_ulsph>` -
 * :doc:`smtbq <pair_smtbq>` -
-* :doc:`mliap <pair_mliap>` - Multiple styles of machine-learning potential
 * :doc:`snap <pair_snap>` - SNAP machine-learning potential
 * :doc:`soft <pair_soft>` - Soft (cosine) potential
 * :doc:`sph/heatconduction <pair_sph_heatconduction>` -
@@ -382,6 +398,7 @@ accelerated styles exist.
 * :doc:`tracker <pair_tracker>` - monitor information about pairwise interactions
 * :doc:`tri/lj <pair_tri_lj>` - LJ potential between triangles
 * :doc:`ufm <pair_ufm>` -
+* :doc:`uf3 <pair_uf3>` - UF3 machine-learning potential
 * :doc:`vashishta <pair_vashishta>` - Vashishta 2-body and 3-body potential
 * :doc:`vashishta/table <pair_vashishta>` -
 * :doc:`wf/cut <pair_wf_cut>` - Wang-Frenkel Potential for short-ranged interactions

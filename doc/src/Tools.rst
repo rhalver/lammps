@@ -15,7 +15,7 @@ Sandia which provides tools for doing setup, analysis, plotting, and
 visualization for LAMMPS simulations.
 
 .. _lws: https://www.lammps.org
-.. _pizza: https://lammps.github.io/pizza
+.. _pizza: https://lammps.github.io/pizza/
 .. _python: https://www.python.org
 
 Additional tools included in the LAMMPS distribution are described on
@@ -58,6 +58,7 @@ Pre-processing tools
    * :ref:`polybond <polybond>`
    * :ref:`stl_bin2txt <stlconvert>`
    * :ref:`tabulate <tabulate>`
+   * :ref:`tinker <tinker>`
 
 Post-processing tools
 =====================
@@ -90,14 +91,16 @@ Miscellaneous tools
 
    * :ref:`LAMMPS coding standards <coding_standard>`
    * :ref:`emacs <emacs>`
-   * :ref:`i-pi <ipi>`
+   * :ref:`i-PI <ipi>`
+   * :ref:`JSON support <json>`
    * :ref:`kate <kate>`
-   * :ref:`LAMMPS shell <lammps_shell>`
-   * :ref:`LAMMPS GUI <lammps_gui>`
+   * :ref:`LAMMPS-GUI <lammps_gui>`
    * :ref:`LAMMPS magic patterns for file(1) <magic>`
    * :ref:`Offline build tool <offline>`
+   * :ref:`Regression tester <regression>`
    * :ref:`singularity/apptainer <singularity_tool>`
    * :ref:`SWIG interface <swig>`
+   * :ref:`valgrind <valgrind>`
    * :ref:`vim <vim>`
 
 ----------
@@ -110,7 +113,7 @@ Tool descriptions
 amber2lmp tool
 --------------------------
 
-The amber2lmp subdirectory contains two Python scripts for converting
+The amber2lmp subdirectory contains three Python scripts for converting
 files back-and-forth between the AMBER MD code and LAMMPS.  See the
 README file in amber2lmp for more information.
 
@@ -303,7 +306,7 @@ The parameters for Cr were taken from:
 Lin Z B, Johnson R A and Zhigilei L V, Phys. Rev. B 77 214108 (2008).
 
 The Python version of the tool was authored  by Germain Clavier
-(TU Eindhoven) g.m.g.c.clavier at tue.nl or germain.clavier at gmail.com
+(Unicaen) germain.clavier at unicaen.fr
 
 .. note::
 
@@ -362,7 +365,7 @@ These tools were provided by Aidan Thompson at Sandia
 .. _fep:
 
 fep tool
-------------------
+--------
 
 The tools/fep directory contains Python scripts useful for
 post-processing results from performing free-energy perturbation
@@ -376,21 +379,40 @@ See README file in the tools/fep directory.
 
 .. _ipi:
 
-i-pi tool
--------------------
+i-PI tool
+---------
 
-The tools/i-pi directory contains a version of the i-PI package, with
-all the LAMMPS-unrelated files removed.  It is provided so that it can
-be used with the :doc:`fix ipi <fix_ipi>` command to perform
-path-integral molecular dynamics (PIMD).
+.. versionchanged:: 27June2024
+
+The tools/i-pi directory used to contain a bundled version of the i-PI
+software package for use with LAMMPS.  This version, however, was
+removed in 06/2024.
 
 The i-PI package was created and is maintained by Michele Ceriotti,
 michele.ceriotti at gmail.com, to interface to a variety of molecular
 dynamics codes.
 
-See the tools/i-pi/manual.pdf file for an overview of i-PI, and the
-:doc:`fix ipi <fix_ipi>` page for further details on running PIMD
-calculations with LAMMPS.
+i-PI is now available via PyPI using the pip package manager at:
+https://pypi.org/project/ipi/
+
+Here are the commands to set up a virtual environment and install
+i-PI into it with all its dependencies.
+
+.. code-block:: sh
+
+   python -m venv ipienv
+   source ipienv/bin/activate
+   pip install --upgrade pip
+   pip install ipi
+
+To install the development version from GitHub, please use:
+
+.. code-block:: sh
+
+   pip install git+https://github.com/i-pi/i-pi.git
+
+For further information, please consult the [i-PI home
+page](https://ipi-code.org).
 
 ----------
 
@@ -411,6 +433,87 @@ tools/createatoms tool's input file.
 
 ----------
 
+.. _json:
+
+JSON support files
+------------------
+
+.. versionadded:: 12June2025
+
+The ``tools/json`` directory contains files and tools to support
+using `JSON format <https://www.json.org/>`_ files in LAMMPS.
+Currently only the :doc:`molecule command <molecule>` supports
+files in JSON format directly, but this is planned to be expanded
+in the future.
+
+JSON file validation
+^^^^^^^^^^^^^^^^^^^^
+
+The JSON syntax is independent of its content, and thus the data in the
+file must follow suitable conventions to be correctly parsed during
+input.  This can be done in a portable fashion using a `JSON schema file
+<https://json-schema.org/>`_ (which is in JSON format as well) to define
+those conventions.  A suitable JSON validator software can then validate
+JSON files against the requirements.  Validating a particular JSON file
+against a schema ensures that both, the syntax *and* the conventions
+are followed.  This is useful when writing or editing JSON files in a
+text editor or when writing a pre-processing script or tool to create
+JSON files for a specific purpose in LAMMPS.  It **cannot** check
+whether the file contents are physically meaningful, though.
+
+One such validator tool is `check-jsonschema
+<https://check-jsonschema.readthedocs.io/>`_ which is written in Python
+and can be installed using the `pip Python package manager
+<https://pypi.org/>`_, best in a virtual environment as shown below (for
+a Bourne Shell command line):
+
+.. code-block:: sh
+
+   python -m venv validate-json
+   source validate-json/bin/activate
+   pip install --upgrade pip
+   pip install check-jsonschema
+
+To validate a specific JSON file against a provided schema (here for
+a :doc:`molecule command file <molecule>` you would then run for example:
+
+.. code-block:: sh
+
+   check-jsonschema --schemafile molecule-schema.json tip3p.json
+
+The latest schema files are also maintained and available for download
+at https://download.lammps.org/json/ .  This enables validation of JSON
+files even if the LAMMPS sources are not locally available. Example:
+
+.. code-block:: sh
+
+   check-jsonschema --schemafile https://download.lammps.org/json/molecule-schema.json tip3p.json
+
+JSON file format normalization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are extensions to the strict JSON format that allow for comments
+or ignore additional (dangling) commas. The ``reformat-json.cpp`` tool
+will read JSON files in relaxed format, but write it out in strict format.
+It is also possible to change the level of indentation from -1 (all data
+one long line) to any positive integer value.  The original file will be
+backed up (.bak added to file name) and then overwritten.
+
+Manual compilation (it will be automatically included in the CMake build
+if building tools is requested during CMake configuration):
+
+.. code-block:: sh
+
+   g++ -I <path/to/lammps/src> -o reformat-json reformat-json.cpp
+
+Usage:
+
+.. parsed-literal::
+
+   reformat-json <indent-width> <json-file-1> [<json-file-2> ...]
+
+----------
+
 .. _kate:
 
 kate tool
@@ -425,419 +528,21 @@ The file was provided by Alessandro Luigi Sellerio
 
 ----------
 
-.. _lammps_shell:
-
-LAMMPS shell
-------------
-
-.. versionadded:: 9Oct2020
-
-Overview
-^^^^^^^^
-
-The LAMMPS Shell, ``lammps-shell`` is a program that functions very
-similar to the regular LAMMPS executable but has several modifications
-and additions that make it more powerful for interactive sessions,
-i.e. where you type LAMMPS commands from the prompt instead of reading
-them from a file.
-
-- It uses the readline and history libraries to provide command line
-  editing and context aware TAB-expansion (details on that below).
-
-- When processing an input file with the '-in' or '-i' flag from the
-  command line, it does not exit at the end of that input file but
-  stops at a prompt, so that additional commands can be issued
-
-- Errors will not abort the shell but return to the prompt.
-
-- It has additional commands aimed at interactive use (details below).
-
-- Interrupting a calculation with CTRL-C will not terminate the
-  session but rather enforce a timeout to cleanly stop an ongoing
-  run (more info on timeouts is in the :doc:`timer command <timer>`
-  documentation).
-
-These enhancements make the LAMMPS shell an attractive choice for
-interactive LAMMPS sessions in graphical desktop environments
-(e.g. Gnome, KDE, Cinnamon, XFCE, Windows).
-
-TAB-expansion
-^^^^^^^^^^^^^
-
-When writing commands interactively at the shell prompt, you can hit
-the TAB key at any time to try and complete the text.  This completion
-is context aware and will expand any first word only to commands
-available in that executable.
-
-- For style commands it will expand to available styles of the
-  corresponding category (e.g. pair styles after a
-  :doc:`pair_style <pair_style>` command).
-
-- For :doc:`compute <compute>`, :doc:`fix <fix>`, or :doc:`dump <dump>`
-  it will also expand only to already defined groups for the group-ID
-  keyword.
-
-- For commands like :doc:`compute_modify <compute_modify>`,
-  :doc:`fix_modify <fix_modify>`, or :doc:`dump_modify <dump_modify>`
-  it will expand to known compute/fix/dump IDs only.
-
-- When typing references to computes, fixes, or variables with a
-  "c\_", "f\_", or "v\_" prefix, respectively, then the expansion will
-  be to known compute/fix IDs and variable names. Variable name
-  expansion is also available for the ${name} variable syntax.
-
-- In all other cases TAB expansion will complete to names of files
-  and directories.
-
-Command line editing and history
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When typing commands, command line editing similar to what BASH
-provides is available.  Thus it is possible to move around the
-currently line and perform various cut and insert and edit operations.
-Previous commands can be retrieved by scrolling up (and down)
-or searching (e.g. with CTRL-r).
-
-Also history expansion through using the exclamation mark '!'
-can be performed.  Examples: '!!' will be replaced with the previous
-command, '!-2' will repeat the command before that, '!30' will be
-replaced with event number 30 in the command history list, and
-'!run' with the last command line that started with "run".  Adding
-a ":p" to such a history expansion will result that the expansion is
-printed and added to the history list, but NOT executed.
-On exit the LAMMPS shell will write the history list to a file
-".lammps_history" in the current working directory.  If such a
-file exists when the LAMMPS shell is launched it will be read to
-populate the history list.
-
-This is realized via the readline library and can thus be customized
-with an ``.inputrc`` file in the home directory.  For application
-specific customization, the LAMMPS shell uses the name "lammps-shell".
-For more information about using and customizing an application using
-readline, please see the available documentation at:
-https://www.gnu.org/software/readline/
-
-
-Additional commands
-^^^^^^^^^^^^^^^^^^^
-
-The following commands are added to the LAMMPS shell on top of the
-regular LAMMPS commands:
-
-.. parsed-literal::
-
-   help (or ?)    print a brief help message
-   history        display the current command history list
-   clear_history  wipe out the current command history list
-   save_history <range> <file>
-                  write commands from the history to file.
-                  The range is given as <from>-<to>, where <from> and <to>
-                  may be empty. Example: save_history 100- in.recent
-   source <file>  read commands from file (same as "include")
-   pwd            print current working directory
-   cd <directory> change current working directory (same as pwd if no directory)
-   mem            print current and maximum memory usage
-   \|<command>     execute <command> as a shell command and return to the command prompt
-   exit           exit the LAMMPS shell cleanly (unlike the "quit" command)
-
-Please note that some known shell operations are implemented in the
-LAMMPS :doc:`shell command <shell>` in a platform neutral fashion,
-while using the '\|' character will always pass the following text
-to the operating system's shell command.
-
-Compilation
-^^^^^^^^^^^
-
-Compilation of the LAMMPS shell can be enabled by setting the CMake
-variable ``BUILD_LAMMPS_SHELL`` to "on" or using the makefile in the
-``tools/lammps-shell`` folder to compile after building LAMMPS using
-the conventional make procedure.  The makefile will likely need
-customization depending on the features and settings used for
-compiling LAMMPS.
-
-Limitations
-^^^^^^^^^^^
-
-The LAMMPS shell was not designed for use with MPI parallelization
-via ``mpirun`` or ``mpiexec`` or ``srun``.
-
-Readline customization
-^^^^^^^^^^^^^^^^^^^^^^
-
-The behavior of the readline functionality can be customized in the
-``${HOME}/.inputrc`` file.  This can be used to alter the default
-settings or change the key-bindings.  The LAMMPS Shell sets the
-application name ``lammps-shell``, so settings can be either applied
-globally or only for the LAMMPS shell by bracketing them between
-``$if lammps-shell`` and ``$endif`` like in the following example:
-
-.. code-block:: bash
-
-   $if lammps-shell
-   # disable "beep" or "screen flash"
-   set bell-style none
-   # bind the "Insert" key to toggle overwrite mode
-   "\e[2~": overwrite-mode
-   $endif
-
-More details about this are in the `readline documentation <https://tiswww.cwru.edu/php/chet/readline/rluserman.html#SEC9>`_.
-
-
-LAMMPS Shell tips and tricks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Below are some suggestions for how to use and customize the LAMMPS shell.
-
-Enable tilde expansion
-""""""""""""""""""""""
-
-Adding ``set expand-tilde on`` to ``${HOME}/.inputrc`` is recommended as
-this will change the filename expansion behavior to replace any text
-starting with "~" by the full path to the corresponding user's home
-directory.  While the expansion of filenames **will** happen on all
-arguments where the context is not known (e.g. ``~/compile/lamm<TAB>``
-will expand to ``~/compile/lammps/``), it will not replace the tilde by
-default.  But since LAMMPS does not do tilde expansion itself (unlike a
-shell), this will result in errors.  Instead the tilde-expression should
-be expanded into a valid path, where the plain "~/" stands for the
-current user's home directory and "~someuser/" stands for
-"/home/someuser" or whatever the full path to that user's home directory
-is.
-
-File extension association
-""""""""""""""""""""""""""
-
-Since the LAMMPS shell (unlike the regular LAMMPS executable) does not
-exit when an input file is passed on the command line with the "-in" or
-"-i" flag (the behavior is like for ``python -i <filename>``), it makes
-the LAMMPS shell suitable for associating it with input files based on
-their filename extension (e.g. ".lmp").  Since ``lammps-shell`` is a
-console application, you have to run it inside a terminal program with a
-command line like this:
-
-.. code-block:: bash
-
-   xterm -title "LAMMPS Shell" -e /path/to/lammps-shell -i in.file.lmp
-
-
-Use history to create an input file
-"""""""""""""""""""""""""""""""""""
-
-When experimenting with commands to interactively to figure out a
-suitable choice of settings or simply the correct syntax, you may want
-to record part of your commands to a file for later use.  This can be
-done with the ``save_history`` commands, which allows to selectively
-write a section of the command history to a file (Example:
-``save_history 25-30 in.run``).  This file can be further edited
-(Example: ``|vim in.run``) and then the file read back in and tried out
-(Example: ``source in.run``).  If the input also creates a system box,
-you first need to use the :doc:`clear` command.
-
-----------
-
 .. _lammps_gui:
 
-LAMMPS GUI
+LAMMPS-GUI
 ----------
 
-.. versionadded:: 2Aug2023
+.. versionchanged:: 10Sep2025
 
-Overview
-^^^^^^^^
+LAMMPS-GUI is a graphical text editor customized for editing LAMMPS
+input files that is linked to the :ref:`LAMMPS C-library
+<lammps_c_api>`.  It used to be included with LAMMPS in the
+``tools/lammps-gui`` folder, but it is now hosted in its own git
+repository at https://github.com/akohlmey/lammps-gui/ and the online
+documentation is at https://lammps-gui.lammps.org/
 
-LAMMPS GUI is a graphical text editor customized for editing LAMMPS
-input files that is linked to the :ref:`LAMMPS C-library <lammps_c_api>`
-and thus can run LAMMPS directly using the contents of the editor's text
-buffer as input.  It can retrieve and display information from LAMMPS
-while it is running, display visualizations created with the :doc:`dump
-image command <dump_image>`, and is adapted specifically for editing
-LAMMPS input files through text completion and reformatting, and linking
-to the online LAMMPS documentation for known LAMMPS commands and styles.
-
-This is similar to what people traditionally would do to run LAMMPS:
-using a regular text editor to edit the input and run the necessary
-commands, possibly including the text editor, too, from a command line
-terminal window.  This similarity is a design goal. While making it easy
-for beginners to start with LAMMPS, it is also the intention to simplify
-the transition to workflows like most experienced LAMMPS users do.
-
-All features have been extensively exposed to keyboard shortcuts, so
-that there is also appeal for experienced LAMMPS users for prototyping
-and testing simulations setups.
-
-Features
-^^^^^^^^
-
-A detailed discussion and explanation of all features and functionality
-are in the :doc:`Howto_lammps_gui` tutorial Howto page.
-
-Here are a few highlights of LAMMPS GUI
-
-- Text editor with syntax highlighting customized for LAMMPS
-- Text editor will switch working directory to folder of file in buffer
-- Text editor will remember up to 5 recent files
-- Context specific LAMMPS command help via online documentation
-- LAMMPS is running in a concurrent thread, so the GUI remains responsive
-- Support for most accelerator packages
-- Progress bar indicates how far a run command is completed
-- LAMMPS can be started and stopped with a hotkey
-- Screen output is captured in a Log Window
-- Thermodynamic output is captured and displayed as line graph in a Chart Window
-- Indicator for currently executed command
-- Indicator for line that caused an error
-- Visualization of current state in Image Viewer (via :doc:`dump image <dump_image>`)
-- Many adjustable settings and preferences that are persistent
-- Dialog to set variables from the LAMMPS command line
-
-Parallelization
-^^^^^^^^^^^^^^^
-
-Due to its nature as a graphical application, it is not possible to use
-the LAMMPS GUI in parallel with MPI, but OpenMP multi-threading and GPU
-acceleration is available and enabled by default.
-
-Prerequisites and portability
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-LAMMPS GUI is programmed in C++ based on the C++11 standard and using
-the `Qt GUI framework <https://www.qt.io/product/framework>`_.
-Currently, Qt version 5.12 or later is required; Qt 5.15LTS is
-recommended; support for Qt version 6.x is under active development and
-thus far only tested with Qt 6.5LTS on Linux.  Building LAMMPS with
-CMake is required.
-
-The LAMMPS GUI has been successfully compiled and tested on:
-
-- Ubuntu Linux 20.04LTS x86_64 using GCC 9, Qt version 5.12
-- Fedora Linux 38 x86\_64 using GCC 13 and Clang 16, Qt version 5.15LTS
-- Fedora Linux 38 x86\_64 using GCC 13, Qt version 6.5LTS
-- Apple macOS 12 (Monterey) and macOS 13 (Ventura) with Xcode on arm64 and x86\_64, Qt version 5.15LTS
-- Windows 10 and 11 x86_64 with Visual Studio 2022 and Visual C++ 14.36, Qt version 5.15LTS
-- Windows 10 and 11 x86_64 with MinGW / GCC 10.0 cross-compiler on Fedora 38, Qt version 5.15LTS
-
-.. _lammps_gui_install:
-
-
-Pre-compiled executables
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Pre-compiled LAMMPS executable packages that include the GUI are currently
-available from https://download.lammps.org/static or
-https://github.com/lammps/lammps/releases.  You can unpack the archives
-(or mount the macOS disk image) and run the GUI directly in place. The
-folder may also be moved around and added to the ``PATH`` environment
-variable so the executables will be found automatically.  The LAMMPS GUI
-executable is called ``lammps-gui`` and either takes no arguments or
-attempts to load the first argument as LAMMPS input file.
-
-Compilation
-^^^^^^^^^^^
-
-The source for the LAMMPS GUI is included with the LAMMPS source code
-distribution in the folder ``tools/lammps-gui`` and thus it can be can
-be built as part of a regular LAMMPS compilation.  :doc:`Using CMake
-<Howto_cmake>` is required.  To enable its compilation, the CMake
-variable ``-D BUILD_LAMMPS_GUI=on`` must be set when creating the CMake
-configuration.  All other settings (compiler, flags, compile type) for
-LAMMPS GUI are then inherited from the regular LAMMPS build.  If the Qt
-library is packaged for Linux distributions, then its location is
-typically auto-detected since the required CMake configuration files are
-stored in a location where CMake can find them without additional help.
-Otherwise, the location of the Qt library installation must be indicated
-by setting ``-D Qt5_DIR=/path/to/qt5/lib/cmake/Qt5``, which is a path to
-a folder inside the Qt installation that contains the file
-``Qt5Config.cmake``. Similarly, for Qt6 the location of the Qt library
-installation can be indicated by setting ``-D Qt6_DIR=/path/to/qt6/lib/cmake/Qt6``,
-if necessary.  When both, Qt5 and Qt6 are available, Qt6 will be preferred
-unless ``-D LAMMPS_GUI_USE_QT5=yes`` is set.
-
-It should be possible to build the LAMMPS GUI as a standalone
-compilation (e.g. when LAMMPS has been compiled with traditional make),
-then the CMake configuration needs to be told where to find the LAMMPS
-headers and the LAMMPS library, via ``-D
-LAMMPS_SOURCE_DIR=/path/to/lammps/src``.  CMake will try to guess a
-build folder with the LAMMPS library from that path, but it can also be
-set with ``-D LAMMPS_LIB_DIR=/path/to/lammps/lib``.
-
-Rather than linking to the LAMMPS library during compilation, it is also
-possible to compile the GUI with a plugin loader library that will load
-the LAMMPS library dynamically at runtime during the start of the GUI
-from a shared library; e.g. ``liblammps.so`` or ``liblammps.dylib`` or
-``liblammps.dll`` (depending on the operating system).  This has the
-advantage that the LAMMPS library can be updated LAMMPS without having
-to recompile the GUI.  The ABI of the LAMMPS C-library interface is very
-stable and generally backward compatible.  This feature is enabled by
-setting ``-D LAMMPS_GUI_USE_PLUGIN=on`` and then ``-D
-LAMMPS_PLUGINLIB_DIR=/path/to/lammps/plugin/loader``. Typically, this
-would be the ``examples/COUPLE/plugin`` folder of the LAMMPS
-distribution.
-
-Platform notes
-^^^^^^^^^^^^^^
-
-macOS
-"""""
-
-When building on macOS, the build procedure will try to manufacture a
-drag-n-drop installer, LAMMPS-macOS-multiarch.dmg, when using the 'dmg'
-target (i.e. ``cmake --build <build dir> --target dmg`` or ``make dmg``.
-
-To build multi-arch executables that will run on both, arm64 and x86_64
-architectures natively, it is necessary to set the CMake variable ``-D
-CMAKE_OSX_ARCHITECTURES=arm64;x86_64``.  To achieve wide compatibility
-with different macOS versions, you can also set ``-D
-CMAKE_OSX_DEPLOYMENT_TARGET=11.0`` which will set compatibility to macOS
-11 (Big Sur) and later, even if you are compiling on a more recent macOS
-version.
-
-Windows
-"""""""
-
-On Windows either native compilation from within Visual Studio 2022 with
-Visual C++ is supported and tested, or compilation with the MinGW / GCC
-cross-compiler environment on Fedora Linux.
-
-**Visual Studio**
-
-Using CMake and Ninja as build system are required.  Qt needs to be
-installed, tested was a binary package downloaded from
-https://www.qt.io, which installs into the ``C:\\Qt`` folder by default.
-There is a custom `x64-GUI-MSVC` build configuration provided in the
-``CMakeSettings.json`` file that Visual Studio uses to store different
-compilation settings for project.  Choosing this configuration will
-activate building the `lammps-gui.exe` executable in addition to LAMMPS
-through importing package selection from the ``windows.cmake`` preset
-file and enabling building the LAMMPS GUI and disabling building with MPI.
-When requesting an installation from the `Build` menu in Visual Studio,
-it will create a compressed ``LAMMPS-Win10-amd64.zip`` zip file with the
-executables and required dependent .dll files.  This zip file can be
-uncompressed and ``lammps-gui.exe`` run directly from there.  The
-uncompressed folder can be added to the ``PATH`` environment and LAMMPS
-and LAMMPS GUI can be launched from anywhere from the command line.
-
-**MinGW64 Cross-compiler**
-
-The standard CMake build procedure can be applied and the
-``mingw-cross.cmake`` preset used. By using ``mingw64-cmake`` the CMake
-command will automatically include a suitable CMake toolset file (the
-regular cmake command can be used after that).  After building the
-libraries and executables, you can build the target 'zip'
-(i.e. ``cmake --build <build dir> --target zip`` or ``make zip``
-to stage all installed files into a LAMMPS_GUI folder and then
-run a script to copy all required dependencies, some other files,
-and create a zip file from it.
-
-Linux
-"""""
-
-Version 5.12 or later of the Qt library is required. Those are provided
-by, e.g., Ubuntu 20.04LTS.  Thus older Linux distributions are not
-likely to be supported, while more recent ones will work, even for
-pre-compiled executables (see above).  After compiling with
-``cmake --build <build folder>``, use ``cmake --build <build
-folder> --target tgz`` or ``make tgz`` to build a
-``LAMMPS-Linux-amd64.tar.gz`` file with the executables and their
-support libraries.
+It is still possible to compile :ref:`LAMMPS-GUI together with LAMMPS <tools>`.
 
 ----------
 
@@ -1024,7 +729,7 @@ the same ``LAMMPS_CACHING_DIR``. This script does the following:
  #. Start a simple local HTTP server using Python to host files for CMake
 
 Afterwards, it will print out instruction on how to modify the CMake
-command line to make sure it uses the local HTTP server.
+commands to make sure it uses the local HTTP server.
 
 To undo the environment changes and shutdown the local HTTP server,
 run the ``deactivate_caches`` command.
@@ -1078,7 +783,7 @@ dependencies and redirects the download to the local cache.
 
    mkdir build
    cd build
-   cmake -D LAMMPS_DOWNLOADS_URL=${HTTP_CACHE_URL} -C "${LAMMPS_HTTP_CACHE_CONFIG}" -C ../cmake/presets/most.cmake ../cmake
+   cmake -D LAMMPS_DOWNLOADS_URL=${HTTP_CACHE_URL} -C "${LAMMPS_HTTP_CACHE_CONFIG}" -C ../cmake/presets/most.cmake -D DOWNLOAD_POTENTIALS=off ../cmake
    make -j 8
 
    deactivate_caches
@@ -1157,6 +862,30 @@ that perform common LAMMPS post-processing tasks, such as:
 
 These are simple scripts built on `Pizza.py <pizza_>`_ modules.  See the
 README for more info on Pizza.py and how to use these scripts.
+
+----------
+
+.. _regression:
+
+Regression tester tool
+----------------------
+
+The regression-tests subdirectory contains a tool for performing
+regression tests with a given LAMMPS binary.  The tool launches the
+LAMMPS binary with any given input script under one of the `examples`
+subdirectories, and compares the thermo output in the generated log file
+with those in the provided log file with the same number of processors
+in the same subdirectory. If the differences between the actual and
+reference values are within specified tolerances, the test is considered
+passed.  For each test batch, that is, a set of example input scripts,
+the mpirun command, the LAMMPS command-line arguments, and the
+tolerances for individual thermo quantities can be specified in a
+configuration file in YAML format.
+
+The tool also reports if and how the run fails, and if a reference log file
+is missing.  See the README file for more information.
+
+This tool was written by Trung Nguyen at U of Chicago (ndactrung at gmail.com).
 
 ----------
 
@@ -1293,13 +1022,13 @@ necessary development headers and libraries are present.
 
 .. code-block:: bash
 
-   -D WITH_SWIG=on         # to enable building any SWIG wrapper
-   -D BUILD_SWIG_JAVA=on   # to enable building the Java wrapper
-   -D BUILD_SWIG_LUA=on    # to enable building the Lua wrapper
-   -D BUILD_SWIG_PERL5=on  # to enable building the Perl 5.x wrapper
-   -D BUILD_SWIG_PYTHON=on # to enable building the Python wrapper
-   -D BUILD_SWIG_RUBY=on   # to enable building the Ruby wrapper
-   -D BUILD_SWIG_TCL=on    # to enable building the Tcl wrapper
+   -D WITH_SWIG=on          # to enable building any SWIG wrapper
+   -D BUILD_SWIG_JAVA=on    # to enable building the Java wrapper
+   -D BUILD_SWIG_LUA=on     # to enable building the Lua wrapper
+   -D BUILD_SWIG_PERL5=on   # to enable building the Perl 5.x wrapper
+   -D BUILD_SWIG_PYTHON=on  # to enable building the Python wrapper
+   -D BUILD_SWIG_RUBY=on    # to enable building the Ruby wrapper
+   -D BUILD_SWIG_TCL=on     # to enable building the Tcl wrapper
 
 
 Manual building allows a little more flexibility. E.g. one can choose
@@ -1309,7 +1038,7 @@ for Tcl with:
 .. code-block:: bash
 
    swig -tcl -module tcllammps lammps.i
-   gcc -fPIC -shared $(pkgconf --cflags tcl) -o tcllammps.so \
+   gcc -fPIC -shared $(pkg-config tcl --cflags) -o tcllammps.so \
                lammps_wrap.c -L ../src/ -llammps
    tclsh
 
@@ -1320,8 +1049,8 @@ functions included with:
 
    swig -tcl -module tcllmps lammps_shell.i
    gcc -o tcllmpsh lammps_wrap.c -Xlinker -export-dynamic \
-            -DHAVE_CONFIG_H $(pkgconf --cflags tcl) \
-            $(pkgconf --libs tcl) -L ../src -llammps
+            -DHAVE_CONFIG_H $(pkg-config tcl --cflags) \
+            $(pkg-config tcl --libs) -L ../src -llammps
 
 In both cases it is assumed that the LAMMPS library was compiled
 as a shared library in the ``src`` folder. Otherwise the last
@@ -1374,10 +1103,39 @@ tabulate tool
 
 .. versionadded:: 22Dec2022
 
-The ``tabulate`` folder contains Python scripts scripts to generate tabulated
-potential files for LAMMPS.  The bulk of the code is in the ``tabulate`` module
-in the ``tabulate.py`` file.  Some example files demonstrating its use are
-included.  See the README file for more information.
+The ``tabulate`` folder contains Python scripts scripts to generate and
+visualize tabulated potential files for LAMMPS.  The bulk of the code is in the
+``tabulate`` module in the ``tabulate.py`` file.  Some example files
+demonstrating its use are included.  See the README file for more information.
+
+----------
+
+.. _tinker:
+
+tinker tool
+--------------
+
+The ``tinker`` folder contains Python scripts scripts to convert Tinker input
+files to LAMMPS.
+
+See the README file for more information.
+
+Those scripts were written by Steve Plimpton sjplimp at gmail.com
+
+----------
+
+.. _valgrind:
+
+valgrind tool
+-------------
+
+The ``valgrind`` folder contains additional suppressions for LAMMPS when
+using `valgrind's <https://valgrind.org/>`_ ` `memcheck tool
+<https://valgrind.org/info/tools.html#memcheck>`_ to search for memory
+access violation and memory leaks.  These suppressions are automatically
+invoked when running tests through CMake "ctest -T memcheck".  See the
+instruction in the ``README`` file to add these suppressions when using
+valgrind with LAMMPS or other programs.
 
 ----------
 

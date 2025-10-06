@@ -47,6 +47,7 @@ class PairEAM : public Pair {
   PairEAM(class LAMMPS *);
   ~PairEAM() override;
   void compute(int, int) override;
+  double compute_atomic_energy(int, NeighList *) override;
   void settings(int, char **) override;
   void coeff(int, char **) override;
   void init_style() override;
@@ -67,6 +68,9 @@ class PairEAM : public Pair {
   double cutforcesq;
   double **scale;
   bigint embedstep;    // timestep, the embedding term was computed
+
+  int exceeded_rhomax;    // global flag for whether rho[i] has exceeded rhomax
+                          // on a step energy is computed - 0 = no, 1 = yes
 
   // per-atom arrays
 

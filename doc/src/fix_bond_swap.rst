@@ -111,7 +111,7 @@ be met:
 4. The molecule IDs of A1 and B1 must be the same (see below).
 
 If an eligible B1 partner is found, the energy change due to swapping
-the 2 bonds is computed.  This includes changes in pairwise, bond, and
+the two bonds is computed.  This includes changes in pairwise, bond, and
 angle energies due to the altered connectivity of the 2 chains.
 Dihedral and improper interactions are not allowed to be defined when
 this fix is used.
@@ -232,6 +232,8 @@ Restrictions
 This fix is part of the MC package.  It is only enabled if LAMMPS was
 built with that package.  See the :doc:`Build package <Build_package>`
 doc page for more info.
+
+This fix requires using an atom style with molecule IDs.
 
 The settings of the "special_bond" command must be 0,1,1 in order to
 use this fix, which is typical of bead-spring chains with FENE or

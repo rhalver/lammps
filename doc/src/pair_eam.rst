@@ -126,8 +126,8 @@ are parameterized in terms of LAMMPS :doc:`metal units <units>`.
 There are web sites that distribute and document EAM potentials stored
 in DYNAMO or other formats:
 
-* https://www.ctcms.nist.gov/potentials
-* https://openkim.org
+* https://www.ctcms.nist.gov/potentials/
+* https://openkim.org/
 
 These potentials should be usable with LAMMPS, though the alternate
 formats would need to be converted to the DYNAMO format used by LAMMPS
@@ -139,6 +139,21 @@ The OpenKIM Project at
 `https://openkim.org/browse/models/by-type <https://openkim.org/browse/models/by-type>`_
 provides EAM potentials that can be used directly in LAMMPS with the
 :doc:`kim command <kim_commands>` interface.
+
+.. warning::
+
+   The EAM potential files tabulate the embedding energy as a function
+   of the local electron density :math:`\rho`.  When atoms get too
+   close, this electron density may exceed the range for which the
+   embedding energy was tabulated for.  To avoid crashes, LAMMPS will
+   assume a linearly increasing embedding energy for electron densities
+   beyond the maximum tabulated value.  LAMMPS will print a warning when
+   this happens.  It may be acceptable at the beginning of an
+   equilibration (e.g. when using randomized coordinates) but would be a
+   big concern for accuracy if it happens during production runs.  The
+   EAM potential file triggering the warning during production is thus
+   not a good choice, and the EAM model in general not likely a good
+   model for the kind of system under investigation.
 
 ----------
 

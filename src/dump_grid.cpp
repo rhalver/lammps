@@ -26,6 +26,7 @@
 #include "update.h"
 
 #include <cstring>
+#include <map>
 
 using namespace LAMMPS_NS;
 
@@ -431,19 +432,19 @@ void DumpGrid::header_item(bigint /*ndump*/)
 {
   if (unit_flag && !unit_count) {
     ++unit_count;
-    fmt::print(fp,"ITEM: UNITS\n{}\n",update->unit_style);
+    utils::print(fp,"ITEM: UNITS\n{}\n",update->unit_style);
   }
-  if (time_flag) fmt::print(fp,"ITEM: TIME\n{:.16}\n",compute_time());
+  if (time_flag) utils::print(fp,"ITEM: TIME\n{:.16}\n",compute_time());
 
-  fmt::print(fp,"ITEM: TIMESTEP\n{}\n",update->ntimestep);
-  fmt::print(fp,"ITEM: BOX BOUNDS {}\n"
+  utils::print(fp,"ITEM: TIMESTEP\n{}\n",update->ntimestep);
+  utils::print(fp,"ITEM: BOX BOUNDS {}\n"
              "{:>1.16e} {:>1.16e}\n"
              "{:>1.16e} {:>1.16e}\n"
              "{:>1.16e} {:>1.16e}\n",
              boundstr,boxxlo,boxxhi,boxylo,boxyhi,boxzlo,boxzhi);
-  fmt::print(fp,"ITEM: DIMENSION\n{}\n",domain->dimension);
-  fmt::print(fp,"ITEM: GRID SIZE nx ny nz\n{} {} {}\n",nxgrid,nygrid,nzgrid);
-  fmt::print(fp,"ITEM: GRID CELLS {}\n",columns);
+  utils::print(fp,"ITEM: DIMENSION\n{}\n",domain->dimension);
+  utils::print(fp,"ITEM: GRID SIZE nx ny nz\n{} {} {}\n",nxgrid,nygrid,nzgrid);
+  utils::print(fp,"ITEM: GRID CELLS {}\n",columns);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -452,19 +453,19 @@ void DumpGrid::header_item_triclinic(bigint /*ndump*/)
 {
   if (unit_flag && !unit_count) {
     ++unit_count;
-    fmt::print(fp,"ITEM: UNITS\n{}\n",update->unit_style);
+    utils::print(fp,"ITEM: UNITS\n{}\n",update->unit_style);
   }
-  if (time_flag) fmt::print(fp,"ITEM: TIME\n{:.16}\n",compute_time());
+  if (time_flag) utils::print(fp,"ITEM: TIME\n{:.16}\n",compute_time());
 
-  fmt::print(fp,"ITEM: TIMESTEP\n{}\n",update->ntimestep);
-  fmt::print(fp,"ITEM: BOX BOUNDS xy xz yz {}\n"
+  utils::print(fp,"ITEM: TIMESTEP\n{}\n",update->ntimestep);
+  utils::print(fp,"ITEM: BOX BOUNDS xy xz yz {}\n"
              "{:>1.16e} {:>1.16e} {:>1.16e}\n"
              "{:>1.16e} {:>1.16e} {:>1.16e}\n"
              "{:>1.16e} {:>1.16e} {:>1.16e}\n",
              boundstr,boxxlo,boxxhi,boxxy,boxylo,boxyhi,boxxz,boxzlo,boxzhi,boxyz);
-  fmt::print(fp,"ITEM: DIMENSION\n{}\n",domain->dimension);
-  fmt::print(fp,"ITEM: GRID SIZE nx ny nz\n{} {} {}\n",nxgrid,nygrid,nzgrid);
-  fmt::print(fp,"ITEM: GRID CELLS {}\n",columns);
+  utils::print(fp,"ITEM: DIMENSION\n{}\n",domain->dimension);
+  utils::print(fp,"ITEM: GRID SIZE nx ny nz\n{} {} {}\n",nxgrid,nygrid,nzgrid);
+  utils::print(fp,"ITEM: GRID CELLS {}\n",columns);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -590,15 +591,16 @@ int DumpGrid::convert_string(int n, double *mybuf)
     }
 
     for (j = 0; j < nfield; j++) {
+      const auto maxsize = maxsbuf - offset;
       if (vtype[j] == Dump::INT)
-        offset += sprintf(&sbuf[offset],vformat[j],static_cast<int> (mybuf[m]));
+        offset += snprintf(&sbuf[offset],maxsize,vformat[j],static_cast<int> (mybuf[m]));
       else if (vtype[j] == Dump::DOUBLE)
-        offset += sprintf(&sbuf[offset],vformat[j],mybuf[m]);
+        offset += snprintf(&sbuf[offset],maxsize,vformat[j],mybuf[m]);
       else if (vtype[j] == Dump::BIGINT)
-        offset += sprintf(&sbuf[offset],vformat[j], static_cast<bigint> (mybuf[m]));
+        offset += snprintf(&sbuf[offset],maxsize,vformat[j], static_cast<bigint> (mybuf[m]));
       m++;
     }
-    offset += sprintf(&sbuf[offset],"\n");
+    offset += snprintf(&sbuf[offset],maxsbuf-offset,"\n");
   }
 
   return offset;
@@ -668,11 +670,11 @@ int DumpGrid::parse_fields(int narg, char **arg)
     // grid reference is to a compute or fix
 
     if (iflag == ArgInfo::COMPUTE) {
-      auto icompute = lmp->modify->get_compute_by_id(id);
+      auto *icompute = lmp->modify->get_compute_by_id(id);
       field2index[iarg] = add_compute(id,icompute);
       field2source[iarg] = COMPUTE;
     } else if (iflag == ArgInfo::FIX) {
-      auto ifix = modify->get_fix_by_id(id);
+      auto *ifix = modify->get_fix_by_id(id);
       field2index[iarg] = add_fix(id,ifix);
       field2source[iarg] = FIX;
     }
@@ -776,9 +778,9 @@ int DumpGrid::modify_param(int narg, char **arg)
       if (ptr == nullptr)
         error->all(FLERR,"Dump_modify int format does not contain d character");
       char str[8];
-      sprintf(str,"%s",BIGINT_FORMAT);
+      snprintf(str,8,"%s",BIGINT_FORMAT);
       *ptr = '\0';
-      sprintf(format_bigint_user,"%s%s%s",format_int_user,&str[1],ptr+1);
+      snprintf(format_bigint_user,n,"%s%s%s",format_int_user,&str[1],ptr+1);
       *ptr = 'd';
 
     } else if (strcmp(arg[1],"float") == 0) {

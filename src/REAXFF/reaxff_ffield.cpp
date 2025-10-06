@@ -39,6 +39,7 @@
 
 using LAMMPS_NS::utils::open_potential;
 using LAMMPS_NS::utils::getsyserror;
+using LAMMPS_NS::utils::strmatch;
 using LAMMPS_NS::utils::uppercase;
 using LAMMPS_NS::EOFException;
 using LAMMPS_NS::ValueTokenizer;
@@ -56,9 +57,9 @@ namespace ReaxFF {
                         control_params *control, MPI_Comm world)
   {
     char ****tor_flag;
-    auto error = control->error_ptr;
-    auto lmp = control->lmp_ptr;
-    auto memory = control->lmp_ptr->memory;
+    auto *error = control->error_ptr;
+    auto *lmp = control->lmp_ptr;
+    auto *memory = control->lmp_ptr->memory;
 
     // read and parse the force field only on rank 0
 
@@ -71,7 +72,7 @@ namespace ReaxFF {
                                           filename, lineno, want, values.count()))
 
     if (control->me == 0) {
-      FILE *fp = LAMMPS_NS::utils::open_potential(filename, lmp, nullptr);
+      FILE *fp = open_potential(filename, lmp, nullptr);
       if (!fp)
         error->one(FLERR,"The ReaxFF parameter file {} cannot be opened: {}",
                    filename, getsyserror());
@@ -81,9 +82,11 @@ namespace ReaxFF {
       try {
         int i,j,k,l,m,n,lineno = 0;
 
-        // skip header comment line
+        // check if header comment line is present
 
-        reader.skip_line();
+        auto *line = reader.next_line();
+        if (strmatch(line, "^\\s*[0-9]+\\s+!.*general parameters.*"))
+          THROW_ERROR("First line of ReaxFF potential file must be a comment or empty");
         ++lineno;
 
         // set some defaults
@@ -231,6 +234,12 @@ namespace ReaxFF {
           if (lgflag) {
             values = reader.next_values(0);
             ++lineno;
+
+            // if line does not start with a floating point number, i.e. is the start
+            // of the data for the next element, the file does not support lgflag != 0
+            if (!values.matches("^\\s*\\f+\\s*"))
+              THROW_ERROR("ReaxFF potential file is not compatible with 'lgvdw yes'");
+
             CHECK_COLUMNS(2);
             sbp[i].lgcij    = values.next_double();
             sbp[i].lgre     = values.next_double();
@@ -547,7 +556,7 @@ namespace ReaxFF {
             for (k = 0; k < ntypes; ++k)
               hbp[i][j][k].r0_hb = -1.0;
 
-        auto thisline = reader.next_line();
+        auto *thisline = reader.next_line();
         if (!thisline) throw EOFException("ReaxFF parameter file has no hydrogen bond parameters");
 
         values = ValueTokenizer(thisline);

@@ -29,7 +29,7 @@ class FixDeform : public Fix {
   int remapflag;     // whether x,v are remapped across PBC
   int dimflag[6];    // which dims are deformed
 
-  enum { NONE, FINAL, DELTA, SCALE, VEL, ERATE, TRATE, VOLUME, WIGGLE, VARIABLE, PRESSURE, PMEAN };
+  enum { NONE, FINAL, DELTA, SCALE, VEL, ERATE, TRATE, VOLUME, WIGGLE, VARIABLE, PRESSURE, PMEAN, ERATERS };
   enum { ONE_FROM_ONE, ONE_FROM_TWO, TWO_FROM_ONE };
 
   FixDeform(class LAMMPS *, int, char **);
@@ -38,8 +38,8 @@ class FixDeform : public Fix {
   void init() override;
   void pre_exchange() override;
   void end_of_step() override;
-  void virtual write_restart(FILE *) override;
-  void virtual restart(char *buf) override;
+  void write_restart(FILE *) override;
+  void restart(char *buf) override;
   double memory_usage() override;
 
  protected:

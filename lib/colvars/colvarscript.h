@@ -16,7 +16,6 @@
 
 #include "colvarmodule.h"
 #include "colvarvalue.h"
-#include "colvarbias.h"
 #include "colvarproxy.h"
 
 
@@ -24,6 +23,8 @@
 #define COLVARSCRIPT_ERROR -1
 #define COLVARSCRIPT_OK 0
 
+
+class colvardeps;
 
 class colvarscript  {
 
@@ -161,6 +162,11 @@ public:
   /// \param cmd Name of the command's function (e.g. "cv_units")
   int get_command_n_args_max(char const *cmd);
 
+  /// Set the main command for the CLI, when it is not "cv" (e.g. LAMMPS)
+  inline void set_cmdline_main_cmd(std::string const &cmd) {
+    cmdline_main_cmd_ = cmd;
+  }
+
   /// Get help string for a command (does not specify how it is launched)
   /// \param cmd Name of the command's function (e.g. "cv_units")
   char const *get_command_full_help(char const *cmd);
@@ -224,14 +230,16 @@ public:
   int set_result_real(cvm::real const &x, unsigned char *obj = NULL);
 
   /// Copy x into obj if not NULL, or into the script object's result otherwise
-  int set_result_real_vec(std::vector<cvm::real> const &x,
+  template <typename T>
+  int set_result_real_vec(T const &x,
                           unsigned char *obj = NULL);
 
   /// Copy x into obj if not NULL, or into the script object's result otherwise
   int set_result_rvector(cvm::rvector const &x, unsigned char *obj = NULL);
 
   /// Copy x into obj if not NULL, or into the script object's result otherwise
-  int set_result_rvector_vec(std::vector<cvm::rvector> const &x,
+  template <typename T>
+  int set_result_rvector_vec(T const &x,
                              unsigned char *obj = NULL);
 
   /// Copy x into obj if not NULL, or into the script object's result otherwise
@@ -262,6 +270,9 @@ private: // TODO
 
   /// Internal identifiers of command strings
   std::map<std::string, command> cmd_str_map;
+
+  /// Main command used in command line ("cv" by default)
+  std::string cmdline_main_cmd_;
 
   /// Inverse of cmd_str_map (to be exported outside this class)
   char const **cmd_names;
@@ -304,7 +315,7 @@ private: // TODO
 
   /// Code reused by instances of set_result_text()
   template <typename T>
-  int pack_vector_elements_text(std::vector<T> const &x, std::string &x_str);
+  int pack_vector_elements_text(T const &x, std::string &x_str);
 
   /// Code reused by all instances of set_result_text()
   int set_result_text_from_str(std::string const &x_str, unsigned char *obj);
