@@ -10,7 +10,7 @@ Syntax
 
    atom_style style args
 
-* style = *amoeba* or *angle* or *atomic* or *body* or *bond* or *charge* or *dielectric* or *dipole* or  *dpd* or *edpd* or *electron* or *ellipsoid* or *full* or *line* or *mdpd* or *molecular* or *oxdna* or *peri* or *smd* or *sph* or *sphere* or *bpm/sphere* or *spin* or *tdpd* or *tri* or *template* or *wavepacket* or *hybrid*
+* style = *amoeba* or *angle* or *apip* or *atomic* or *body* or *bond* or *charge* or *dielectric* or *dipole* or  *dpd* or *edpd* or *electron* or *ellipsoid* or *full* or *line* or *mdpd* or *molecular* or *oxdna* or *peri* or *smd* or *sph* or *sphere* or *bpm/sphere* or *spin* or *tdpd* or *tri* or *template* or *hybrid*
 
   .. parsed-literal::
 
@@ -103,7 +103,7 @@ the Additional Information section below.
 
 .. list-table::
    :header-rows: 1
-   :widths: auto
+   :widths: 12 28 18 32
 
    * - Atom style
      - Attributes
@@ -117,6 +117,10 @@ the Additional Information section below.
      - *bond* + "angle data"
      - :ref:`MOLECULE <PKG-MOLECULE>`
      - bead-spring polymers with stiffness
+   * - *apip*
+     - *atomic* + apip_lambda, apip_lambda_required, apip_lambda_input, apip_lambda_const, apip_lambda_input_ta, apip_e_fast, apip_e_precise, apip_f_const_lambda, apip_f_dyn_lambda
+     - :ref:`APIP <PKG-APIP>`
+     - adaptive-precision interatomic potentials(APIP), see :doc:`APIP howto <Howto_apip>`
    * - *atomic*
      - tag, type, x, v, f, image, mask
      -
@@ -189,6 +193,14 @@ the Additional Information section below.
      - *atomic* + molecule, radius, rmass + "smd data"
      - :ref:`MACHDYN <PKG-MACHDYN>`
      - Smooth Mach Dynamics models
+   * - *rheo*
+     - *atomic* + rho, status
+     - :ref:`RHEO <PKG-RHEO>`
+     - solid and fluid RHEO particles
+   * - *rheo/thermal*
+     - *atomic* + rho, status, energy, temperature
+     - :ref:`RHEO <PKG-RHEO>`
+     - RHEO particles with temperature
    * - *sph*
      - *atomic* + "sph data"
      - :ref:`SPH <PKG-SPH>`
@@ -213,10 +225,6 @@ the Additional Information section below.
      - *sphere* + molecule, angmom, tri
      -
      - 3-d triangulated rigid body LJ particles
-   * - *wavepacket*
-     - *charge* + "wavepacket data"
-     - :ref:`AWPMD <PKG-AWPMD>`
-     - Antisymmetrized wave packet MD
 
 .. note::
 
@@ -283,21 +291,22 @@ Note that there may be additional arguments required along with the
 arguments are described on the :doc:`Howto body <Howto_body>` doc page.
 
 For the *dielectric* style, each particle can be either a physical
-particle (e.g. an ion), or an interface particle representing a boundary
-element between two regions of different dielectric constant. For
-interface particles, in addition to the properties associated with
-atom_style full, each particle also should be assigned a normal unit
-vector (defined by normx, normy, normz), an area (area/patch), the
+particle (e.g. an ion), or an interface particle representing a
+boundary element between two regions of different dielectric
+constant. For interface particles, in addition to the properties
+associated with atom_style full, each particle also should be assigned
+a unit dipole vector (mu) representing the direction of the induced
+dipole moment at each interface particle, an area (area/patch), the
 difference and mean of the dielectric constants of two sides of the
 interface along the direction of the normal vector (ed and em), the
-local dielectric constant at the boundary element (epsilon), and a mean
-local curvature (curv).  Physical particles must be assigned these
-values, as well, but only their local dielectric constants will be used;
-see documentation for associated :doc:`pair styles <pair_dielectric>`
-and :doc:`fixes <fix_polarize>`.  The distinction between the physical
-and interface particles is only meaningful when :doc:`fix polarize
-<fix_polarize>` commands are applied to the interface particles. This
-style is part of the DIELECTRIC package.
+local dielectric constant at the boundary element (epsilon), and a
+mean local curvature (curv).  Physical particles must be assigned
+these values, as well, but only their local dielectric constants will
+be used; see documentation for associated :doc:`pair styles
+<pair_dielectric>` and :doc:`fixes <fix_polarize>`.  The distinction
+between the physical and interface particles is only meaningful when
+:doc:`fix polarize <fix_polarize>` commands are applied to the
+interface particles. This style is part of the DIELECTRIC package.
 
 For the *dipole* style, a point dipole vector mu is defined for each
 point particle.  Note that if you wish the particles to be finite-size
@@ -410,7 +419,7 @@ showing the use of the *template* atom style versus *molecular*.
    <molecule>` that contains multiple molecules, you should ensure the
    atom types, bond types, angle_types, etc in all the molecules are
    consistent.  E.g. if one molecule represents H2O and another CO2,
-   then you probably do not want each molecule file to define 2 atom
+   then you probably do not want each molecule file to define two atom
    types and a single bond type, because they will conflict with each
    other when a mixture system of H2O and CO2 molecules is defined,
    e.g. by the :doc:`read_data <read_data>` command.  Rather the H2O

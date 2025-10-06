@@ -129,7 +129,7 @@ FixOMP::FixOMP(LAMMPS *lmp, int narg, char **arg)
 #endif
   {
     const int tid = get_tid();
-    auto t = new Timer(lmp);
+    auto *t = new Timer(lmp);
     thr[tid] = new ThrData(tid,t);
   }
 }
@@ -184,7 +184,7 @@ void FixOMP::init()
 #endif
     {
       const int tid = get_tid();
-      auto t = new Timer(lmp);
+      auto *t = new Timer(lmp);
       thr[tid] = new ThrData(tid,t);
     }
   }
@@ -229,7 +229,13 @@ void FixOMP::init()
   check_hybrid = 0;                                                     \
   if (force->name) {                                                    \
     if ( (strcmp(force->name ## _style,"hybrid") == 0) ||               \
-         (strcmp(force->name ## _style,"hybrid/overlay") == 0) )        \
+         (strcmp(force->name ## _style,"hybrid/overlay") == 0) ||       \
+         (strcmp(force->name ## _style,"hybrid/scaled") == 0) ||        \
+         (strcmp(force->name ## _style,"hybrid/molecular") == 0) ||     \
+         (strcmp(force->name ## _style,"hybrid/omp") == 0) ||           \
+         (strcmp(force->name ## _style,"hybrid/overlay/omp") == 0) ||   \
+         (strcmp(force->name ## _style,"hybrid/scaled/omp") == 0) ||    \
+         (strcmp(force->name ## _style,"hybrid/molecular/omp") == 0) )  \
       check_hybrid=1;                                                   \
     if (force->name->suffix_flag & Suffix::OMP) {                       \
       last_force_name = (const char *) #name;                           \

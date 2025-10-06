@@ -7,13 +7,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+// NOLINTBEGIN
 /*
  * This file contains the definitions for Sun External Data Representation (XDR).
  * They have been adapted specifically for the use with the LAMMPS xtc dump style
  * to produce compressed trajectory files in the Gromacs XTC format.
  *
- * The XDR sources are avaiable under the BSD 3-clause license for example in
+ * The XDR sources are available under the BSD 3-clause license for example in
  * the MIT Kerberos 5 distribution with the following copyright notice and license.
  *
  * @(#)xdr.h    2.2 88/07/29 4.0 RPCSRC
@@ -130,6 +130,7 @@ extern bool_t xdr_vector(XDR *__xdrs, char *__basep, unsigned int __nelem, unsig
 extern bool_t xdr_float(XDR *__xdrs, float *__fp);
 extern void xdrstdio_create(XDR *__xdrs, FILE *__file, enum xdr_op __xop);
 
+// NOLINTEND
 #ifdef __cplusplus
 }
 #endif

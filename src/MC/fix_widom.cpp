@@ -77,11 +77,11 @@ FixWidom::FixWidom(LAMMPS *lmp, int narg, char **arg) :
 
   // required args
 
-  nevery = utils::inumeric(FLERR,arg[3],false,lmp);
-  ninsertions = utils::inumeric(FLERR,arg[4],false,lmp);
-  nwidom_type = utils::inumeric(FLERR,arg[5],false,lmp);
-  seed = utils::inumeric(FLERR,arg[6],false,lmp);
-  insertion_temperature = utils::numeric(FLERR,arg[7],false,lmp);
+  nevery = utils::inumeric(FLERR, arg[3], false, lmp);
+  ninsertions = utils::inumeric(FLERR, arg[4], false, lmp);
+  nwidom_type = utils::expand_type_int(FLERR, arg[5], Atom::ATOM, lmp);
+  seed = utils::inumeric(FLERR, arg[6], false, lmp);
+  insertion_temperature = utils::numeric(FLERR, arg[7], false, lmp);
 
   if (nevery <= 0) error->all(FLERR,"Invalid fix widom every argument: {}", nevery);
   if (ninsertions < 0) error->all(FLERR,"Invalid fix widom insertions argument: {}", ninsertions);
@@ -356,7 +356,7 @@ void FixWidom::init()
         if (molecule[i] == 0) flag = 1;
     int flagall;
     MPI_Allreduce(&flag,&flagall,1,MPI_INT,MPI_SUM,world);
-    if (flagall && comm->me == 0)
+    if (flagall)
       error->all(FLERR, "All mol IDs should be set for fix widom group atoms");
   }
 
@@ -663,7 +663,7 @@ void FixWidom::attempt_molecule_insertion()
     MathExtra::quat_to_mat(quat,rotmat);
 
     double insertion_energy = 0.0;
-    auto procflag = new bool[natoms_per_molecule];
+    auto *procflag = new bool[natoms_per_molecule];
 
     for (int i = 0; i < natoms_per_molecule; i++) {
       MathExtra::matvec(rotmat,onemol->x[i],molcoords[i]);
@@ -973,7 +973,8 @@ void FixWidom::attempt_molecule_insertion_full()
 }
 
 /* ----------------------------------------------------------------------
-   compute particle's interaction energy with the rest of the system
+   compute particle's interaction energy with the rest of the system by
+   looping over all atoms in the sub-domain including ghosts.
 ------------------------------------------------------------------------- */
 
 double FixWidom::energy(int i, int itype, tagint imolecule, double *coord)
@@ -1129,7 +1130,7 @@ void FixWidom::write_restart(FILE *fp)
 void FixWidom::restart(char *buf)
 {
   int n = 0;
-  auto list = (double *) buf;
+  auto *list = (double *) buf;
 
   seed = static_cast<int> (list[n++]);
   random_equal->reset(seed);

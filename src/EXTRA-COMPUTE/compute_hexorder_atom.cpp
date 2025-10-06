@@ -62,7 +62,7 @@ ComputeHexOrderAtom::ComputeHexOrderAtom(LAMMPS *lmp, int narg, char **arg) :
   while (iarg < narg) {
     if (strcmp(arg[iarg],"degree") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal compute hexorder/atom command");
-      ndegree = utils::numeric(FLERR,arg[iarg+1],false,lmp);
+      ndegree = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       if (ndegree < 0)
         error->all(FLERR,"Illegal compute hexorder/atom command");
       iarg += 2;
@@ -71,7 +71,7 @@ ComputeHexOrderAtom::ComputeHexOrderAtom(LAMMPS *lmp, int narg, char **arg) :
       if (strcmp(arg[iarg+1],"NULL") == 0)
         nnn = 0;
       else {
-        nnn = utils::numeric(FLERR,arg[iarg+1],false,lmp);
+        nnn = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
         if (nnn < 0)
           error->all(FLERR,"Illegal compute hexorder/atom command");
       }
@@ -148,10 +148,8 @@ void ComputeHexOrderAtom::compute_peratom()
   }
 
   // invoke full neighbor list (will copy or build if necessary)
-  // on the first step of a run, set preflag to one in neighbor->build_one(...)
 
-  if (update->firststep == update->ntimestep) neighbor->build_one(list,1);
-  else neighbor->build_one(list);
+  neighbor->build_one(list);
 
   inum = list->inum;
   ilist = list->ilist;
