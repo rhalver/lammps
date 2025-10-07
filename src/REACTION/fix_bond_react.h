@@ -148,6 +148,7 @@ class FixBondReact : public Fix {
   tagint *partner, *finalpartner;
   double **distsq;
   int allnattempt;
+  unsigned shuffle_seed;                                   // user-provided value for the 'shuffle_seed' common keyword
 
   Fix *fix1;                                               // nve/limit used to relax reaction sites
   Fix *fix2;                                               // properties/atom used to indicate 1) relaxing atoms 2) to which 'react' atom belongs

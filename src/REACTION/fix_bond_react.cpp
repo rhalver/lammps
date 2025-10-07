@@ -153,6 +153,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   int iarg = 3;
   stabilization_flag = 0;
   molid_mode = Reset_Mol_IDs::YES;
+  shuffle_seed = 0;
   int hang_catch = 0;
   int num_common_keywords = 50; // generous arbitrary limit
   while (true) {
@@ -210,6 +211,10 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       rlm.Nsteps = utils::inumeric(FLERR,arg[iarg+rlm.Nrxns+3],false,lmp);
       rate_limits.push_back(rlm);
       iarg += rlm.Nrxns+4;
+    } else if (strcmp(arg[iarg],"shuffle_seed") == 0) {
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"fix bond/react seed", error);
+      shuffle_seed = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      iarg += 2;
     } else if (strcmp(arg[iarg],"react") == 0) {
       break;
     } else error->all(FLERR, iarg, "Unknown fix bond/react command keyword {}", arg[iarg]);
@@ -1292,8 +1297,13 @@ void FixBondReact::superimpose_algorithm()
   if (!rxnflag) return;
 
   // C++11 and later compatible version of Park pRNG
-  std::random_device rnd;
-  std::minstd_rand park_rng(rnd());
+  std::minstd_rand park_rng;
+  if (shuffle_seed == 0) {
+    std::random_device rnd;
+    park_rng.seed(rnd());
+  } else {
+    park_rng.seed(shuffle_seed);
+  }
 
   std::vector<int> oversteps(rxns.size(), 0);
   if (comm->me == 0) {
@@ -4067,7 +4077,7 @@ void FixBondReact::CreateAtoms(char *line, Reaction &rxn, int ncreate)
   }
   if (rxn.product->xflag == 0)
     error->one(FLERR,"Fix bond/react: 'Coords' section required in post-reaction template when creating new atoms");
-  if (atom->rmass_flag && !twomol->rmassflag)
+  if (atom->rmass_flag && !rxn.product->rmassflag)
     error->one(FLERR, "Fix bond/react: 'Masses' section required in post-reaction template when creating new atoms if per-atom masses are defined.");
 }
 
