@@ -68,6 +68,13 @@ available:
    * - ``test_utils.cpp``
      - Utils
      - Tests for ``utils::`` :doc:`functions <Developer_utils>`
+   * - ``test_fft3d.cpp``
+     - FFT3D
+     - Tests for standard FFT3d wrapper (KISS, FFTW3, MKL, NVPL)
+   * - ``test_fft3d_kokkos.cpp``
+     - FFT3DKokkos
+     - Tests for KOKKOS FFT3d wrapper (CPU and GPU backends)
+
 
 To add tests either an existing source file needs to be modified or a
 new source file needs to be added to the distribution and enabled for
@@ -136,6 +143,127 @@ The MathEigen test collection has been adapted from a standalone test
 and does not use the GoogleTest framework and thus not representative.
 The other test sources, however, can serve as guiding examples for
 additional tests.
+
+FFT Testing Infrastructure
+""""""""""""""""""""""""""
+
+The FFT tests (``test_fft3d.cpp`` and ``test_fft3d_kokkos.cpp``) validate
+the LAMMPS FFT wrapper implementations for both standard (CPU) and KOKKOS
+(CPU/GPU) backends. These tests require the KSPACE package and use
+specialized helper utilities to ensure FFT correctness across different
+library backends (KISS FFT, FFTW3, MKL, NVPL, cuFFT, hipFFT, etc.).
+
+**Building and Running FFT Tests:**
+
+The FFT tests are automatically enabled when ``ENABLE_TESTING=ON`` and
+``PKG_KSPACE=ON`` are set during CMake configuration. For KOKKOS FFT tests,
+``PKG_KOKKOS=ON`` is also required.
+
+Build configuration example:
+
+.. code-block:: bash
+
+   cd build
+   cmake -D PKG_KSPACE=ON -D PKG_KOKKOS=ON -D ENABLE_TESTING=ON ../cmake
+   cmake --build . --target test_fft3d -j8
+   cmake --build . --target test_fft3d_kokkos -j8
+
+Run all FFT tests via CTest:
+
+.. code-block:: bash
+
+   ctest -R FFT3D          # Both standard and KOKKOS tests
+   ctest -L fft            # All tests labeled with 'fft'
+
+Run test executables directly for detailed output:
+
+.. code-block:: bash
+
+   ./test_fft3d                                    # All standard FFT tests
+   ./test_fft3d_kokkos                            # All KOKKOS FFT tests
+   ./test_fft3d --gtest_filter="*RoundTrip*"     # Specific test pattern
+
+Tests automatically skip configurations requiring libraries or backends
+not available in the current build (e.g., FFTW3, MPI, CUDA).
+
+**Helper Headers:**
+
+Two header-only utility files provide the testing infrastructure:
+
+- ``fft_introspection.h`` - Runtime FFT configuration detection
+- ``fft_test_helpers.h`` - Test data generators, validators, and utilities
+
+**FFT Introspection API:**
+
+The ``fft_introspection.h`` header provides compile-time detection of FFT
+configuration through the ``FFTIntrospection`` namespace:
+
+.. code-block:: c++
+
+   #include "fft_introspection.h"
+   
+   TEST_F(FFT3DTest, ConfigurationDetection) {
+       using namespace FFTIntrospection;
+       
+       // Conditionally skip tests
+       if (!is_fft_fftw3()) {
+           GTEST_SKIP() << "Test requires FFTW3";
+       }
+   }
+
+Key functions: ``get_fft_library()``, ``get_fft_precision()``,
+``has_fft_threading()``, ``get_kokkos_backend()``, ``is_kokkos_gpu_backend()``,
+and boolean queries like ``is_fft_fftw3()``, ``is_kokkos_cuda()``, etc.
+
+**FFT Test Helpers:**
+
+The ``fft_test_helpers.h`` header provides three main namespaces:
+
+1. **FFTTestHelpers** - Utility functions:
+   ``FFTBuffer`` (RAII wrapper), ``idx3d()`` (index conversion),
+   ``scaled_tolerance()`` (grid-size-dependent precision)
+
+2. **FFTTestData** - Test data generators:
+   ``DeltaFunctionGenerator``, ``ConstantGenerator``, ``SineWaveGenerator``,
+   ``GaussianGenerator``, ``RandomComplexGenerator``, ``MixedModesGenerator``
+
+3. **FFTValidation** - Validators:
+   ``RoundTripValidator``, ``KnownAnswerValidator``, ``ParsevalValidator``,
+   ``HermitianSymmetryValidator``, ``LinearityValidator``
+
+**Example Test:**
+
+.. code-block:: c++
+
+   TEST_F(FFT3DTest, RoundTrip_32x32x32) {
+       FFTBuffer original(32, 32, 32), fft_result(32, 32, 32), recovered(32, 32, 32);
+       
+       GaussianGenerator generator(2.0);
+       generator.generate(original.data(), 32, 32, 32);
+       
+       fft->compute(original.data(), fft_result.data(), FFT3d::FORWARD);
+       fft->compute(fft_result.data(), recovered.data(), FFT3d::BACKWARD);
+       
+       RoundTripValidator validator(original.data(), recovered.data(), 32, 32, 32,
+                                     scaled_tolerance(ROUNDTRIP_TOLERANCE, 32, 32, 32));
+       EXPECT_TRUE(validator.validate());
+   }
+
+**Test Coverage:**
+
+The tests validate backend detection, round-trip transforms, known answer tests
+(delta function, constant, sine wave), Parseval's theorem (energy conservation),
+Hermitian symmetry, MPI parallel FFTs, and library-specific features (threading,
+GPU backends, non-power-of-2 sizes).
+
+**Precision and Tolerances:**
+
+FFT tests use precision-aware tolerances that automatically adjust based on
+floating-point precision (``FFT_SINGLE`` vs double), grid size, and accelerator
+backend. Base tolerances (``ROUNDTRIP_TOLERANCE``, ``PARSEVAL_TOLERANCE``, etc.)
+are defined in ``fft_test_helpers.h``. Use ``scaled_tolerance()`` to adjust
+for grid size effects.
+
 
 Tests for individual LAMMPS commands
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
