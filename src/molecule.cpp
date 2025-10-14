@@ -1167,9 +1167,9 @@ void Molecule::from_json(const std::string &molid, const json &moldata)
                        "Molecule template {}: invalid angle type in angle {}: {}", id, i + 1,
                        to_string(item));
           if (flag == 0) {
-            count[atom1 - 1]++;
+            count[atom2 - 1]++;
             if (newton_bond == 0) {
-              count[atom2 - 1]++;
+              count[atom1 - 1]++;
               count[atom3 - 1]++;
             }
           } else {
@@ -1248,7 +1248,7 @@ void Molecule::from_json(const std::string &molid, const json &moldata)
                        i + 1, to_string(item));
 
           if (item[0].is_number_integer()) {    // numeric type
-            itype = int(item[0]) + aoffset;
+            itype = int(item[0]) + doffset;
           } else {
             const auto &typestr = std::string(item[0]);
             if (!atom->labelmapflag)
@@ -1281,9 +1281,9 @@ void Molecule::from_json(const std::string &molid, const json &moldata)
                        "Molecule template {}: invalid dihedral type in dihedral {}: {}", id, i + 1,
                        to_string(item));
           if (flag == 0) {
-            count[atom1 - 1]++;
+            count[atom2 - 1]++;
             if (newton_bond == 0) {
-              count[atom2 - 1]++;
+              count[atom1 - 1]++;
               count[atom3 - 1]++;
               count[atom4 - 1]++;
             }
