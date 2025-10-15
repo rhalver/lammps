@@ -808,8 +808,12 @@ void FixRigid::setup(int vflag)
   int i,n,ibody;
 
   // fcm = force on center-of-mass of each rigid body
+  // torque = torque on each rigid body
 
   double **f = atom->f;
+  double **x = atom->x;
+  double dx,dy,dz;
+  double unwrap[3];
   int nlocal = atom->nlocal;
 
   for (ibody = 0; ibody < nbody; ibody++)
@@ -818,41 +822,19 @@ void FixRigid::setup(int vflag)
   for (i = 0; i < nlocal; i++) {
     if (body[i] < 0) continue;
     ibody = body[i];
+
     sum[ibody][0] += f[i][0];
     sum[ibody][1] += f[i][1];
     sum[ibody][2] += f[i][2];
-  }
-
-  MPI_Allreduce(sum[0],all[0],6*nbody,MPI_DOUBLE,MPI_SUM,world);
-
-  for (ibody = 0; ibody < nbody; ibody++) {
-    fcm[ibody][0] = all[ibody][0];
-    fcm[ibody][1] = all[ibody][1];
-    fcm[ibody][2] = all[ibody][2];
-  }
-
-  // torque = torque on each rigid body
-
-  double **x = atom->x;
-
-  double dx,dy,dz;
-  double unwrap[3];
-
-  for (ibody = 0; ibody < nbody; ibody++)
-    for (i = 0; i < 6; i++) sum[ibody][i] = 0.0;
-
-  for (i = 0; i < nlocal; i++) {
-    if (body[i] < 0) continue;
-    ibody = body[i];
 
     domain->unmap(x[i],xcmimage[i],unwrap);
     dx = unwrap[0] - xcm[ibody][0];
     dy = unwrap[1] - xcm[ibody][1];
     dz = unwrap[2] - xcm[ibody][2];
 
-    sum[ibody][0] += dy * f[i][2] - dz * f[i][1];
-    sum[ibody][1] += dz * f[i][0] - dx * f[i][2];
-    sum[ibody][2] += dx * f[i][1] - dy * f[i][0];
+    sum[ibody][3] += dy * f[i][2] - dz * f[i][1];
+    sum[ibody][4] += dz * f[i][0] - dx * f[i][2];
+    sum[ibody][5] += dx * f[i][1] - dy * f[i][0];
   }
 
   // extended particles add their torque to torque of body
@@ -864,9 +846,9 @@ void FixRigid::setup(int vflag)
       if (body[i] < 0) continue;
       ibody = body[i];
       if (eflags[i] & TORQUE) {
-        sum[ibody][0] += torque_one[i][0];
-        sum[ibody][1] += torque_one[i][1];
-        sum[ibody][2] += torque_one[i][2];
+        sum[ibody][3] += torque_one[i][0];
+        sum[ibody][4] += torque_one[i][1];
+        sum[ibody][5] += torque_one[i][2];
       }
     }
   }
@@ -874,9 +856,12 @@ void FixRigid::setup(int vflag)
   MPI_Allreduce(sum[0],all[0],6*nbody,MPI_DOUBLE,MPI_SUM,world);
 
   for (ibody = 0; ibody < nbody; ibody++) {
-    torque[ibody][0] = all[ibody][0];
-    torque[ibody][1] = all[ibody][1];
-    torque[ibody][2] = all[ibody][2];
+    fcm[ibody][0] = all[ibody][0];
+    fcm[ibody][1] = all[ibody][1];
+    fcm[ibody][2] = all[ibody][2];
+    torque[ibody][0] = all[ibody][3];
+    torque[ibody][1] = all[ibody][4];
+    torque[ibody][2] = all[ibody][5];
   }
 
   // enforce 2d body forces and torques
