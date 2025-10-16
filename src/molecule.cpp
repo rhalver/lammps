@@ -2026,6 +2026,75 @@ json Molecule::to_json() const
     }
   }
 
+  if (shakeflag) {
+    moldata["shake"]["flags"]["format"] = {"atom-id", "flag"};
+    moldata["shake"]["atoms"]["format"] = {"atom-id", "atom-id-list"};
+    moldata["shake"]["types"]["format"] = {"atom-id", "type-list"};
+    for (int i = 0; i < natoms; ++i) {
+      bool has_typelabels = (atom->labelmapflag != 0) && atom->lmap->is_complete(Atom::BOND);
+      moldata["shake"]["flags"]["data"][i] = {i + 1, shake_flag[i]};
+      moldata["shake"]["atoms"]["data"][i][0] = i + 1;
+      moldata["shake"]["types"]["data"][i][0] = i + 1;
+      switch (shake_flag[i]) {
+        case 1:
+          has_typelabels = has_typelabels && atom->lmap->is_complete(Atom::ANGLE);
+          moldata["shake"]["atoms"]["data"][i][1] = {shake_atom[i][0], shake_atom[i][1],
+                                                     shake_atom[i][2]};
+          if (has_typelabels) {
+            moldata["shake"]["types"]["data"][i][1] = {
+                atom->lmap->find(shake_type[i][0], Atom::BOND),
+                atom->lmap->find(shake_type[i][1], Atom::BOND),
+                atom->lmap->find(shake_type[i][2], Atom::ANGLE)};
+          } else {
+            moldata["shake"]["types"]["data"][i][1] = {shake_type[i][0], shake_type[i][1],
+                                                       shake_type[i][2]};
+          }
+          break;
+        case 2:
+          moldata["shake"]["atoms"]["data"][i][1] = {shake_atom[i][0], shake_atom[i][1]};
+          if (has_typelabels) {
+            moldata["shake"]["types"]["data"][i][1] = {
+                atom->lmap->find(shake_type[i][0], Atom::BOND),
+                atom->lmap->find(shake_type[i][1], Atom::BOND)};
+          } else {
+            moldata["shake"]["types"]["data"][i][1] = {shake_type[i][0], shake_type[i][1]};
+          }
+          break;
+        case 3:
+          moldata["shake"]["atoms"]["data"][i][1] = {shake_atom[i][0], shake_atom[i][1],
+                                                     shake_atom[i][2]};
+          if (has_typelabels) {
+            moldata["shake"]["types"]["data"][i][1] = {
+                atom->lmap->find(shake_type[i][0], Atom::BOND),
+                atom->lmap->find(shake_type[i][1], Atom::BOND),
+                atom->lmap->find(shake_type[i][2], Atom::BOND)};
+          } else {
+            moldata["shake"]["types"]["data"][i][1] = {shake_type[i][0], shake_type[i][1],
+                                                       shake_type[i][2]};
+          }
+          break;
+        case 4:
+          moldata["shake"]["atoms"]["data"][i][1] = {shake_atom[i][0], shake_atom[i][1],
+                                                     shake_atom[i][2], shake_atom[i][3]};
+          if (has_typelabels) {
+            moldata["shake"]["types"]["data"][i][1] = {
+                atom->lmap->find(shake_type[i][0], Atom::BOND),
+                atom->lmap->find(shake_type[i][1], Atom::BOND),
+                atom->lmap->find(shake_type[i][2], Atom::BOND),
+                atom->lmap->find(shake_type[i][3], Atom::BOND)};
+          } else {
+            moldata["shake"]["types"]["data"][i][1] = {shake_type[i][0], shake_type[i][1],
+                                                       shake_type[i][2], shake_type[i][3]};
+          }
+          break;
+        case 0:
+          moldata["shake"]["atoms"]["data"][i][1] = nullptr;
+          moldata["shake"]["types"]["data"][i][1] = nullptr;
+          break;
+      }
+    }
+  }
+
   return moldata;
 }
 
