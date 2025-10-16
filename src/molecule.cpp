@@ -2020,8 +2020,9 @@ json Molecule::to_json() const
     for (int i = 0; i < natoms; i++) {
       moldata["special"]["counts"]["data"][i] = {
           i + 1, nspecial[i][0], nspecial[i][1] - nspecial[i][0], nspecial[i][2] - nspecial[i][1]};
+      moldata["special"]["bonds"]["data"][i][0] = i + 1;
       for (int j = 0; j < nspecial[i][2]; ++j)
-        moldata["special"]["bonds"]["data"][i][j] = special[i][j];
+        moldata["special"]["bonds"]["data"][i][1][j] = special[i][j];
     }
   }
 
