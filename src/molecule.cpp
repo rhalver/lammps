@@ -3864,7 +3864,7 @@ void Molecule::body(int flag, int pflag, char *line)
       if (ncount == 0)
         error->all(FLERR, fileiarg, "Too few values in {} section of molecule file", sec);
       if (nword + ncount > nparam)
-        error->all(FLERR, fileiarg, "Too many values in {} sectopm of molecule file", sec);
+        error->all(FLERR, fileiarg, "Too many values in {} section of molecule file", sec);
 
       if (flag) {
         if (pflag == 0) {
@@ -4256,7 +4256,6 @@ void Molecule::print(FILE *fp)
   if (nangles) utils::print(fp, "  {} angles\n", nangles);
   if (ndihedrals) utils::print(fp, "  {} dihedrals\n", ndihedrals);
   if (nimpropers) utils::print(fp, "  {} impropers\n", nimpropers);
-  if (nfragments) utils::print(fp, "  {} fragments\n", nfragments);
   if (nfragments) utils::print(fp, "  {} fragments\n", nfragments);
   if (bodyflag) utils::print(fp, "  {} {} body\n", nibody, ndbody);
   if (comflag_user) utils::print(fp, "  {} {} {} com\n", com[0], com[1], com[2]);

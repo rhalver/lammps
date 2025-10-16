@@ -8,7 +8,7 @@ Syntax
 
 .. code-block:: LAMMPS
 
-   write_dump mol-ID file
+   write_molecule mol-ID file
 
 * mol-ID = ID of the molecule template to be written
 * file = name of file to write the molecule template to
