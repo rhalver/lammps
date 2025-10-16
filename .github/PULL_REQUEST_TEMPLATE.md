@@ -17,12 +17,12 @@ By submitting this pull request, I agree, that my contribution will be included 
 **Artificial Intelligence (AI) Tools Usage**
 
 <!--Please update the following sentence as needed in case you were using AI tools to
-generate code.  Please mentione which specific AI tools you were using and which parts
-of the code were AI generated versus the parts written by a human.  The use of AI tools
-for checking spelling and syntax does not need to be reported.-->
+generate code.  Please mention which specific AI tool or tools you were using and which
+parts of the code were AI generated versus the parts written by a human.  The use of AI
+tools for checking spelling and syntax does not need to be reported.-->
 
 By submitting this pull request, I confirm that I did NOT use any AI tools to generate
-all or parts of the code and modificiations in this pull request.
+all or parts of the code and modifications in this pull request.
 
 **Backward Compatibility**
 
