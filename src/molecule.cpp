@@ -16,6 +16,7 @@
 #include "atom.h"
 #include "atom_vec.h"
 #include "atom_vec_body.h"
+#include "body.h"
 #include "comm.h"
 #include "domain.h"
 #include "error.h"
@@ -2093,6 +2094,11 @@ json Molecule::to_json() const
           break;
       }
     }
+  }
+
+  if (bodyflag) {
+    for (int i = 0; i < nibody; ++i) { moldata["body"]["integers"][i] = ibodyparams[i]; }
+    for (int i = 0; i < nibody; ++i) { moldata["body"]["doubles"][i] = dbodyparams[i]; }
   }
 
   return moldata;
@@ -4250,6 +4256,7 @@ void Molecule::print(FILE *fp)
   if (ndihedrals) utils::print(fp, "  {} dihedrals\n", ndihedrals);
   if (nimpropers) utils::print(fp, "  {} impropers\n", nimpropers);
   if (massflag_user) utils::print(fp, "  {} mass\n", masstotal);
+  if (bodyflag) utils::print(fp, "  {} {} body\n", nibody, ndbody);
   if (comflag_user) utils::print(fp, "  {} {} {} com\n", com[0], com[1], com[2]);
   if (inertiaflag_user)
     utils::print(fp, "  {} {} {} {} {} {} inertia\n", itensor[0], itensor[1], itensor[2],
@@ -4486,6 +4493,41 @@ void Molecule::print(FILE *fp)
           fputs("\n", fp);
           break;
       }
+    }
+  }
+
+  if (bodyflag) {
+    auto avec = dynamic_cast<AtomVecBody *>(atom->style_match("body"));
+    if (avec) {
+      fputs("\nBody Integers\n\n", fp);
+      if ((strcmp(avec->bptr->style, "nparticle") == 0) ||
+          (strcmp(avec->bptr->style, "rounded/polygon") == 0)) {
+        utils::print(fp, " {}\n", ibodyparams[0]);
+      }
+      if (strcmp(avec->bptr->style, "rounded/polyhedron") == 0) {
+        utils::print(fp, " {} {} {}\n", ibodyparams[0], ibodyparams[1], ibodyparams[2]);
+      }
+      fputs("\nBody Doubles\n\n", fp);
+      utils::print(fp, " {} {} {} {} {} {}\n", dbodyparams[0], dbodyparams[1], dbodyparams[2],
+                   dbodyparams[3], dbodyparams[4], dbodyparams[5]);
+      int idx = 6;
+      for (int i = 0; i < ibodyparams[0]; ++i) {
+        utils::print(fp, " {} {} {}\n", dbodyparams[idx], dbodyparams[idx + 1],
+                     dbodyparams[idx + 2]);
+        idx += 3;
+      }
+      if (strcmp(avec->bptr->style, "rounded/polyhedron") == 0) {
+        for (int i = 0; i < ibodyparams[1]; ++i) {
+          utils::print(fp, " {} {}\n", dbodyparams[idx], dbodyparams[idx + 1]);
+          idx += 2;
+        }
+        for (int i = 0; i < ibodyparams[2]; ++i) {
+          utils::print(fp, " {} {} {} {}\n", dbodyparams[idx], dbodyparams[idx + 1],
+                       dbodyparams[idx + 2], dbodyparams[idx + 3]);
+          idx += 4;
+        }
+      }
+      utils::print(fp, " {}\n", dbodyparams[idx]);
     }
   }
 }
