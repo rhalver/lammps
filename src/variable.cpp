@@ -645,7 +645,7 @@ void Variable::set(int narg, char **arg)
     if (ivar >= 0) {
       if (style[ivar] != INTERNAL)
         error->all(FLERR, 1, "Cannot redefine variable {} with a different style", arg[0]);
-      dvalue[nvar] = utils::numeric(FLERR, arg[2], false, lmp);
+      dvalue[ivar] = utils::numeric(FLERR, arg[2], false, lmp);
       replaceflag = 1;
     } else {
       if (nvar == maxvar) grow();
