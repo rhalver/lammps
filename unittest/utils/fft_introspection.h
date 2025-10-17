@@ -15,8 +15,8 @@
    FFT Introspection API - Runtime detection of FFT configuration
 
    Purpose: Provide compile-time FFT configuration detection for testing
-   
-   Documentation: See doc/src/Developer_unittest.rst 
+
+   Documentation: See doc/src/Developer_unittest.rst
                   (Section: FFT Testing Infrastructure)
 
    This header-only utility provides functions to detect and report the
@@ -69,11 +69,6 @@
 
 #include <map>
 #include <string>
-
-// Include KOKKOS configuration if available
-#ifdef LMP_KOKKOS
-#include "fftdata_kokkos.h"
-#endif
 
 namespace FFTIntrospection {
 

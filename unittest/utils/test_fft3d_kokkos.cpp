@@ -635,13 +635,8 @@ TEST_F(FFT3DKokkosTest, Threading_OpenMP_Concurrent)
 
         // Generate random data (unique seed for each FFT)
         RandomComplexGenerator gen(12345 + n);
-        for (int i = 0; i < nsize; i++) {
-            auto val = gen.next();
-            input_buffers[n][2*i] = val.real();
-            input_buffers[n][2*i+1] = val.imag();
-            original_buffers[n][2*i] = val.real();
-            original_buffers[n][2*i+1] = val.imag();
-        }
+        gen.generate(input_buffers[n].data(), grid_size, grid_size, grid_size);
+        gen.generate(original_buffers[n].data(), grid_size, grid_size, grid_size);
 
         // Create FFT instance
         int in_ilo = 0, in_ihi = grid_size - 1;
@@ -655,7 +650,7 @@ TEST_F(FFT3DKokkosTest, Threading_OpenMP_Concurrent)
 
         BEGIN_HIDE_OUTPUT();
         auto fft = new FFT3dKokkos<LMPDeviceType>(
-            lmp, MPI_COMM_SELF, grid_size, grid_size, grid_size, in_ilo, in_ihi, in_jlo, in_jhi,
+            lmp, MPI_COMM_WORLD, grid_size, grid_size, grid_size, in_ilo, in_ihi, in_jlo, in_jhi,
             in_klo, in_khi, out_ilo, out_ihi, out_jlo, out_jhi, out_klo, out_khi, scaled, permute,
             &nbuf, usecollective, usegpu_aware);
         END_HIDE_OUTPUT();
@@ -753,13 +748,8 @@ TEST_F(FFT3DKokkosTest, Threading_Threads_Concurrent)
 
         // Generate random data
         RandomComplexGenerator gen(54321 + n);
-        for (int i = 0; i < nsize; i++) {
-            auto val = gen.next();
-            input_buffers[n][2*i] = val.real();
-            input_buffers[n][2*i+1] = val.imag();
-            original_buffers[n][2*i] = val.real();
-            original_buffers[n][2*i+1] = val.imag();
-        }
+        gen.generate(input_buffers[n].data(), grid_size, grid_size, grid_size);
+        gen.generate(original_buffers[n].data(), grid_size, grid_size, grid_size);
 
         // Create FFT instance
         int in_ilo = 0, in_ihi = grid_size - 1;
@@ -773,7 +763,7 @@ TEST_F(FFT3DKokkosTest, Threading_Threads_Concurrent)
 
         BEGIN_HIDE_OUTPUT();
         auto fft = new FFT3dKokkos<LMPDeviceType>(
-            lmp, MPI_COMM_SELF, grid_size, grid_size, grid_size, in_ilo, in_ihi, in_jlo, in_jhi,
+            lmp, MPI_COMM_WORLD, grid_size, grid_size, grid_size, in_ilo, in_ihi, in_jlo, in_jhi,
             in_klo, in_khi, out_ilo, out_ihi, out_jlo, out_jhi, out_klo, out_khi, scaled, permute,
             &nbuf, usecollective, usegpu_aware);
         END_HIDE_OUTPUT();
@@ -852,7 +842,7 @@ TEST_F(FFT3DKokkosTest, Threading_Safety)
 
     BEGIN_HIDE_OUTPUT();
     auto fft_device = new FFT3dKokkos<LMPDeviceType>(
-        lmp, MPI_COMM_SELF, grid_size, grid_size, grid_size, in_ilo, in_ihi, in_jlo, in_jhi,
+        lmp, MPI_COMM_WORLD, grid_size, grid_size, grid_size, in_ilo, in_ihi, in_jlo, in_jhi,
         in_klo, in_khi, out_ilo, out_ihi, out_jlo, out_jhi, out_klo, out_khi, scaled, permute,
         &nbuf, usecollective, usegpu_aware);
     END_HIDE_OUTPUT();
@@ -864,13 +854,8 @@ TEST_F(FFT3DKokkosTest, Threading_Safety)
     std::vector<FFT_SCALAR> original_data(2 * nsize);
 
     RandomComplexGenerator gen(98765);
-    for (int i = 0; i < nsize; i++) {
-        auto val = gen.next();
-        input_data[2*i] = val.real();
-        input_data[2*i+1] = val.imag();
-        original_data[2*i] = val.real();
-        original_data[2*i+1] = val.imag();
-    }
+    gen.generate(input_data.data(), grid_size, grid_size, grid_size);
+    gen.generate(original_data.data(), grid_size, grid_size, grid_size);
 
     // Create Kokkos views
     typedef FFTArrayTypes<LMPDeviceType> FFT_AT;

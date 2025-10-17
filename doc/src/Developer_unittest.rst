@@ -201,10 +201,10 @@ configuration through the ``FFTIntrospection`` namespace:
 .. code-block:: c++
 
    #include "fft_introspection.h"
-   
+
    TEST_F(FFT3DTest, ConfigurationDetection) {
        using namespace FFTIntrospection;
-       
+
        // Conditionally skip tests
        if (!is_fft_fftw3()) {
            GTEST_SKIP() << "Test requires FFTW3";
@@ -237,13 +237,13 @@ The ``fft_test_helpers.h`` header provides three main namespaces:
 
    TEST_F(FFT3DTest, RoundTrip_32x32x32) {
        FFTBuffer original(32, 32, 32), fft_result(32, 32, 32), recovered(32, 32, 32);
-       
+
        GaussianGenerator generator(2.0);
        generator.generate(original.data(), 32, 32, 32);
-       
+
        fft->compute(original.data(), fft_result.data(), FFT3d::FORWARD);
        fft->compute(fft_result.data(), recovered.data(), FFT3d::BACKWARD);
-       
+
        RoundTripValidator validator(original.data(), recovered.data(), 32, 32, 32,
                                      scaled_tolerance(ROUNDTRIP_TOLERANCE, 32, 32, 32));
        EXPECT_TRUE(validator.validate());
