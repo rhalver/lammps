@@ -50,7 +50,7 @@ cmake -S cmake -B build \
 cmake --build build
 ```
 
-**IMPORTANT:** Always use `-D DOWNLOAD_POTENTIALS=off` unless you specifically need to download potential files. Network access may be restricted in CI environments.
+**IMPORTANT:** Use `-D DOWNLOAD_POTENTIALS=off` by default to avoid network dependency issues in CI/restricted environments. Only omit this flag if you specifically need LAMMPS to download potential files during the build.
 
 **Build time:** Basic build: ~3-5 minutes, Full build with most packages: ~10-15 minutes
 
