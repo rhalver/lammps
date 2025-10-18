@@ -50,6 +50,8 @@ cmake -S cmake -B build \
 cmake --build build
 ```
 
+**IMPORTANT:** Always use `-D DOWNLOAD_POTENTIALS=off` unless you specifically need to download potential files. Network access may be restricted in CI environments.
+
 **Build time:** Basic build: ~3-5 minutes, Full build with most packages: ~10-15 minutes
 
 ### Traditional Make Build (Legacy, Still Supported)
@@ -270,7 +272,7 @@ lammps/
 ```bash
 # Standard development build and test cycle
 mkdir build
-cmake -S cmake -B build -C cmake/presets/gcc.cmake -C cmake/presets/most.cmake -D ENABLE_TESTING=on
+cmake -S cmake -B build -C cmake/presets/gcc.cmake -C cmake/presets/most.cmake -D ENABLE_TESTING=on -D DOWNLOAD_POTENTIALS=off
 cmake --build build -j 4
 cd src && make check  # Style checks
 cd ../build && ctest -V  # Unit tests
