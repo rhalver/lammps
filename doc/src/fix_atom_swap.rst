@@ -73,9 +73,9 @@ swapped atoms are not well equilibrated.
    energy of the system will be output for the single step.  If you
    instead define no time-integration fix, set *N* = 1, *X* = 1, and
    run for *M* steps (to attempt *M* total swaps), you will get the
-   same result, but there will be 3x as many times as many energy
-   evaluations due to the way LAMMPS treats the MD portion of the
-   timestep.
+   same result, but there will be 3x more energy evaluations due to
+   the requirements of (what LAMMPS presumes is a) hybrid MC+MD
+   simulation.
 
 The *types* keyword is required. At least two atom types must be
 specified. If not using *semi-grand*, exactly two atom types are
