@@ -49,17 +49,33 @@ atoms of the other given atom types.  The specified scaling temperature
 *T* is used in the Metropolis criterion dictating swap probabilities.
 
 Perform *X* swaps of atoms of one type with atoms of another type
-according to a Monte Carlo probability. Swap candidates must be in the
-fix group, must be in the region (if specified), and must be of one of
-the listed types. Swaps are attempted between candidates that are chosen
-randomly with equal probability among the candidate atoms. Swaps are not
-attempted between atoms of the same type since nothing would happen.
+according to a Monte Carlo probability.  Swap candidates must be in
+the fix group, must be in the region (if specified), and must be of
+one of the listed types. Swaps are attempted between candidates that
+are chosen randomly with equal probability among the candidate
+atoms. Swaps are not attempted between atoms of the same type since
+nothing would happen.
 
-All atoms in the simulation domain can be moved using regular time
-integration displacements (e.g., via :doc:`fix nvt <fix_nh>`), resulting
-in a hybrid MC+MD simulation. A smaller-than-usual timestep size may be
-needed when running such a hybrid simulation, especially if the swapped
-atoms are not well equilibrated.
+All atoms in the simulation domain can also be moved using regular
+time integration displacements (e.g., via :doc:`fix nvt <fix_nh>`),
+resulting in a hybrid MC+MD simulation, where $X$ MC swap attempts are
+made once every $N$ MD steps.  A smaller-than-usual timestep size may
+be needed when running such a hybrid simulation, especially if the
+swapped atoms are not well equilibrated.
+
+.. note::
+   
+   To run an MC-only simulation (no MD), you should define no
+   time-integration fix, set *N* = 1, set *X* to the total number of
+   MC swaps *M* to attempt, and run the simulation for a single
+   timestep.  This will invoke energy evaluations only for the MC
+   operations, and none for MD.  The initial and final potential
+   energy of the system will be output for the single step.  If you
+   instead define no time-integration fix, set *N* = 1, *X* = 1, and
+   run for *M* steps (to attempt *M* total swaps), you will get the
+   same result, but there will be 3x as many times as many energy
+   evaluations due to the way LAMMPS treats the MD portion of the
+   timestep.
 
 The *types* keyword is required. At least two atom types must be
 specified. If not using *semi-grand*, exactly two atom types are
