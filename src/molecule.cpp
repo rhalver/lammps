@@ -1862,12 +1862,12 @@ json Molecule::to_json() const
     moldata["com"][2] = com[2];
   }
   if (inertiaflag_user) {
-    moldata["inertia"][0] = inertia[0];
-    moldata["inertia"][1] = inertia[1];
-    moldata["inertia"][2] = inertia[2];
-    moldata["inertia"][3] = inertia[3];
-    moldata["inertia"][4] = inertia[4];
-    moldata["inertia"][5] = inertia[5];
+    moldata["inertia"][0] = itensor[0];
+    moldata["inertia"][1] = itensor[1];
+    moldata["inertia"][2] = itensor[2];
+    moldata["inertia"][3] = itensor[3];
+    moldata["inertia"][4] = itensor[4];
+    moldata["inertia"][5] = itensor[5];
   }
 
   // fields with format
