@@ -475,6 +475,9 @@ void FixPIMDLangevin::init()
     error->universe_all(FLERR, fmt::format("Unknown integrator parameter for fix {}", style));
   }
 
+  if (force->kspace) kspace_flag = 1;
+  else kspace_flag = 0;
+
   comm_init();
 
   mass = new double[atom->ntypes + 1];
