@@ -34,6 +34,7 @@
 #include "error.h"
 #include "force.h"
 #include "group.h"
+#include "kspace.h"
 #include "math_const.h"
 #include "math_special.h"
 #include "memory.h"
