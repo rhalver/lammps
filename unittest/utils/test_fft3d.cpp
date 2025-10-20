@@ -35,7 +35,6 @@
 #include "lammps.h"
 
 #include "../testing/core.h"
-#include "fft_introspection.h"
 #include "fft_test_helpers.h"
 
 #include "gmock/gmock.h"
@@ -145,30 +144,16 @@ protected:
 
 TEST_F(FFT3DTest, BackendDetection)
 {
-    // Print FFT configuration using introspection API
-    std::cout << "\n" << FFTIntrospection::get_fft_configuration() << std::endl;
-
-    // Verify configuration is valid
-    std::string library = FFTIntrospection::get_fft_library();
-    std::string precision = FFTIntrospection::get_fft_precision();
-
-    EXPECT_FALSE(library.empty());
-    EXPECT_FALSE(precision.empty());
-
-    // Check that exactly one library is selected
-    int library_count = 0;
-    if (FFTIntrospection::is_fft_kiss()) library_count++;
-    if (FFTIntrospection::is_fft_fftw3()) library_count++;
-    if (FFTIntrospection::is_fft_mkl()) library_count++;
-    if (FFTIntrospection::is_fft_nvpl()) library_count++;
-    if (FFTIntrospection::is_fft_heffte()) library_count++;
-
-    EXPECT_GE(library_count, 1) << "At least one FFT library should be selected";
-
-    // Report library and precision
-    std::cout << "FFT Library: " << library << std::endl;
-    std::cout << "FFT Precision: " << precision << std::endl;
-    std::cout << "FFT Threading: " << FFTIntrospection::get_fft_threading_info() << std::endl;
+    // Verify FFT configuration is accessible
+    std::string fft_info = Info::get_fft_info();
+    EXPECT_FALSE(fft_info.empty()) << "FFT info should not be empty";
+    
+    // Check FFT library macro is defined
+#if defined(FFT_KISS) || defined(FFT_FFTW3) || defined(FFT_MKL) || defined(FFT_NVPL) || defined(FFT_HEFFTE)
+    SUCCEED() << "FFT library: " << LMP_FFT_LIB;
+#else
+    FAIL() << "No FFT library defined";
+#endif
 }
 
 // ============================================================================
@@ -918,19 +903,13 @@ TEST_F(FFT3DTest, RoundTrip_MPI_4proc_64x64x64)
 
 TEST_F(FFT3DTest, FFTW3_Threading)
 {
-    // Skip if FFTW3 is not configured
-    if (!FFTIntrospection::is_fft_fftw3()) {
-        GTEST_SKIP() << "Test requires FFTW3, current library: "
-                     << FFTIntrospection::get_fft_library();
-    }
+#ifndef FFT_FFTW3
+    GTEST_SKIP() << "Test requires FFTW3, built with: " << LMP_FFT_LIB;
+#endif
 
 #ifndef FFT_FFTW_THREADS
     GTEST_SKIP() << "Test requires FFTW3 with threading enabled (FFT_FFTW_THREADS)";
 #endif
-
-    // Report configuration
-    std::cout << "Testing FFTW3 threading support" << std::endl;
-    std::cout << "Threading: " << FFTIntrospection::get_fft_threading_info() << std::endl;
 
     // Create 64x64x64 grid (large enough to benefit from threading)
     create_serial_fft(64, 64, 64);
@@ -966,16 +945,9 @@ TEST_F(FFT3DTest, FFTW3_Threading)
                                                  nslow, ROUNDTRIP_TOLERANCE, verbose);
     bool passed = validator.validate();
 
-    if (verbose || !passed) {
-        std::cout << "FFTW3 threading test (64x64x64):" << std::endl;
-        std::cout << "  Library: " << FFTIntrospection::get_fft_library() << std::endl;
-        std::cout << "  Threading: " << FFTIntrospection::get_fft_threading_info() << std::endl;
-        std::cout << "  Max error: " << validator.get_error_stats().max() << std::endl;
-        std::cout << "  Avg error: " << validator.get_error_stats().avg() << std::endl;
-        std::cout << "  Status: " << (passed ? "PASSED" : "FAILED") << std::endl;
-    }
-
-    EXPECT_TRUE(passed) << "FFTW3 threaded round-trip validation failed";
+    EXPECT_TRUE(passed) << "FFTW3 threaded round-trip validation failed"
+                        << "\n  Max error: " << validator.get_error_stats().max()
+                        << "\n  Tolerance: " << ROUNDTRIP_TOLERANCE;
     EXPECT_LT(validator.get_error_stats().max(), ROUNDTRIP_TOLERANCE);
 }
 
@@ -987,16 +959,9 @@ TEST_F(FFT3DTest, FFTW3_Threading)
 
 TEST_F(FFT3DTest, MKL_Optimized)
 {
-    // Skip if MKL is not configured
-    if (!FFTIntrospection::is_fft_mkl()) {
-        GTEST_SKIP() << "Test requires MKL FFT, current library: "
-                     << FFTIntrospection::get_fft_library();
-    }
-
-    // Report configuration
-    std::cout << "Testing MKL FFT optimizations" << std::endl;
-    std::cout << "Library: " << FFTIntrospection::get_fft_library() << std::endl;
-    std::cout << "Threading: " << FFTIntrospection::get_fft_threading_info() << std::endl;
+#ifndef FFT_MKL
+    GTEST_SKIP() << "Test requires MKL FFT, built with: " << LMP_FFT_LIB;
+#endif
 
     // Create 64x64x64 grid (tests MKL optimizations for larger grids)
     create_serial_fft(64, 64, 64);
@@ -1040,15 +1005,9 @@ TEST_F(FFT3DTest, MKL_Optimized)
                                                    nfast, nmid, nslow, 1e-10, verbose);
     bool passed = validator.validate();
 
-    if (verbose || !passed) {
-        std::cout << "MKL optimization test (delta function):" << std::endl;
-        std::cout << "  Library: " << FFTIntrospection::get_fft_library() << std::endl;
-        std::cout << "  Max error: " << validator.get_error_stats().max() << std::endl;
-        std::cout << "  Avg error: " << validator.get_error_stats().avg() << std::endl;
-        std::cout << "  Status: " << (passed ? "PASSED" : "FAILED") << std::endl;
-    }
-
-    EXPECT_TRUE(passed) << "MKL delta function validation failed";
+    EXPECT_TRUE(passed) << "MKL delta function validation failed"
+                        << "\n  Max error: " << validator.get_error_stats().max()
+                        << "\n  Tolerance: " << 1e-10;
     EXPECT_LT(validator.get_error_stats().max(), 1e-10);
 }
 
@@ -1060,14 +1019,9 @@ TEST_F(FFT3DTest, MKL_Optimized)
 
 TEST_F(FFT3DTest, KISS_NonPowerOf2)
 {
-    // Skip if KISS FFT is not configured
-    if (!FFTIntrospection::is_fft_kiss()) {
-        GTEST_SKIP() << "Test requires KISS FFT, current library: "
-                     << FFTIntrospection::get_fft_library();
-    }
-
-    std::cout << "Testing KISS FFT with non-power-of-2 sizes" << std::endl;
-    std::cout << "Library: " << FFTIntrospection::get_fft_library() << std::endl;
+#ifndef FFT_KISS
+    GTEST_SKIP() << "Test requires KISS FFT, built with: " << LMP_FFT_LIB;
+#endif
 
     // Test multiple non-power-of-2 sizes
     std::vector<int> test_sizes = {30, 50, 100, 128};
@@ -1145,14 +1099,9 @@ TEST_F(FFT3DTest, KISS_NonPowerOf2)
 
 TEST_F(FFT3DTest, HeFFTe_Distributed)
 {
-    // Skip if HeFFTe is not configured
-    if (!FFTIntrospection::is_fft_heffte()) {
-        GTEST_SKIP() << "Test requires HeFFTe, current library: "
-                     << FFTIntrospection::get_fft_library();
-    }
-
-    std::cout << "Testing HeFFTe distributed FFT" << std::endl;
-    std::cout << "Library: " << FFTIntrospection::get_fft_library() << std::endl;
+#ifndef FFT_HEFFTE
+    GTEST_SKIP() << "Test requires HeFFTe, built with: " << LMP_FFT_LIB;
+#endif
 
     // Note: HeFFTe is designed for distributed-memory parallelism
     // In serial mode, we just validate basic correctness
@@ -1192,17 +1141,10 @@ TEST_F(FFT3DTest, HeFFTe_Distributed)
                                                  nslow, ROUNDTRIP_TOLERANCE, verbose);
     bool passed = validator.validate();
 
-    if (verbose || !passed) {
-        std::cout << "HeFFTe distributed test:" << std::endl;
-        std::cout << "  Library: " << FFTIntrospection::get_fft_library() << std::endl;
-        std::cout << "  Max error: " << validator.get_error_stats().max() << std::endl;
-        std::cout << "  Avg error: " << validator.get_error_stats().avg() << std::endl;
-        std::cout << "  Status: " << (passed ? "PASSED" : "FAILED") << std::endl;
-        std::cout << "  Note: This test runs in serial mode. Full distributed testing "
-                  << "requires MPI with multiple processes." << std::endl;
-    }
-
-    EXPECT_TRUE(passed) << "HeFFTe round-trip validation failed";
+    EXPECT_TRUE(passed) << "HeFFTe round-trip validation failed"
+                        << "\n  Max error: " << validator.get_error_stats().max()
+                        << "\n  Tolerance: " << ROUNDTRIP_TOLERANCE
+                        << "\n  Note: Running in serial mode";
     EXPECT_LT(validator.get_error_stats().max(), ROUNDTRIP_TOLERANCE);
 }
 
