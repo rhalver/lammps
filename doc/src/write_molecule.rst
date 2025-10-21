@@ -27,15 +27,15 @@ Description
 
 .. versionadded:: TBD
 
-Write the data from a :doc:`molecule template<molecule>` to a file.
+Write the data from a :doc:`molecule template<molecule>` to a molecule file.
 
-The file format is determined by the file name: if the file name ends
-in ``.json`` the file will be written `JSON format <https://www.json.org/>`_,
-otherwise the file is written in the native LAMMPS file format.
+The molecule file format is determined by the file name: if the file name ends
+in ``.json`` the file will be written in `JSON format <https://www.json.org/>`_,
+otherwise the file is written in the native LAMMPS molecule file format.
 
-When the molecule template contains multiple molecules as defined by a
-:doc:`molecule command <molecule>` with multiple molecule files as
-arguments, the filename must contain a '%' character which will be
+When the molecule template contains multiple molecules, as defined by a
+:doc:`molecule command <molecule>`, and multiple molecule files need to
+generated, the filename must contain a '%' character that will be
 replaced by the molecule number (starting from 1) so that each molecule
 is written to a separate file.
 
@@ -53,8 +53,9 @@ following the lists given below.  All sections with per-atom data are
 sorted by the atom-ID value starting from 1.  The list of bonds is
 ordered by the atom-ID of the first atom in the bond.  The lists of
 angles, dihedrals, and impropers are ordered by the atom-ID of the
-second atom in the definition.  Entries with the same atom-ID are
-ordered by the order they were defined in the original input data.
+second atom in the definition.  For entries with the same atom-ID, 
+the order in which they were defined in the original input data is 
+maintained.
 
 Native Format
 ^^^^^^^^^^^^^
