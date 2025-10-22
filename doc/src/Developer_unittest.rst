@@ -147,11 +147,12 @@ additional tests.
 FFT Testing Infrastructure
 """"""""""""""""""""""""""
 
-The FFT tests (``test_fft3d.cpp`` and ``test_fft3d_kokkos.cpp``) validate
-the LAMMPS FFT wrapper implementations for both standard (CPU) and KOKKOS
-(CPU/GPU) backends. These tests require the KSPACE package and use
-specialized helper utilities to ensure FFT correctness across different
-library backends (KISS FFT, FFTW3, MKL, NVPL, cuFFT, hipFFT, etc.).
+The FFT tests (``test_fft3d.cpp`` and ``test_fft3d_kokkos.cpp``)
+validate the LAMMPS FFT wrapper implementations for both standard (CPU)
+and KOKKOS (CPU/GPU) backends.  These tests require the KSPACE package
+and use specialized helper utilities to ensure FFT correctness across
+different library backends (KISS FFT, FFTW3, MKL, NVPL, cuFFT, hipFFT,
+etc.).
 
 **Building and Running FFT Tests:**
 
@@ -159,41 +160,25 @@ The FFT tests are automatically enabled when ``ENABLE_TESTING=ON`` and
 ``PKG_KSPACE=ON`` are set during CMake configuration. For KOKKOS FFT tests,
 ``PKG_KOKKOS=ON`` is also required.
 
-Build configuration example:
+Run only FFT tests via CTest:
 
 .. code-block:: bash
 
-   cd build
-   cmake -D PKG_KSPACE=ON -D PKG_KOKKOS=ON -D ENABLE_TESTING=ON ../cmake
-   cmake --build . --target test_fft3d -j8
-   cmake --build . --target test_fft3d_kokkos -j8
-
-Run all FFT tests via CTest:
-
-.. code-block:: bash
-
-   ctest -R FFT3D          # Both standard and KOKKOS tests
-   ctest -L fft            # All tests labeled with 'fft'
-
-Run test executables directly for detailed output:
-
-.. code-block:: bash
-
-   ./test_fft3d                                    # All standard FFT tests
-   ./test_fft3d_kokkos                            # All KOKKOS FFT tests
-   ./test_fft3d --gtest_filter="*RoundTrip*"     # Specific test pattern
+   ctest -R FFT3D          # Run all tests with FFT3D in their name
+   ctest -R FFT3D -V       # Same as above but with verbose output
+   ctest -L fft            # Run all tests labeled with 'fft'
 
 Tests automatically skip configurations requiring libraries or backends
 not available in the current build (e.g., FFTW3, MPI, CUDA).
 
 **Helper Headers:**
 
-The testing infrastructure uses one header-only utility file:
+The testing infrastructure uses ``fft_test_helpers.h`` which contains
+test data generators, validators, and utilities.
 
-- ``fft_test_helpers.h`` - Test data generators, validators, and utilities
-
-For runtime configuration detection, tests use the existing ``Info`` class API
-(``Info::has_package()``, ``Info::has_accelerator_feature()``, etc.).
+For runtime configuration detection, tests use the existing ``Info``
+class API (``Info::has_package()``, ``Info::has_accelerator_feature()``,
+etc.).
 
 **FFT Test Helpers:**
 
@@ -229,21 +214,14 @@ The ``fft_test_helpers.h`` header provides three main namespaces:
        EXPECT_TRUE(validator.validate());
    }
 
-**Test Coverage:**
-
-The tests validate backend detection, round-trip transforms, known answer tests
-(delta function, constant, sine wave), Parseval's theorem (energy conservation),
-Hermitian symmetry, MPI parallel FFTs, and library-specific features (threading,
-GPU backends, non-power-of-2 sizes).
-
 **Precision and Tolerances:**
 
-FFT tests use precision-aware tolerances that automatically adjust based on
-floating-point precision (``FFT_SINGLE`` vs double), grid size, and accelerator
-backend. Base tolerances (``ROUNDTRIP_TOLERANCE``, ``PARSEVAL_TOLERANCE``, etc.)
-are defined in ``fft_test_helpers.h``. Use ``scaled_tolerance()`` to adjust
-for grid size effects.
-
+FFT tests use precision-aware tolerances that automatically adjust based
+on floating-point precision (``-D FFT_SINGLE=ON`` vs ``-D
+FFT_SINGLE=off``), grid size, and accelerator backend.  Base tolerances
+(``ROUNDTRIP_TOLERANCE``, ``PARSEVAL_TOLERANCE``, etc.)  are defined in
+``fft_test_helpers.h``.  Use ``scaled_tolerance()`` to adjust for grid
+size effects.
 
 Tests for individual LAMMPS commands
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
