@@ -82,17 +82,23 @@ if(PKG_KSPACE)
 
   # Register serial test
   add_test(NAME FFT3D COMMAND test_fft3d)
-  set_tests_properties(FFT3D PROPERTIES LABELS "fft;kspace;utils")
+  set_tests_properties(FFT3D PROPERTIES
+    LABELS "fft;kspace;utils"
+    ENVIRONMENT "OMP_PROC_BIND=false")
 
   # Register MPI parallel tests (if MPI is enabled)
   if(BUILD_MPI)
     # Test with 2 processes
     add_mpi_test(NAME FFT3D_MPI_2proc NUM_PROCS 2 COMMAND $<TARGET_FILE:test_fft3d>)
-    set_tests_properties(FFT3D_MPI_2proc PROPERTIES LABELS "fft;kspace;mpi;utils")
+    set_tests_properties(FFT3D_MPI_2proc PROPERTIES
+      LABELS "fft;kspace;mpi;utils"
+      ENVIRONMENT "OMP_PROC_BIND=false")
 
     # Test with 4 processes
     add_mpi_test(NAME FFT3D_MPI_4proc NUM_PROCS 4 COMMAND $<TARGET_FILE:test_fft3d>)
-    set_tests_properties(FFT3D_MPI_4proc PROPERTIES LABELS "fft;kspace;mpi;utils")
+    set_tests_properties(FFT3D_MPI_4proc PROPERTIES
+      LABELS "fft;kspace;mpi;utils"
+      ENVIRONMENT "OMP_PROC_BIND=false")
   endif()
 endif()
 
@@ -112,17 +118,23 @@ if(PKG_KSPACE AND PKG_KOKKOS)
 
   # Register serial test
   add_test(NAME FFT3DKokkos COMMAND test_fft3d_kokkos)
-  set_tests_properties(FFT3DKokkos PROPERTIES LABELS "fft;kokkos;kspace;utils")
+  set_tests_properties(FFT3DKokkos PROPERTIES
+    LABELS "fft;kokkos;kspace;utils"
+    ENVIRONMENT "OMP_PROC_BIND=false")
 
   # Register MPI parallel tests (if MPI is enabled)
   if(BUILD_MPI)
     # Test with 2 processes
     add_mpi_test(NAME FFT3DKokkos_MPI_2proc NUM_PROCS 2 COMMAND $<TARGET_FILE:test_fft3d_kokkos>)
-    set_tests_properties(FFT3DKokkos_MPI_2proc PROPERTIES LABELS "fft;kokkos;kspace;mpi;utils")
+    set_tests_properties(FFT3DKokkos_MPI_2proc PROPERTIES
+      LABELS "fft;kokkos;kspace;mpi;utils"
+      ENVIRONMENT "OMP_PROC_BIND=false")
 
     # Test with 4 processes
     add_mpi_test(NAME FFT3DKokkos_MPI_4proc NUM_PROCS 4 COMMAND $<TARGET_FILE:test_fft3d_kokkos>)
-    set_tests_properties(FFT3DKokkos_MPI_4proc PROPERTIES LABELS "fft;kokkos;kspace;mpi;utils")
+    set_tests_properties(FFT3DKokkos_MPI_4proc PROPERTIES
+      LABELS "fft;kokkos;kspace;mpi;utils"
+      ENVIRONMENT "OMP_PROC_BIND=false")
   endif()
 endif()
 
