@@ -851,12 +851,12 @@ void FixPIMDLangevin::b_step()
   double **f = atom->f;
 
   for (int i = 0; i < nlocal; i++) {
-    // if (mask[i] & groupbit) {
+    if (mask[i] & groupbit) {
       double dtfm = dtf / mass[type[i]];
       v[i][0] += dtfm * f[i][0];
       v[i][1] += dtfm * f[i][1];
       v[i][2] += dtfm * f[i][2];
-    // }
+    }
   }
 }
 
@@ -875,11 +875,11 @@ void FixPIMDLangevin::qc_step()
   if (!pstat_flag) {
     if (universe->iworld == 0) {
       for (int i = 0; i < nlocal; i++) {
-        // if (mask[i] & groupbit) {
+        if (mask[i] & groupbit) {
           x[i][0] += dtv * v[i][0];
           x[i][1] += dtv * v[i][1];
           x[i][2] += dtv * v[i][2];
-        // }
+        }
       }
     }
   } else {
@@ -895,7 +895,7 @@ void FixPIMDLangevin::qc_step()
       }
       if (barostat == BZP) {
         for (int i = 0; i < nlocal; i++) {
-          // if (mask[i] & groupbit) {
+          if (mask[i] & groupbit) {
             for (int j = 0; j < 3; j++) {
               if (p_flag[j]) {
                 x[i][j] = expq[j] * x[i][j] + (expq[j] - expp[j]) / 2. / vw[j] * v[i][j];
@@ -904,7 +904,7 @@ void FixPIMDLangevin::qc_step()
                 x[i][j] += dtv * v[i][j];
               }
             }
-          // }
+          }
         }
         oldlo = domain->boxlo[0];
         oldhi = domain->boxhi[0];
@@ -945,7 +945,7 @@ void FixPIMDLangevin::a_step()
 
   if (universe->iworld != 0) {
     for (int i = 0; i < nlocal; i++) {
-      // if (mask[i] & groupbit) {
+      if (mask[i] & groupbit) {
         x0 = x[i][0];
         x1 = x[i][1];
         x2 = x[i][2];
@@ -964,7 +964,7 @@ void FixPIMDLangevin::a_step()
             Lan_c[universe->iworld] * v1;
         v[i][2] = -1.0 * _omega_k[universe->iworld] * Lan_s[universe->iworld] * x2 +
             Lan_c[universe->iworld] * v2;
-      // }
+      }
     }
   }
 }
@@ -982,11 +982,11 @@ void FixPIMDLangevin::q_step()
 
   if (!pstat_flag) {
     for (int i = 0; i < nlocal; i++) {
-      // if (mask[i] & groupbit) {
+      if (mask[i] & groupbit) {
         x[i][0] += dtv * v[i][0];
         x[i][1] += dtv * v[i][1];
         x[i][2] += dtv * v[i][2];
-      // }
+      }
     }
   }
 }
@@ -1177,25 +1177,25 @@ void FixPIMDLangevin::o_step()
   if (thermostat == PILE_L) {
     if (method == NMPIMD) {
       for (int i = 0; i < nlocal; i++) {
-        // if (mask[i] & groupbit) {
+        if (mask[i] & groupbit) {
           atom->v[i][0] = c1_k[universe->iworld] * atom->v[i][0] +
               c2_k[universe->iworld] * sqrt(1.0 / mass[type[i]] / beta_np) * random->gaussian();
           atom->v[i][1] = c1_k[universe->iworld] * atom->v[i][1] +
               c2_k[universe->iworld] * sqrt(1.0 / mass[type[i]] / beta_np) * random->gaussian();
           atom->v[i][2] = c1_k[universe->iworld] * atom->v[i][2] +
               c2_k[universe->iworld] * sqrt(1.0 / mass[type[i]] / beta_np) * random->gaussian();
-        // }
+        }
       }
     } else if (method == PIMD) {
       for (int i = 0; i < nlocal; i++) {
-        // if (mask[i] & groupbit) {
+        if (mask[i] & groupbit) {
           atom->v[i][0] =
               c1 * atom->v[i][0] + c2 * sqrt(1.0 / mass[type[i]] / beta_np) * random->gaussian();
           atom->v[i][1] =
               c1 * atom->v[i][1] + c2 * sqrt(1.0 / mass[type[i]] / beta_np) * random->gaussian();
           atom->v[i][2] =
               c1 * atom->v[i][2] + c2 * sqrt(1.0 / mass[type[i]] / beta_np) * random->gaussian();
-        // }
+        }
       }
     }
   }
