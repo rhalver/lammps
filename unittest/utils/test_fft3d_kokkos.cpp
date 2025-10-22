@@ -11,28 +11,24 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-// Test suite for KOKKOS FFT3d wrapper (GPU and CPU backends)
+// Test suite for KOKKOS FFT3d wrapper
 //
-// CPU Tests (Task 4.3):
+// Supported Backends (CPU only):
 //   - Kokkos::Serial backend (always available)
 //   - Kokkos::OpenMP backend (if enabled)
 //   - Kokkos::Threads backend (if enabled)
 //
-// GPU Tests (Task 4.4):
-//   - cuFFT tests for NVIDIA CUDA backend
-//   - hipFFT tests for AMD HIP backend
-//   - MKL_GPU tests for Intel SYCL backend
+// GPU Backend Limitations:
+//   Currently, KOKKOS GPU backends (CUDA, HIP, SYCL) are NOT tested because:
+//   1. When a GPU backend is configured, it MUST be used (cannot test threading only)
+//   2. No reliable, non-crashing way exists to detect viable GPU hardware
+//   Therefore, tests are skipped for KOKKOS/CUDA, KOKKOS/HIP, and KOKKOS/SYCL
 //
 // Test Categories:
 //   1. Backend detection and configuration
 //   2. Round-trip tests (forward + backward FFT)
 //   3. Known answer tests (delta function, sine wave)
 //   4. Multiple grid sizes
-//
-// Note: GPU tests require appropriate hardware and libraries:
-//   - cuFFT: NVIDIA GPU + CUDA
-//   - hipFFT: AMD GPU + ROCm (or NVIDIA GPU via HIP)
-//   - MKL_GPU: Intel GPU + SYCL
 
 #include "lmpfftsettings.h"
 
@@ -632,8 +628,6 @@ TEST_F(FFT3DKokkosTest, Threading_OpenMP_Concurrent)
         delete fft;
     }
 
-    std::cout << "  Status: " << (all_passed ? "PASSED" : "FAILED") << std::endl;
-
     EXPECT_TRUE(all_passed) << "One or more concurrent FFTs failed validation";
 #endif
 }
@@ -726,8 +720,6 @@ TEST_F(FFT3DKokkosTest, Threading_Threads_Concurrent)
         delete fft;
     }
 
-    std::cout << "  Status: " << (all_passed ? "PASSED" : "FAILED") << std::endl;
-
     EXPECT_TRUE(all_passed) << "One or more concurrent FFTs failed validation";
 #endif
 }
@@ -816,9 +808,6 @@ TEST_F(FFT3DKokkosTest, Threading_Safety)
     }
 
     delete fft_device;
-
-    std::cout << "  Iterations completed: " << num_iterations << std::endl;
-    std::cout << "  Status: " << (all_passed ? "PASSED" : "FAILED") << std::endl;
 
     EXPECT_TRUE(all_passed) << "Thread safety validation failed";
 }
@@ -963,14 +952,6 @@ TEST_F(FFT3DKokkosTest, RoundTrip_Kokkos_MPI_2proc_32x32x32)
     double global_max_error;
     MPI_Allreduce(&local_max_error, &global_max_error, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
-    // Report results (rank 0 only)
-    if (rank == 0) {
-        std::cout << "  Global grid: " << grid_size << "^3" << std::endl;
-        std::cout << "  MPI processes: " << nprocs << std::endl;
-        std::cout << "  Global max error: " << global_max_error << std::endl;
-        std::cout << "  Status: " << (all_passed ? "PASSED" : "FAILED") << std::endl;
-    }
-
     delete fft_mpi;
 
     EXPECT_TRUE(all_passed) << "Round-trip validation failed on rank " << rank;
@@ -1102,15 +1083,6 @@ TEST_F(FFT3DKokkosTest, RoundTrip_Kokkos_MPI_4proc_64x64x64)
     double local_max_error = validator.get_error_stats().max();
     double global_max_error;
     MPI_Allreduce(&local_max_error, &global_max_error, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
-    // Report results (rank 0 only)
-    if (rank == 0) {
-        std::cout << "  Global grid: " << grid_size << "^3" << std::endl;
-        std::cout << "  MPI processes: " << nprocs << std::endl;
-        std::cout << "  Slices per process: " << slices_per_proc << std::endl;
-        std::cout << "  Global max error: " << global_max_error << std::endl;
-        std::cout << "  Status: " << (all_passed ? "PASSED" : "FAILED") << std::endl;
-    }
 
     delete fft_mpi;
 
@@ -1244,15 +1216,6 @@ TEST_F(FFT3DKokkosTest, RoundTrip_Kokkos_MPI_GPU_2proc)
     double local_max_error = validator.get_error_stats().max();
     double global_max_error;
     MPI_Allreduce(&local_max_error, &global_max_error, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
-    // Report results
-    if (rank == 0) {
-        std::cout << "  Global grid: " << grid_size << "^3" << std::endl;
-        std::cout << "  MPI processes: " << nprocs << std::endl;
-        std::cout << "  GPU-aware MPI: " << (usegpu_aware ? "enabled" : "disabled") << std::endl;
-        std::cout << "  Global max error: " << global_max_error << std::endl;
-        std::cout << "  Status: " << (all_passed ? "PASSED" : "FAILED") << std::endl;
-    }
 
     delete fft_mpi;
 
