@@ -391,6 +391,12 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
             iarg += 2;
           } else break;
         }
+      } else if (strcmp(arg[iarg],"rate_limit") == 0) {
+        error->all(FLERR,"Fix bond/react: 'rate_limit' as an 'individual keyword' has been deprecated. "
+                         "Please use the 'rate_limit' common keyword instead, which can be applied to one or more reactions.");
+      } else if (strcmp(arg[iarg],"max_rxn") == 0) {
+        error->all(FLERR,"Fix bond/react: 'max_rxn' as an 'individual keyword' has been deprecated. "
+                         "Please use the 'max_rxn' common keyword instead, which can be applied to one or more reactions.");
       } else error->all(FLERR,"Illegal fix bond/react command: unknown keyword");
     }
   }
