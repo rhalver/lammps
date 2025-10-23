@@ -193,13 +193,20 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg],"rate_limit") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit", error);
       struct RateLimit rlm;
-      rlm.Nrxns = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      rlm.Nrxns = 0;
+      int j = iarg+1;
+      while (isalpha(arg[j++][0])) {
+        rlm.Nrxns++;
+        if (j > narg+2) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit", error);
+      }
+      if (rlm.Nrxns == 0) error->all(FLERR, iarg, "Illegal fix bond/react command: "
+                                         "at least one rxn-ID should be listed directly after the 'rate_limit' keyword");
       if (iarg+rlm.Nrxns+4 > narg) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit", error);
       for (int i = 0; i < rlm.Nrxns; i++) {
-        std::string tmpstr = arg[iarg+2+i];
+        std::string tmpstr = arg[iarg+1+i];
         rlm.rxn_names.push_back(tmpstr);
       }
-      char *myarg = arg[iarg+rlm.Nrxns+2]; // Nlimit
+      char *myarg = arg[iarg+rlm.Nrxns+1]; // Nlimit
       if (strncmp(myarg,"v_",2) == 0) {
         rlm.var_flag = 1;
         rlm.var_id = input->variable->find(myarg);
@@ -208,9 +215,9 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
         if (!input->variable->equalstyle(rlm.var_id))
           error->all(FLERR,"Fix bond/react: Variable {} for rate_limit is not equal-style",myarg);
       } else rlm.Nlimit = utils::inumeric(FLERR,myarg,false,lmp);
-      rlm.Nsteps = utils::inumeric(FLERR,arg[iarg+rlm.Nrxns+3],false,lmp);
+      rlm.Nsteps = utils::inumeric(FLERR,arg[iarg+rlm.Nrxns+2],false,lmp);
       rate_limits.push_back(rlm);
-      iarg += rlm.Nrxns+4;
+      iarg += rlm.Nrxns+3;
     } else if (strcmp(arg[iarg],"shuffle_seed") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"fix bond/react seed", error);
       shuffle_seed = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
