@@ -179,17 +179,24 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg],"max_rxn") == 0) {
       if (iarg+1 > narg) utils::missing_cmd_args(FLERR,"fix bond/react max_rxn", error);
       struct MaxRxnLimit maxlimit;
-      maxlimit.Nrxns = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
-      if (iarg+maxlimit.Nrxns+3 > narg) utils::missing_cmd_args(FLERR,"fix bond/react max_rxn", error);
+      maxlimit.Nrxns = 0;
+      int j = iarg+1;
+      while (isalpha(arg[j++][0])) {
+        maxlimit.Nrxns++;
+        if (j > narg+2) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit", error);
+      }
+      if (maxlimit.Nrxns == 0) error->all(FLERR, iarg, "Illegal fix bond/react command: "
+                                         "at least one rxn-ID should be listed directly after the 'max_rxn' keyword");
+      if (iarg+maxlimit.Nrxns+2 > narg) utils::missing_cmd_args(FLERR,"fix bond/react max_rxn", error);
       for (int i = 0; i < maxlimit.Nrxns; i++) {
-        std::string tmpstr = arg[iarg+2+i];
+        std::string tmpstr = arg[iarg+1+i];
         maxlimit.rxn_names.push_back(tmpstr);
       }
-      maxlimit.max_rxn = utils::inumeric(FLERR,arg[iarg+maxlimit.Nrxns+2],false,lmp);
+      maxlimit.max_rxn = utils::inumeric(FLERR,arg[iarg+maxlimit.Nrxns+1],false,lmp);
       if (maxlimit.max_rxn < 0) error->all(FLERR, iarg, "Illegal fix bond/react command: "
                                          "'max_rxn' cannot be negative");
       max_rxn_limits.push_back(maxlimit);
-      iarg += maxlimit.Nrxns+3;
+      iarg += maxlimit.Nrxns+2;
     } else if (strcmp(arg[iarg],"rate_limit") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit", error);
       struct RateLimit rlm;
@@ -432,7 +439,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
           break;
         }
       }
-      if (existflag == 0) error->all(FLERR, "Fix bond/react: Invalid reaction name {} listed for rate_limit", maxlimit.rxn_names[i]);
+      if (existflag == 0) error->all(FLERR, "Fix bond/react: Invalid reaction name {} listed for max_rxn", maxlimit.rxn_names[i]);
     }
   }
 
