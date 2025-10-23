@@ -147,6 +147,8 @@ additional tests.
 FFT Testing Infrastructure
 """"""""""""""""""""""""""
 
+.. versionadded:: TBD
+
 The FFT tests (``test_fft3d.cpp`` and ``test_fft3d_kokkos.cpp``)
 validate the LAMMPS FFT wrapper implementations for both standard (CPU)
 and KOKKOS (CPU/GPU) back ends.  These tests require the KSPACE package
@@ -171,7 +173,7 @@ Run only FFT tests using the ``ctest`` command of the CMake software:
 Tests automatically skip configurations requiring libraries or back ends
 not available in the current build (e.g., FFTW3, MPI, CUDA).
 
-**Helper Headers:**
+**FFT Test Helper Header:**
 
 The testing infrastructure uses ``fft_test_helpers.h`` which contains
 test data generators, validators, and utilities.
@@ -179,8 +181,6 @@ test data generators, validators, and utilities.
 For runtime configuration detection, tests use the existing ``Info``
 class API (``Info::has_package()``, ``Info::has_accelerator_feature()``,
 etc.).
-
-**FFT Test Helpers:**
 
 The ``fft_test_helpers.h`` header provides three main namespaces:
 
