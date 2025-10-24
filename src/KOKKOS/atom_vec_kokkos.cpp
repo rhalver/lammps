@@ -856,3 +856,104 @@ void AtomVecKokkos::unpack_reverse_kokkos(const int &n,
     atomKK->modified(Device,F_MASK);
   }
 }
+
+/* ---------------------------------------------------------------------- */
+
+int AtomVecKokkos::field2mask(std::string field)
+{
+  if (field == "id")
+    return TAG_MASK;
+  else if (field == "type")
+    return TYPE_MASK;
+  else if (field == "mask")
+    return MASK_MASK;
+  else if (field == "image")
+    return IMAGE_MASK;
+  else if (field == "x")
+    return X_MASK;
+  else if (field == "v")
+    return V_MASK;
+  else if (field == "f")
+    return F_MASK;
+  else if (field == "rmass")
+    return RMASS_MASK;
+  else if (field == "q")
+    return Q_MASK;
+  else if (field == "mu")
+    return MU_MASK;
+  else if (field == "radius")
+    return RADIUS_MASK;
+  else if (field == "omega")
+    return OMEGA_MASK;
+  else if (field == "torque")
+    return TORQUE_MASK;
+  else if (field == "molecule")
+    return MOLECULE_MASK;
+  else if (field == "special")
+    return SPECIAL_MASK;
+  else if (field == "num_bond")
+    return BOND_MASK;
+  else if (field == "num_angle")
+    return ANGLE_MASK;
+  else if (field == "num_dihedral")
+    return DIHEDRAL_MASK;
+  else if (field == "num_improper")
+    return IMPROPER_MASK;
+  else if (field == "sp")
+    return SP_MASK;
+  else if (field == "fm")
+    return FM_MASK;
+  else if (field == "fm_long")
+    return FML_MASK;
+  else if (field == "rho") // conflicts with SPH package "rho"
+    return DPDRHO_MASK;
+  else if (field == "dpdTheta")
+    return DPDTHETA_MASK;
+  else if (field == "uCond")
+    return UCOND_MASK;
+  else if (field == "uMech")
+    return UMECH_MASK;
+  else if (field == "uChem")
+    return UCHEM_MASK;
+  else if (field == "uCG")
+    return UCG_MASK;
+  else if (field == "uCGnew")
+    return UCGNEW_MASK;
+  else if (field == "duChem")
+    return DUCHEM_MASK;
+  else
+    return EMPTY_MASK;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void AtomVecKokkos::set_atom_masks()
+{
+  datamask_grow = EMPTY_MASK;
+  for (int i = 0; i < ngrow; i++)
+    datamask_grow |= field2mask(fields_grow[i]);
+
+  datamask_comm = EMPTY_MASK;
+  for (int i = 0; i < ncomm; i++)
+    datamask_comm |= field2mask(fields_comm[i]);
+
+  datamask_comm_vel = EMPTY_MASK;
+  for (int i = 0; i < ncomm_vel; i++)
+    datamask_comm_vel |= field2mask(fields_comm_vel[i]);
+
+  datamask_reverse = EMPTY_MASK;
+  for (int i = 0; i < nreverse; i++)
+    datamask_reverse |= field2mask(fields_reverse[i]);
+
+  datamask_border = EMPTY_MASK;
+  for (int i = 0; i < nborder; i++)
+    datamask_border |= field2mask(fields_border[i]);
+
+  datamask_border_vel = EMPTY_MASK;
+  for (int i = 0; i < nborder_vel; i++)
+    datamask_border_vel |= field2mask(fields_border_vel[i]);
+
+  datamask_exchange = EMPTY_MASK;
+  for (int i = 0; i < nexchange; i++)
+    datamask_exchange |= field2mask(fields_exchange[i]);
+}

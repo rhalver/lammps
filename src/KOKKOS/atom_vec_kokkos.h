@@ -127,6 +127,17 @@ class AtomVecKokkos : virtual public AtomVec {
 
   DAT::tdual_int_1d k_count;
 
+  int datamask_grow;
+  int datamask_comm;
+  int datamask_comm_vel;
+  int datamask_reverse;
+  int datamask_border;
+  int datamask_border_vel;
+  int datamask_exchange;
+
+  int field2mask(std::string);
+  void set_atom_masks();
+
  public:
 
   #ifdef LMP_KOKKOS_GPU
