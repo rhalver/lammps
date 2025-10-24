@@ -36,24 +36,53 @@ class AtomVecHybridKokkos : public AtomVecKokkos, public AtomVecHybrid {
   void grow(int) override;
   void sort_kokkos(Kokkos::BinSort<KeyViewType, BinOp> &Sorter) override;
 
-  int pack_comm_kokkos(const int &n, const DAT::tdual_int_1d &k_sendlist,
-                       const DAT::tdual_double_2d_lr &buf,
-                       const int &pbc_flag, const int pbc[]) override;
-  void unpack_comm_kokkos(const int &n, const int &nfirst,
-                          const DAT::tdual_double_2d_lr &buf) override;
   int pack_comm_self(const int &n, const DAT::tdual_int_1d &list,
                      const int nfirst,
                      const int &pbc_flag, const int pbc[]) override;
+
+  int pack_comm_self_fused(const int &n, const DAT::tdual_int_2d_lr &list,
+                           const DAT::tdual_int_1d &sendnum_scan,
+                           const DAT::tdual_int_1d &firstrecv,
+                           const DAT::tdual_int_1d &pbc_flag,
+                           const DAT::tdual_int_2d &pbc,
+                           const DAT::tdual_int_1d &g2l) override;
+
+  int pack_comm_kokkos(const int &n, const DAT::tdual_int_1d &list,
+                       const DAT::tdual_double_2d_lr &buf,
+                       const int &pbc_flag, const int pbc[]) override;
+
+  void unpack_comm_kokkos(const int &n, const int &nfirst,
+                          const DAT::tdual_double_2d_lr &buf) override;
+
+  int pack_comm_vel_kokkos(const int &n, const DAT::tdual_int_1d &list,
+                           const DAT::tdual_double_2d_lr &buf,
+                           const int &pbc_flag, const int pbc[]) override;
+
+  void unpack_comm_vel_kokkos(const int &n, const int &nfirst,
+                              const DAT::tdual_double_2d_lr &buf) override;
+
+  int pack_reverse_self(const int &n, const DAT::tdual_int_1d &list,
+                        const int nfirst) override;
+
+  int pack_reverse_kokkos(const int &n, const int &nfirst,
+                          const DAT::tdual_double_2d_lr &buf) override;
+
+  void unpack_reverse_kokkos(const int &n, const DAT::tdual_int_1d &list,
+                             const DAT::tdual_double_2d_lr &buf) override;
+
   int pack_border_kokkos(int n, DAT::tdual_int_1d k_sendlist,
                          DAT::tdual_double_2d_lr buf,
                          int pbc_flag, int *pbc, ExecutionSpace space) override;
+
   void unpack_border_kokkos(const int &n, const int &nfirst,
                             const DAT::tdual_double_2d_lr &buf,
                             ExecutionSpace space) override;
+
   int pack_exchange_kokkos(const int &nsend,DAT::tdual_double_2d_lr &buf,
                            DAT::tdual_int_1d k_sendlist,
                            DAT::tdual_int_1d k_copylist,
                            ExecutionSpace space) override;
+
   int unpack_exchange_kokkos(DAT::tdual_double_2d_lr &k_buf, int nrecv,
                              int nlocal, int dim, double lo, double hi,
                              ExecutionSpace space,
