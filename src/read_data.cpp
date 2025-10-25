@@ -710,6 +710,8 @@ void ReadData::command(int narg, char **arg)
     if (firstpass) {
       delete lmap;
       lmap = new LabelMap(lmp, ntypes, nbondtypes, nangletypes, ndihedraltypes, nimpropertypes);
+      // reset maxexchange
+      atom->avec->maxexchange = 0;
     }
 
     // -------------------------------------------------------------------------------------
@@ -1722,8 +1724,10 @@ void ReadData::bonds(int firstpass)
         error->all(FLERR,
                    "Subsequent read data induced "
                    "too many bonds per atom");
-    } else
+    } else {
       atom->bond_per_atom = maxall;
+      atom->avec->maxexchange += 2 * maxall;
+    }
 
     memory->destroy(count);
     return;
@@ -1801,9 +1805,10 @@ void ReadData::angles(int firstpass)
         error->all(FLERR,
                    "Subsequent read data induced "
                    "too many angles per atom");
-    } else
+    } else {      
       atom->angle_per_atom = maxall;
-
+      atom->avec->maxexchange += 4 * maxall;
+    }
     memory->destroy(count);
     return;
   }
@@ -1881,8 +1886,10 @@ void ReadData::dihedrals(int firstpass)
         error->all(FLERR,
                    "Subsequent read data induced "
                    "too many dihedrals per atom");
-    } else
+    } else {
       atom->dihedral_per_atom = maxall;
+      atom->avec->maxexchange += 5 * maxall;
+    }
 
     memory->destroy(count);
     return;
@@ -1959,8 +1966,10 @@ void ReadData::impropers(int firstpass)
     if (addflag != NONE) {
       if (maxall > atom->improper_per_atom)
         error->all(FLERR, "Subsequent read data induced too many impropers per atom");
-    } else
+    } else {
       atom->improper_per_atom = maxall;
+      atom->avec->maxexchange += 5 * maxall;
+    }
 
     memory->destroy(count);
     return;
