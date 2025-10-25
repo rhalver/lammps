@@ -151,6 +151,9 @@ class AtomVecHybridKokkos : public AtomVecKokkos, public AtomVecHybrid {
   HAT::t_int_2d h_dihedral_type;
   HAT::t_tagint_2d h_dihedral_atom1,h_dihedral_atom2,
     h_dihedral_atom3,h_dihedral_atom4;
+
+  DAT::t_kkfloat_1d_4 d_mu;
+  HAT::t_kkfloat_1d_4 h_mu;
 };
 
 } // namespace LAMMPS_NS
