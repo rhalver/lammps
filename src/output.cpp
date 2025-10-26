@@ -709,7 +709,7 @@ void Output::write_molecule_json(FILE *fp, int json_level, int printflag, int *i
         fprintf(fp, "%s\"types\": {\n", indent.c_str());
         indent.resize(++json_level*tab, ' ');
         if (printflag == 1 && json_init == 1)
-          fprintf(fp, "%s\"format\": [\"atom-tag\", \"type\"],\n", indent.c_str());
+          fprintf(fp, "%s\"format\": [\"atom-id\", \"type\"],\n", indent.c_str());
         fprintf(fp, "%s\"data\": [\n", indent.c_str());
         indent.resize(++json_level*tab, ' ');
         auto it = atoms_root.begin();
@@ -730,7 +730,7 @@ void Output::write_molecule_json(FILE *fp, int json_level, int printflag, int *i
         fprintf(fp, "%s\"coords\": {\n", indent.c_str());
         indent.resize(++json_level*tab, ' ');
         if (printflag == 1 && json_init == 1)
-          fprintf(fp, "%s\"format\": [\"atom-tag\", \"x\", \"y\", \"z\"],\n", indent.c_str());
+          fprintf(fp, "%s\"format\": [\"atom-id\", \"x\", \"y\", \"z\"],\n", indent.c_str());
         if (json_init == 1) json_init++;
         fprintf(fp, "%s\"data\": [\n", indent.c_str());
         indent.resize(++json_level*tab, ' ');
