@@ -286,6 +286,7 @@ struct AtomVecHybridKokkos_PackCommSelf {
       _spw(i+_nfirst,0) = _sp(j,0);
       _spw(i+_nfirst,1) = _sp(j,1);
       _spw(i+_nfirst,2) = _sp(j,2);
+      _spw(i+_nfirst,3) = _sp(j,3);
     }
 
     if (_datamask & DPDTHETA_MASK)
@@ -914,6 +915,7 @@ struct AtomVecHybridKokkos_UnpackCommVel {
       _sp(i+_first,0) = _buf(i,m++);
       _sp(i+_first,1) = _buf(i,m++);
       _sp(i+_first,2) = _buf(i,m++);
+      _sp(i+_first,3) = _buf(i,m++);
     }
 
     if (_datamask & OMEGA_MASK) {
@@ -1204,24 +1206,24 @@ struct AtomVecHybridKokkos_PackBorder {
     const typename AT::t_int_1d_const &list,
     const double &dx, const double &dy, const double &dz,
     const unsigned int &datamask):
-    _buf(buf),_list(list),
-    _x(atomKK->k_x.view<DeviceType>()),
-    _tag(atomKK->k_tag.view<DeviceType>()),
-    _type(atomKK->k_type.view<DeviceType>()),
-    _mask(atomKK->k_mask.view<DeviceType>()),
-    _molecule(atomKK->k_molecule.view<DeviceType>()),
-    _q(atomKK->k_q.view<DeviceType>()),
-    _mu(atomKK->k_mu.view<DeviceType>()),
-    _sp(atomKK->k_sp.view<DeviceType>()),
-    _radius(atomKK->k_radius.view<DeviceType>()),
-    _rmass(atomKK->k_rmass.view<DeviceType>()),
-    _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
-    _uCond(atomKK->k_uCond.view<DeviceType>()),
-    _uMech(atomKK->k_uMech.view<DeviceType>()),
-    _uChem(atomKK->k_uChem.view<DeviceType>()),
-    _uCG(atomKK->k_uCG.view<DeviceType>()),
-    _uCGnew(atomKK->k_uCGnew.view<DeviceType>()),
-    _dx(dx),_dy(dy),_dz(dz),_datamask(datamask) {}
+      _buf(buf),_list(list),
+      _x(atomKK->k_x.view<DeviceType>()),
+      _tag(atomKK->k_tag.view<DeviceType>()),
+      _type(atomKK->k_type.view<DeviceType>()),
+      _mask(atomKK->k_mask.view<DeviceType>()),
+      _molecule(atomKK->k_molecule.view<DeviceType>()),
+      _q(atomKK->k_q.view<DeviceType>()),
+      _mu(atomKK->k_mu.view<DeviceType>()),
+      _sp(atomKK->k_sp.view<DeviceType>()),
+      _radius(atomKK->k_radius.view<DeviceType>()),
+      _rmass(atomKK->k_rmass.view<DeviceType>()),
+      _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+      _uCond(atomKK->k_uCond.view<DeviceType>()),
+      _uMech(atomKK->k_uMech.view<DeviceType>()),
+      _uChem(atomKK->k_uChem.view<DeviceType>()),
+      _uCG(atomKK->k_uCG.view<DeviceType>()),
+      _uCGnew(atomKK->k_uCGnew.view<DeviceType>()),
+      _dx(dx),_dy(dy),_dz(dz),_datamask(datamask) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const int& i) const {
