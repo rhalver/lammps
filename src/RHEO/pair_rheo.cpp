@@ -88,7 +88,7 @@ void PairRHEO::compute(int eflag, int vflag)
   double dx[3], du[3], dv[3], fv[3], dfp[3], fsolid[3], ft[3], vi[3], vj[3];
 
   int *ilist, *jlist, *numneigh, **firstneigh;
-  double imass, jmass, rsq, r, rinv;
+  double imass, jmass, rsq, r, rinv, rinvsq;
 
   int nlocal = atom->nlocal;
   int newton_pair = force->newton_pair;
@@ -154,12 +154,14 @@ void PairRHEO::compute(int eflag, int vflag)
       imass = rmass[i];
     else
       imass = mass[itype];
+    rho0i = rho0[itype];
     etai = viscosity[i];
     fluidi = !(status[i] & PHASECHECK);
     if (thermal_flag) {
       kappai = conductivity[i];
       Ti = temperature[i];
       cpi = fix_thermal->calc_cv(itype);
+      alphai = kappai / (rho0i * cpi);
     }
 
     for (jj = 0; jj < jnum; jj++) {
@@ -175,6 +177,7 @@ void PairRHEO::compute(int eflag, int vflag)
       if (rsq < cutksq) {
         r = sqrt(rsq);
         rinv = 1 / r;
+        rinvsq = rinv * rinv;
 
         if (rmass)
           jmass = rmass[i];
@@ -219,7 +222,6 @@ void PairRHEO::compute(int eflag, int vflag)
         // Add corrections for walls
         rhoi = rho[i];
         rhoj = rho[j];
-        rho0i = rho0[itype];
         rho0j = rho0[jtype];
         Pi = pressure[i];
         Pj = pressure[j];
@@ -264,7 +266,6 @@ void PairRHEO::compute(int eflag, int vflag)
         // Thermal Evolution
         if (thermal_flag) {
           cpj = fix_thermal->calc_cv(jtype);
-          alphai = kappai / (rho0i * cpi);
           alphaj = kappaj / (rho0j * cpj);
           if (harmonic_means_flag) {
             alpha_ave = 2.0 * alphai * alphaj / (alphai + alphaj);
@@ -272,7 +273,7 @@ void PairRHEO::compute(int eflag, int vflag)
             alpha_ave = 0.5 * (alphai + alphaj);
           }
           dT_prefactor =
-              2.0 * alpha_ave * (Ti - Tj) * rinv * rinv;
+              2.0 * alpha_ave * (Ti - Tj) * rinvsq;
 
           dT = dot3(dx, dWij);
           heatflow[i] += dT * dT_prefactor * volj;
@@ -317,7 +318,7 @@ void PairRHEO::compute(int eflag, int vflag)
           for (a = 0; a < dim; a++) {
             fv[a] = 0.0;
             for (b = 0; b < dim; b++) fv[a] += dv[a] * dx[b] * dWij[b];
-            fv[a] *= 2.0 * eta_ave * volj * rinv * rinv;
+            fv[a] *= 2.0 * eta_ave * volj * rinvsq;
           }
 
           add3(fv, dfp, ft);
@@ -341,7 +342,7 @@ void PairRHEO::compute(int eflag, int vflag)
             for (a = 0; a < dim; a++) {
               fv[a] = 0.0;
               for (b = 0; b < dim; b++) fv[a] += (vi[a] - vj[a]) * dx[b] * dWji[b];
-              fv[a] *= -2.0 * eta_ave * voli * rinv * rinv;
+              fv[a] *= -2.0 * eta_ave * voli * rinvsq;
               // flip sign here b/c -= at accummulator
             }
 
@@ -370,7 +371,7 @@ void PairRHEO::compute(int eflag, int vflag)
         if (rho_damp_flag && pair_rho_flag) {
           if (laplacian_order >= 1) {
             psi_ij = rhoj - rhoi;
-            Fij = -rinv * rinv * dot3(dx, dWij);
+            Fij = -rinvsq * dot3(dx, dWij);
             for (a = 0; a < dim; a++) psi_ij += 0.5 * (gradr[i][a] + gradr[j][a]) * dx[a];
             drho[i] += 2 * rho_damp * psi_ij * Fij * volj;
           } else {
@@ -380,7 +381,7 @@ void PairRHEO::compute(int eflag, int vflag)
 
           if (newton_pair || j < nlocal) {
             if (laplacian_order >= 1) {
-              Fij = rinv * rinv * dot3(dx, dWji);
+              Fij = rinvsq * dot3(dx, dWji);
               psi_ij *= -1;
               drho[j] += 2 * rho_damp * psi_ij * Fij * voli;
             } else {
