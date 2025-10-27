@@ -64,6 +64,8 @@ struct AtomVecHybridKokkos_PackComm {
 
   typename AT::t_kkfloat_1d_3_lr_randomread _x;
   typename AT::t_kkfloat_1d_4_randomread _mu;
+  typename AT::t_kkfloat_1d_4_randomread _sp;
+  typename AT::t_kkfloat_1d_randomread _dpdTheta,_uCond,_uMech,_uChem;
   typename AT::t_double_2d_lr_um _buf;
   typename AT::t_int_1d_const _list;
   double _xprd,_yprd,_zprd,_xy,_xz,_yz;
@@ -79,6 +81,11 @@ struct AtomVecHybridKokkos_PackComm {
       const unsigned int &datamask):
       _x(atomKK->k_x.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),
+      _sp(atomKK->k_sp.view<DeviceType>()),
+      _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+      _uCond(atomKK->k_uCond.view<DeviceType>()),
+      _uMech(atomKK->k_uMech.view<DeviceType>()),
+      _uChem(atomKK->k_uChem.view<DeviceType>()),
       _list(list.view<DeviceType>()),
       _xprd(xprd),_yprd(yprd),_zprd(zprd),
       _xy(xy),_xz(xz),_yz(yz),_datamask(datamask) {
@@ -115,6 +122,25 @@ struct AtomVecHybridKokkos_PackComm {
       _buf(i,m++) = _mu(j,1);
       _buf(i,m++) = _mu(j,2);
     }
+
+    if (_datamask & SP_MASK) {
+      _buf(i,m++) = _sp(j,0);
+      _buf(i,m++) = _sp(j,1);
+      _buf(i,m++) = _sp(j,2);
+      _buf(i,m++) = _sp(j,3);
+    }
+
+    if (_datamask & DPDTHETA_MASK)
+      _buf(i,m++) = _dpdTheta(j);
+
+    if (_datamask & UCOND_MASK)
+      _buf(i,m++) = _uCond(j);
+
+    if (_datamask & UMECH_MASK)
+      _buf(i,m++) = _uMech(j);
+
+    if (_datamask & UCHEM_MASK)
+      _buf(i,m++) = _uChem(j);
   }
 };
 
@@ -197,9 +223,13 @@ struct AtomVecHybridKokkos_PackCommSelf {
 
   typename AT::t_kkfloat_1d_3_lr_randomread _x;
   typename AT::t_kkfloat_1d_4_randomread _mu;
+  typename AT::t_kkfloat_1d_4_randomread _sp;
+  typename AT::t_kkfloat_1d_randomread _dpdTheta,_uCond,_uMech,_uChem;
   typename AT::t_kkfloat_1d_3_lr _xw;
   typename AT::t_kkfloat_1d_4 _muw;
+  typename AT::t_kkfloat_1d_4 _spw;
   typename AT::t_kkfloat_1d _radiusw,_rmassw;
+  typename AT::t_kkfloat_1d _dpdThetaw,_uCondw,_uMechw,_uChemw;
   int _nfirst;
   typename AT::t_int_1d_const _list;
   double _xprd,_yprd,_zprd,_xy,_xz,_yz;
@@ -215,6 +245,11 @@ struct AtomVecHybridKokkos_PackCommSelf {
       const unsigned int datamask):
       _x(atomKK->k_x.view<DeviceType>()),_xw(atomKK->k_x.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),_muw(atomKK->k_mu.view<DeviceType>()),
+      _sp(atomKK->k_sp.view<DeviceType>()),_spw(atomKK->k_sp.view<DeviceType>()),
+      _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),_dpdThetaw(atomKK->k_dpdTheta.view<DeviceType>()),
+      _uCond(atomKK->k_uCond.view<DeviceType>()),_uCondw(atomKK->k_uCond.view<DeviceType>()),
+      _uMech(atomKK->k_uMech.view<DeviceType>()),_uMechw(atomKK->k_uMech.view<DeviceType>()),
+      _uChem(atomKK->k_uChem.view<DeviceType>()),_uChemw(atomKK->k_uChem.view<DeviceType>()),
       _nfirst(nfirst),_list(list.view<DeviceType>()),
       _xprd(xprd),_yprd(yprd),_zprd(zprd),
       _xy(xy),_xz(xz),_yz(yz),_datamask(datamask) {
@@ -246,6 +281,24 @@ struct AtomVecHybridKokkos_PackCommSelf {
       _muw(i+_nfirst,1) = _mu(j,1);
       _muw(i+_nfirst,2) = _mu(j,2);
     }
+
+    if (_datamask & SP_MASK) {
+      _spw(i+_nfirst,0) = _sp(j,0);
+      _spw(i+_nfirst,1) = _sp(j,1);
+      _spw(i+_nfirst,2) = _sp(j,2);
+    }
+
+    if (_datamask & DPDTHETA_MASK)
+      _dpdThetaw(i+_nfirst) = _dpdTheta(j);
+
+    if (_datamask & UCOND_MASK)
+      _uCondw(i+_nfirst) = _uCond(j);
+
+    if (_datamask & UMECH_MASK)
+      _uMechw(i+_nfirst) = _uMech(j);
+
+    if (_datamask & UCHEM_MASK)
+      _uChemw(i+_nfirst) = _uChem(j);
   }
 };
 
@@ -323,9 +376,12 @@ struct AtomVecHybridKokkos_PackCommSelfFused {
 
   typename AT::t_kkfloat_1d_3_lr_randomread _x;
   typename AT::t_kkfloat_1d_4_randomread _mu;
+  typename AT::t_kkfloat_1d_4_randomread _sp;
+  typename AT::t_kkfloat_1d_randomread _dpdTheta,_uCond,_uMech,_uChem;
   typename AT::t_kkfloat_1d_3_lr _xw;
   typename AT::t_kkfloat_1d_4 _muw;
-  typename AT::t_kkfloat_1d _radiusw,_rmassw;
+  typename AT::t_kkfloat_1d_4 _spw;
+  typename AT::t_kkfloat_1d _dpdThetaw,_uCondw,_uMechw,_uChemw;
   typename AT::t_int_2d_lr_const _list;
   typename AT::t_int_2d_const _pbc;
   typename AT::t_int_1d_const _pbc_flag;
@@ -348,6 +404,11 @@ struct AtomVecHybridKokkos_PackCommSelfFused {
       const unsigned int datamask):
       _x(atomKK->k_x.view<DeviceType>()),_xw(atomKK->k_x.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),_muw(atomKK->k_mu.view<DeviceType>()),
+      _sp(atomKK->k_sp.view<DeviceType>()),_spw(atomKK->k_sp.view<DeviceType>()),
+      _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),_dpdThetaw(atomKK->k_dpdTheta.view<DeviceType>()),
+      _uCond(atomKK->k_uCond.view<DeviceType>()),_uCondw(atomKK->k_uCond.view<DeviceType>()),
+      _uMech(atomKK->k_uMech.view<DeviceType>()),_uMechw(atomKK->k_uMech.view<DeviceType>()),
+      _uChem(atomKK->k_uChem.view<DeviceType>()),_uChemw(atomKK->k_uChem.view<DeviceType>()),
       _list(list.view<DeviceType>()),
       _pbc(pbc.view<DeviceType>()),
       _pbc_flag(pbc_flag.view<DeviceType>()),
@@ -394,6 +455,25 @@ struct AtomVecHybridKokkos_PackCommSelfFused {
       _muw(i+_nfirst,1) = _mu(j,1);
       _muw(i+_nfirst,2) = _mu(j,2);
     }
+
+    if (_datamask & SP_MASK) {
+      _spw(i+_nfirst,0) = _sp(j,0);
+      _spw(i+_nfirst,1) = _sp(j,1);
+      _spw(i+_nfirst,2) = _sp(j,2);
+      _spw(i+_nfirst,3) = _sp(j,3);
+    }
+
+    if (_datamask & DPDTHETA_MASK)
+      _dpdThetaw(i+_nfirst) = _dpdTheta(j);
+
+    if (_datamask & UCOND_MASK)
+      _uCondw(i+_nfirst) = _uCond(j);
+
+    if (_datamask & UMECH_MASK)
+      _uMechw(i+_nfirst) = _uMech(j);
+
+    if (_datamask & UCHEM_MASK)
+      _uChemw(i+_nfirst) = _uChem(j);
   }
 };
 
@@ -444,6 +524,8 @@ struct AtomVecHybridKokkos_UnpackComm {
 
   typename AT::t_kkfloat_1d_3_lr _x;
   typename AT::t_kkfloat_1d_4 _mu;
+  typename AT::t_kkfloat_1d_4 _sp;
+  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem;
   typename AT::t_double_2d_lr_const _buf;
   int _first;
   unsigned int _datamask;
@@ -454,6 +536,11 @@ struct AtomVecHybridKokkos_UnpackComm {
     const int &first, const unsigned int &datamask):
       _x(atomKK->k_x.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),
+      _sp(atomKK->k_sp.view<DeviceType>()),
+      _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+      _uCond(atomKK->k_uCond.view<DeviceType>()),
+      _uMech(atomKK->k_uMech.view<DeviceType>()),
+      _uChem(atomKK->k_uChem.view<DeviceType>()),
       _first(first),_datamask(datamask) {
         const int size_forward = atomKK->avecKK->size_forward;
         const size_t maxsend = (buf.view<DeviceType>().extent(0)*buf.view<DeviceType>().extent(1))/size_forward;
@@ -473,6 +560,25 @@ struct AtomVecHybridKokkos_UnpackComm {
       _mu(i+_first,1) = _buf(i,m++);
       _mu(i+_first,2) = _buf(i,m++);
     }
+
+    if (_datamask & SP_MASK) {
+      _sp(i+_first,0) = _buf(i,m++);
+      _sp(i+_first,1) = _buf(i,m++);
+      _sp(i+_first,2) = _buf(i,m++);
+      _sp(i+_first,3) = _buf(i,m++);
+    }
+
+    if (_datamask & DPDTHETA_MASK)
+      _dpdTheta(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCOND_MASK)
+      _uCond(i+_first) = _buf(i,m++);
+
+    if (_datamask & UMECH_MASK)
+      _uMech(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCHEM_MASK)
+      _uChem(i+_first) = _buf(i,m++);
   }
 };
 
@@ -504,7 +610,9 @@ struct AtomVecHybridKokkos_PackCommVel {
   typename AT::t_int_1d _mask;
   typename AT::t_kkfloat_1d_3 _v;
   typename AT::t_kkfloat_1d_4 _mu;
+  typename AT::t_kkfloat_1d_4 _sp;
   typename AT::t_kkfloat_1d_3 _omega;
+  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem;
   typename AT::t_double_2d_lr_um _buf;
   typename AT::t_int_1d_const _list;
   double _xprd,_yprd,_zprd,_xy,_xz,_yz;
@@ -526,6 +634,10 @@ struct AtomVecHybridKokkos_PackCommVel {
     _mask(atomKK->k_mask.view<DeviceType>()),
     _v(atomKK->k_v.view<DeviceType>()),
     _omega(atomKK->k_omega.view<DeviceType>()),
+    _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+    _uCond(atomKK->k_uCond.view<DeviceType>()),
+    _uMech(atomKK->k_uMech.view<DeviceType>()),
+    _uChem(atomKK->k_uChem.view<DeviceType>()),
     _list(list.view<DeviceType>()),
     _xprd(xprd),_yprd(yprd),_zprd(zprd),
     _xy(xy),_xz(xz),_yz(yz),
@@ -586,11 +698,30 @@ struct AtomVecHybridKokkos_PackCommVel {
       _buf(i,m++) = _mu(j,2);
     }
 
+    if (_datamask & SP_MASK) {
+      _buf(i,m++) = _sp(j,0);
+      _buf(i,m++) = _sp(j,1);
+      _buf(i,m++) = _sp(j,2);
+      _buf(i,m++) = _sp(j,3);
+    }
+
     if (_datamask & OMEGA_MASK) {
       _buf(i,m++) = _omega(j,0);
       _buf(i,m++) = _omega(j,1);
       _buf(i,m++) = _omega(j,2);
     }
+
+    if (_datamask & DPDTHETA_MASK)
+      _buf(i,m++) = _dpdTheta(j);
+
+    if (_datamask & UCOND_MASK)
+      _buf(i,m++) = _uCond(j);
+
+    if (_datamask & UMECH_MASK)
+      _buf(i,m++) = _uMech(j);
+
+    if (_datamask & UCHEM_MASK)
+      _buf(i,m++) = _uChem(j);
   }
 };
 
@@ -736,7 +867,9 @@ struct AtomVecHybridKokkos_UnpackCommVel {
   typename AT::t_kkfloat_1d_3_lr _x;
   typename AT::t_kkfloat_1d_3 _v;
   typename AT::t_kkfloat_1d_4 _mu;
+  typename AT::t_kkfloat_1d_4 _sp;
   typename AT::t_kkfloat_1d_3 _omega;
+  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem;
   typename AT::t_double_2d_lr_const _buf;
   int _first;
   unsigned int _datamask;
@@ -748,7 +881,12 @@ struct AtomVecHybridKokkos_UnpackCommVel {
     _x(atomKK->k_x.view<DeviceType>()),
     _v(atomKK->k_v.view<DeviceType>()),
     _mu(atomKK->k_mu.view<DeviceType>()),
+    _sp(atomKK->k_sp.view<DeviceType>()),
     _omega(atomKK->k_omega.view<DeviceType>()),
+    _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+    _uCond(atomKK->k_uCond.view<DeviceType>()),
+    _uMech(atomKK->k_uMech.view<DeviceType>()),
+    _uChem(atomKK->k_uChem.view<DeviceType>()),
     _first(first),_datamask(datamask)
   {
     const size_t elements = atomKK->avecKK->size_forward + atomKK->avecKK->size_velocity;
@@ -772,11 +910,29 @@ struct AtomVecHybridKokkos_UnpackCommVel {
       _mu(i+_first,2) = _buf(i,m++);
     }
 
+    if (_datamask & SP_MASK) {
+      _sp(i+_first,0) = _buf(i,m++);
+      _sp(i+_first,1) = _buf(i,m++);
+      _sp(i+_first,2) = _buf(i,m++);
+    }
+
     if (_datamask & OMEGA_MASK) {
       _omega(i+_first,0) = _buf(i,m++);
       _omega(i+_first,1) = _buf(i,m++);
       _omega(i+_first,2) = _buf(i,m++);
     }
+
+    if (_datamask & DPDTHETA_MASK)
+      _dpdTheta(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCOND_MASK)
+      _uCond(i+_first) = _buf(i,m++);
+
+    if (_datamask & UMECH_MASK)
+      _uMech(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCHEM_MASK)
+      _uChem(i+_first) = _buf(i,m++);
   }
 };
 
@@ -804,7 +960,7 @@ struct AtomVecHybridKokkos_PackReverse {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
 
-  typename AT::t_kkacc_1d_3_randomread _f;
+  typename AT::t_kkacc_1d_3_randomread _f,_fm,_fm_long;
   typename AT::t_kkfloat_1d_3_randomread _torque;
   typename AT::t_double_2d_lr _buf;
   int _first;
@@ -815,6 +971,8 @@ struct AtomVecHybridKokkos_PackReverse {
     const typename DAT::tdual_double_2d_lr &buf,
     const int &first, const unsigned int &datamask):
       _f(atomKK->k_f.view<DeviceType>()),
+      _fm(atomKK->k_fm.view<DeviceType>()),
+      _fm_long(atomKK->k_fm_long.view<DeviceType>()),
       _torque(atomKK->k_torque.view<DeviceType>()),
       _first(first),_datamask(datamask) {
         const size_t elements = atomKK->avecKK->size_reverse;
@@ -828,6 +986,18 @@ struct AtomVecHybridKokkos_PackReverse {
     _buf(i,m++) = _f(i+_first,0);
     _buf(i,m++) = _f(i+_first,1);
     _buf(i,m++) = _f(i+_first,2);
+
+    if (_datamask & FM_MASK) {
+      _buf(i,m++) = _fm(i+_first,0);
+      _buf(i,m++) = _fm(i+_first,1);
+      _buf(i,m++) = _fm(i+_first,2);
+    }
+
+    if (_datamask & FML_MASK) {
+      _buf(i,m++) = _fm_long(i+_first,0);
+      _buf(i,m++) = _fm_long(i+_first,1);
+      _buf(i,m++) = _fm_long(i+_first,2);
+    }
 
     if (_datamask & TORQUE_MASK) {
       _buf(i,m++) = _torque(i+_first,0);
@@ -861,9 +1031,9 @@ struct AtomVecHybridKokkos_UnPackReverseSelf {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
 
-  typename AT::t_kkacc_1d_3_randomread _f;
+  typename AT::t_kkacc_1d_3_randomread _f,_fm,_fm_long;
   typename AT::t_kkfloat_1d_3_randomread _torque;
-  typename AT::t_kkacc_1d_3 _fw;
+  typename AT::t_kkacc_1d_3 _fw,_fmw,_fm_longw;
   typename AT::t_kkfloat_1d_3 _torquew;
   typename AT::t_int_1d_const _list;
   int _nfirst;
@@ -875,6 +1045,8 @@ struct AtomVecHybridKokkos_UnPackReverseSelf {
     const typename DAT::tdual_int_1d &list,
     const unsigned int &datamask):
       _f(atomKK->k_f.view<DeviceType>()),_fw(atomKK->k_f.view<DeviceType>()),
+      _fm(atomKK->k_fm.view<DeviceType>()),_fmw(atomKK->k_fm.view<DeviceType>()),
+      _fm_long(atomKK->k_fm_long.view<DeviceType>()),_fm_longw(atomKK->k_fm_long.view<DeviceType>()),
       _torque(atomKK->k_torque.view<DeviceType>()),_torquew(atomKK->k_torque.view<DeviceType>()),
       _nfirst(nfirst),_list(list.view<DeviceType>()),
       _datamask(datamask) {};
@@ -885,6 +1057,18 @@ struct AtomVecHybridKokkos_UnPackReverseSelf {
     _fw(j,0) += _f(i+_nfirst,0);
     _fw(j,1) += _f(i+_nfirst,1);
     _fw(j,2) += _f(i+_nfirst,2);
+
+    if (_datamask & FM_MASK) {
+      _fmw(j,0) += _fm(i+_nfirst,0);
+      _fmw(j,1) += _fm(i+_nfirst,1);
+      _fmw(j,2) += _fm(i+_nfirst,2);
+    }
+
+    if (_datamask & FML_MASK) {
+      _fm_longw(j,0) += _fm_long(i+_nfirst,0);
+      _fm_longw(j,1) += _fm_long(i+_nfirst,1);
+      _fm_longw(j,2) += _fm_long(i+_nfirst,2);
+    }
 
     if (_datamask & TORQUE_MASK) {
       _torquew(j,0) += _torque(i+_nfirst,0);
@@ -920,7 +1104,7 @@ struct AtomVecHybridKokkos_UnPackReverse {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
 
-  typename AT::t_kkacc_1d_3 _f;
+  typename AT::t_kkacc_1d_3 _f,_fm,_fm_long;
   typename AT::t_kkfloat_1d_3 _torque;
   typename AT::t_double_2d_lr_const _buf;
   typename AT::t_int_1d_const _list;
@@ -932,6 +1116,8 @@ struct AtomVecHybridKokkos_UnPackReverse {
     const typename DAT::tdual_int_1d &list,
     const unsigned int datamask):
       _f(atomKK->k_f.view<DeviceType>()),
+      _fm(atomKK->k_fm.view<DeviceType>()),
+      _fm_long(atomKK->k_fm_long.view<DeviceType>()),
       _torque(atomKK->k_torque.view<DeviceType>()),
       _list(list.view<DeviceType>()),
       _datamask(datamask) {
@@ -947,6 +1133,18 @@ struct AtomVecHybridKokkos_UnPackReverse {
     _f(j,0) += _buf(i,m++);
     _f(j,1) += _buf(i,m++);
     _f(j,2) += _buf(i,m++);
+
+    if (_datamask & FM_MASK) {
+      _fm(j,0) += _buf(i,m++);
+      _fm(j,1) += _buf(i,m++);
+      _fm(j,2) += _buf(i,m++);
+    }
+
+    if (_datamask & FML_MASK) {
+      _fm_long(j,0) += _buf(i,m++);
+      _fm_long(j,1) += _buf(i,m++);
+      _fm_long(j,2) += _buf(i,m++);
+    }
 
     if (_datamask & TORQUE_MASK) {
       _torque(j,0) += _buf(i,m++);
@@ -994,7 +1192,9 @@ struct AtomVecHybridKokkos_PackBorder {
   const typename AT::t_tagint_1d _molecule;
   const typename AT::t_kkfloat_1d _q;
   const typename AT::t_kkfloat_1d_4 _mu;
+  const typename AT::t_kkfloat_1d_4 _sp;
   typename AT::t_kkfloat_1d _radius,_rmass;
+  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
   double _dx,_dy,_dz;
   unsigned int _datamask;
 
@@ -1012,8 +1212,15 @@ struct AtomVecHybridKokkos_PackBorder {
     _molecule(atomKK->k_molecule.view<DeviceType>()),
     _q(atomKK->k_q.view<DeviceType>()),
     _mu(atomKK->k_mu.view<DeviceType>()),
+    _sp(atomKK->k_sp.view<DeviceType>()),
     _radius(atomKK->k_radius.view<DeviceType>()),
     _rmass(atomKK->k_rmass.view<DeviceType>()),
+    _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+    _uCond(atomKK->k_uCond.view<DeviceType>()),
+    _uMech(atomKK->k_uMech.view<DeviceType>()),
+    _uChem(atomKK->k_uChem.view<DeviceType>()),
+    _uCG(atomKK->k_uCG.view<DeviceType>()),
+    _uCGnew(atomKK->k_uCGnew.view<DeviceType>()),
     _dx(dx),_dy(dy),_dz(dz),_datamask(datamask) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -1047,11 +1254,36 @@ struct AtomVecHybridKokkos_PackBorder {
       _buf(i,m++) = _mu(j,3);
     }
 
+    if (_datamask & SP_MASK) {
+      _buf(i,m++) = _sp(j,0);
+      _buf(i,m++) = _sp(j,1);
+      _buf(i,m++) = _sp(j,2);
+      _buf(i,m++) = _sp(j,3);
+    }
+
     if (_datamask & RADIUS_MASK)
       _buf(i,m++) = _radius(j);
 
     if (_datamask & RMASS_MASK)
       _buf(i,m++) = _rmass(j);
+
+    if (_datamask & DPDTHETA_MASK)
+      _buf(i,m++) = _dpdTheta(j);
+
+    if (_datamask & UCOND_MASK)
+      _buf(i,m++) = _uCond(j);
+
+    if (_datamask & UMECH_MASK)
+      _buf(i,m++) = _uMech(j);
+
+    if (_datamask & UCHEM_MASK)
+      _buf(i,m++) = _uChem(j);
+
+    if (_datamask & UCG_MASK)
+      _buf(i,m++) = _uCG(j);
+
+    if (_datamask & UCGNEW_MASK)
+      _buf(i,m++) = _uCGnew(j);
   }
 };
 
@@ -1119,7 +1351,9 @@ struct AtomVecHybridKokkos_UnpackBorder {
   typename AT::t_tagint_1d _molecule;
   typename AT::t_kkfloat_1d _q;
   typename AT::t_kkfloat_1d_4 _mu;
+  typename AT::t_kkfloat_1d_4 _sp;
   typename AT::t_kkfloat_1d _radius,_rmass;
+  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
   int _first;
   unsigned int _datamask;
 
@@ -1135,8 +1369,15 @@ struct AtomVecHybridKokkos_UnpackBorder {
     _molecule(atomKK->k_molecule.view<DeviceType>()),
     _q(atomKK->k_q.view<DeviceType>()),
     _mu(atomKK->k_mu.view<DeviceType>()),
+    _sp(atomKK->k_sp.view<DeviceType>()),
     _radius(atomKK->k_radius.view<DeviceType>()),
     _rmass(atomKK->k_rmass.view<DeviceType>()),
+    _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+    _uCond(atomKK->k_uCond.view<DeviceType>()),
+    _uMech(atomKK->k_uMech.view<DeviceType>()),
+    _uChem(atomKK->k_uChem.view<DeviceType>()),
+    _uCG(atomKK->k_uCG.view<DeviceType>()),
+    _uCGnew(atomKK->k_uCGnew.view<DeviceType>()),
     _first(first),_datamask(datamask) {
   };
 
@@ -1163,11 +1404,36 @@ struct AtomVecHybridKokkos_UnpackBorder {
       _mu(i+_first,3) = _buf(i,m++);
     }
 
+    if (_datamask & SP_MASK) {
+      _sp(i+_first,0) = _buf(i,m++);
+      _sp(i+_first,1) = _buf(i,m++);
+      _sp(i+_first,2) = _buf(i,m++);
+      _sp(i+_first,3) = _buf(i,m++);
+    }
+
     if (_datamask & RADIUS_MASK)
       _radius(i+_first) = _buf(i,m++);
 
     if (_datamask & RMASS_MASK)
       _rmass(i+_first) = _buf(i,m++);
+
+    if (_datamask & DPDTHETA_MASK)
+      _dpdTheta(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCOND_MASK)
+      _uCond(i+_first) = _buf(i,m++);
+
+    if (_datamask & UMECH_MASK)
+      _uMech(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCHEM_MASK)
+      _uChem(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCG_MASK)
+      _uCG(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCGNEW_MASK)
+      _uCGnew(i+_first) = _buf(i,m++);
   }
 };
 
@@ -1208,8 +1474,10 @@ struct AtomVecHybridKokkos_PackBorderVel {
   const typename AT::t_int_1d _type;
   const typename AT::t_int_1d _mask;
   const typename AT::t_kkfloat_1d_4 _mu;
+  const typename AT::t_kkfloat_1d_4 _sp;
   typename AT::t_kkfloat_1d _radius,_rmass;
   typename AT::t_kkfloat_1d_3 _omega;
+  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
   double _dx,_dy,_dz, _dvx, _dvy, _dvz;
   const int _deform_groupbit;
   const unsigned int _datamask;
@@ -1229,9 +1497,16 @@ struct AtomVecHybridKokkos_PackBorderVel {
       _mask(atomKK->k_mask.view<DeviceType>()),
       _v(atomKK->k_v.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),
+      _sp(atomKK->k_sp.view<DeviceType>()),
       _radius(atomKK->k_radius.view<DeviceType>()),
       _rmass(atomKK->k_rmass.view<DeviceType>()),
       _omega(atomKK->k_omega.view<DeviceType>()),
+      _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+      _uCond(atomKK->k_uCond.view<DeviceType>()),
+      _uMech(atomKK->k_uMech.view<DeviceType>()),
+      _uChem(atomKK->k_uChem.view<DeviceType>()),
+      _uCG(atomKK->k_uCG.view<DeviceType>()),
+      _uCGnew(atomKK->k_uCGnew.view<DeviceType>()),
       _dx(dx),_dy(dy),_dz(dz),
       _dvx(dvx),_dvy(dvy),_dvz(dvz),
       _deform_groupbit(deform_groupbit) {
@@ -1276,6 +1551,13 @@ struct AtomVecHybridKokkos_PackBorderVel {
       _buf(i,m++) = _mu(j,3);
     }
 
+    if (_datamask & SP_MASK) {
+      _buf(i,m++) = _sp(j,0);
+      _buf(i,m++) = _sp(j,1);
+      _buf(i,m++) = _sp(j,2);
+      _buf(i,m++) = _sp(j,3);
+    }
+
     if (_datamask & RADIUS_MASK)
       _buf(i,m++) = _radius(j);
 
@@ -1287,6 +1569,24 @@ struct AtomVecHybridKokkos_PackBorderVel {
       _buf(i,m++) = _omega(j,1);
       _buf(i,m++) = _omega(j,2);
     }
+
+    if (_datamask & DPDTHETA_MASK)
+      _buf(i,m++) = _dpdTheta(j);
+
+    if (_datamask & UCOND_MASK)
+      _buf(i,m++) = _uCond(j);
+
+    if (_datamask & UMECH_MASK)
+      _buf(i,m++) = _uMech(j);
+
+    if (_datamask & UCHEM_MASK)
+      _buf(i,m++) = _uChem(j);
+
+    if (_datamask & UCG_MASK)
+      _buf(i,m++) = _uCG(j);
+
+    if (_datamask & UCGNEW_MASK)
+      _buf(i,m++) = _uCGnew(j);
   }
 };
 
@@ -1312,7 +1612,7 @@ int AtomVecHybridKokkos::pack_border_vel_kokkos(
       dz = pbc[2];
     }
     if (!deform_vremap) {
-      if (space==Host) {
+      if (space == Host) {
         AtomVecHybridKokkos_PackBorderVel<LMPHostType,1,0> f(
           atomKK,
           buf.view_host(), k_sendlist.view_host(),
@@ -1385,8 +1685,10 @@ struct AtomVecHybridKokkos_UnpackBorderVel {
   typename AT::t_int_1d _mask;
   typename AT::t_kkfloat_1d_3 _v;
   typename AT::t_kkfloat_1d_4 _mu;
+  typename AT::t_kkfloat_1d_4 _sp;
   typename AT::t_kkfloat_1d _radius,_rmass;
   typename AT::t_kkfloat_1d_3 _omega;
+  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
   int _first;
   unsigned int _datamask;
 
@@ -1402,9 +1704,16 @@ struct AtomVecHybridKokkos_UnpackBorderVel {
     _mask(atomKK->k_mask.view<DeviceType>()),
     _v(atomKK->k_v.view<DeviceType>()),
     _mu(atomKK->k_mu.view<DeviceType>()),
+    _sp(atomKK->k_sp.view<DeviceType>()),
     _radius(atomKK->k_radius.view<DeviceType>()),
     _rmass(atomKK->k_rmass.view<DeviceType>()),
     _omega(atomKK->k_omega.view<DeviceType>()),
+    _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+    _uCond(atomKK->k_uCond.view<DeviceType>()),
+    _uMech(atomKK->k_uMech.view<DeviceType>()),
+    _uChem(atomKK->k_uChem.view<DeviceType>()),
+    _uCG(atomKK->k_uCG.view<DeviceType>()),
+    _uCGnew(atomKK->k_uCGnew.view<DeviceType>()),
     _first(first),_datamask(datamask)
   {
     const size_t elements = atomKK->avecKK->size_border + atomKK->avecKK->size_velocity;
@@ -1434,6 +1743,13 @@ struct AtomVecHybridKokkos_UnpackBorderVel {
       _mu(i+_first,3) = _buf(i,m++);
     }
 
+    if (_datamask & SP_MASK) {
+      _sp(i+_first,0) = _buf(i,m++);
+      _sp(i+_first,1) = _buf(i,m++);
+      _sp(i+_first,2) = _buf(i,m++);
+      _sp(i+_first,3) = _buf(i,m++);
+    }
+
     if (_datamask & RADIUS_MASK)
       _radius(i+_first) = _buf(i,m++);
 
@@ -1445,6 +1761,24 @@ struct AtomVecHybridKokkos_UnpackBorderVel {
       _omega(i+_first,1) = _buf(i,m++);
       _omega(i+_first,2) = _buf(i,m++);
     }
+
+    if (_datamask & DPDTHETA_MASK)
+      _dpdTheta(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCOND_MASK)
+      _uCond(i+_first) = _buf(i,m++);
+
+    if (_datamask & UMECH_MASK)
+      _uMech(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCHEM_MASK)
+      _uChem(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCG_MASK)
+      _uCG(i+_first) = _buf(i,m++);
+
+    if (_datamask & UCGNEW_MASK)
+      _uCGnew(i+_first) = _buf(i,m++);
   }
 };
 
@@ -1503,8 +1837,10 @@ struct AtomVecHybridKokkos_PackExchangeFunctor {
   typename AT::t_tagint_2d_randomread _improper_atom1,_improper_atom2,
     _improper_atom3,_improper_atom4;
   typename AT::t_kkfloat_1d_4 _mu;
+  typename AT::t_kkfloat_1d_4 _sp;
   typename AT::t_kkfloat_1d _radius,_rmass;
   typename AT::t_kkfloat_1d_3 _omega;
+  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
 
   typename AT::t_kkfloat_1d_3_lr _xw;
   typename AT::t_kkfloat_1d_3 _vw;
@@ -1531,8 +1867,10 @@ struct AtomVecHybridKokkos_PackExchangeFunctor {
   typename AT::t_tagint_2d _improper_atom1w,_improper_atom2w,
     _improper_atom3w,_improper_atom4w;
   typename AT::t_kkfloat_1d_4 _muw;
+  typename AT::t_kkfloat_1d_4 _spw;
   typename AT::t_kkfloat_1d _radiusw,_rmassw;
   typename AT::t_kkfloat_1d_3 _omegaw;
+  typename AT::t_kkfloat_1d _dpdThetaw,_uCondw,_uMechw,_uChemw,_uCGw,_uCGneww;
 
   typename AT::t_double_2d_lr_um _buf;
   typename AT::t_int_1d_const _sendlist;
@@ -1577,9 +1915,16 @@ struct AtomVecHybridKokkos_PackExchangeFunctor {
     _improper_atom3(atomKK->k_improper_atom3.view<DeviceType>()),
     _improper_atom4(atomKK->k_improper_atom4.view<DeviceType>()),
     _mu(atomKK->k_mu.view<DeviceType>()),
+    _sp(atomKK->k_sp.view<DeviceType>()),
     _radius(atomKK->k_radius.view<DeviceType>()),
     _rmass(atomKK->k_rmass.view<DeviceType>()),
     _omega(atomKK->k_omega.view<DeviceType>()),
+    _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+    _uCond(atomKK->k_uCond.view<DeviceType>()),
+    _uMech(atomKK->k_uMech.view<DeviceType>()),
+    _uChem(atomKK->k_uChem.view<DeviceType>()),
+    _uCG(atomKK->k_uCG.view<DeviceType>()),
+    _uCGnew(atomKK->k_uCGnew.view<DeviceType>()),
 
     _xw(atomKK->k_x.view<DeviceType>()),
     _vw(atomKK->k_v.view<DeviceType>()),
@@ -1612,9 +1957,16 @@ struct AtomVecHybridKokkos_PackExchangeFunctor {
     _improper_atom3w(atomKK->k_improper_atom3.view<DeviceType>()),
     _improper_atom4w(atomKK->k_improper_atom4.view<DeviceType>()),
     _muw(atomKK->k_mu.view<DeviceType>()),
+    _spw(atomKK->k_sp.view<DeviceType>()),
     _radiusw(atomKK->k_radius.view<DeviceType>()),
     _rmassw(atomKK->k_rmass.view<DeviceType>()),
     _omegaw(atomKK->k_omega.view<DeviceType>()),
+    _dpdThetaw(atomKK->k_dpdTheta.view<DeviceType>()),
+    _uCondw(atomKK->k_uCond.view<DeviceType>()),
+    _uMechw(atomKK->k_uMech.view<DeviceType>()),
+    _uChemw(atomKK->k_uChem.view<DeviceType>()),
+    _uCGw(atomKK->k_uCG.view<DeviceType>()),
+    _uCGneww(atomKK->k_uCGnew.view<DeviceType>()),
 
     _sendlist(sendlist.template view<DeviceType>()),
     _copylist(copylist.template view<DeviceType>()),
@@ -1703,6 +2055,43 @@ struct AtomVecHybridKokkos_PackExchangeFunctor {
       _buf(mysend,m++) = _mu(i,3);
     }
 
+    if (_datamask & SP_MASK) {
+      _buf(mysend,m++) = _sp(i,0);
+      _buf(mysend,m++) = _sp(i,1);
+      _buf(mysend,m++) = _sp(i,2);
+      _buf(mysend,m++) = _sp(i,3);
+    }
+
+    if (_datamask & RADIUS_MASK)
+      _buf(mysend,m++) = _radius(i);
+
+    if (_datamask & RMASS_MASK) 
+      _buf(mysend,m++) = _rmass(i);
+
+    if (_datamask & OMEGA_MASK) {
+      _buf(mysend,m++) = _omega(i,0);
+      _buf(mysend,m++) = _omega(i,1);
+      _buf(mysend,m++) = _omega(i,2);
+    }
+
+    if (_datamask & DPDTHETA_MASK)
+      _buf(mysend,m++) = _dpdTheta(i);
+
+    if (_datamask & UCOND_MASK)
+      _buf(mysend,m++) = _uCond(i);
+
+    if (_datamask & UMECH_MASK)
+      _buf(mysend,m++) = _uMech(i);
+
+    if (_datamask & UCHEM_MASK)
+      _buf(mysend,m++) = _uChem(i);
+
+    if (_datamask & UCG_MASK)
+      _buf(mysend,m++) = _uCG(i);
+
+    if (_datamask & UCGNEW_MASK)
+      _buf(mysend,m++) = _uCGnew(i);
+
     const int j = _copylist(mysend);
 
     if (j > -1) {
@@ -1778,6 +2167,13 @@ struct AtomVecHybridKokkos_PackExchangeFunctor {
         _muw(i,3) = _mu(j,3);
       }
 
+      if (_datamask & SP_MASK) {
+        _spw(i,0) = _sp(j,0);
+        _spw(i,1) = _sp(j,1);
+        _spw(i,2) = _sp(j,2);
+        _spw(i,3) = _sp(j,3);
+      }
+
       if (_datamask & RADIUS_MASK)
         _radiusw(i) = _radius(j);
 
@@ -1789,6 +2185,24 @@ struct AtomVecHybridKokkos_PackExchangeFunctor {
         _omegaw(i,1) = _omega(j,1);
         _omegaw(i,2) = _omega(j,2);
       }
+
+    if (_datamask & DPDTHETA_MASK)
+       _dpdThetaw(i) = _dpdTheta(j);
+
+    if (_datamask & UCOND_MASK)
+      _uCondw(i) = _uCond(j);
+
+    if (_datamask & UMECH_MASK)
+      _uMechw(i) = _uMech(j);
+
+    if (_datamask & UCHEM_MASK)
+      _uChemw(i) = _uChem(j);
+
+    if (_datamask & UCG_MASK)
+      _uCGw(i) = _uCG(j);
+
+    if (_datamask & UCGNEW_MASK)
+      _uCGneww(i) = _uCGnew(j);
     }
   }
 };
@@ -1850,8 +2264,10 @@ struct AtomVecHybridKokkos_UnpackExchangeFunctor {
   typename AT::t_tagint_2d _improper_atom1,_improper_atom2,
     _improper_atom3,_improper_atom4;
   typename AT::t_kkfloat_1d_4 _mu;
+  typename AT::t_kkfloat_1d_4 _sp;
   typename AT::t_kkfloat_1d _radius,_rmass;
   typename AT::t_kkfloat_1d_3 _omega;
+  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
 
   typename AT::t_double_2d_lr_um _buf;
   typename AT::t_int_1d _nlocal;
@@ -1899,9 +2315,16 @@ struct AtomVecHybridKokkos_UnpackExchangeFunctor {
       _improper_atom3(atomKK->k_improper_atom3.view<DeviceType>()),
       _improper_atom4(atomKK->k_improper_atom4.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),
+      _sp(atomKK->k_sp.view<DeviceType>()),
       _radius(atomKK->k_radius.view<DeviceType>()),
       _rmass(atomKK->k_rmass.view<DeviceType>()),
       _omega(atomKK->k_omega.view<DeviceType>()),
+      _dpdTheta(atomKK->k_dpdTheta.view<DeviceType>()),
+      _uCond(atomKK->k_uCond.view<DeviceType>()),
+      _uMech(atomKK->k_uMech.view<DeviceType>()),
+      _uChem(atomKK->k_uChem.view<DeviceType>()),
+      _uCG(atomKK->k_uCG.view<DeviceType>()),
+      _uCGnew(atomKK->k_uCGnew.view<DeviceType>()),
 
       _nlocal(nlocal.template view<DeviceType>()),
       _indices(indices.template view<DeviceType>()),
@@ -1991,6 +2414,13 @@ struct AtomVecHybridKokkos_UnpackExchangeFunctor {
         _mu(i,3) = _buf(myrecv,m++);
       }
 
+      if (_datamask & SP_MASK) {
+        _sp(i,0) = _buf(myrecv,m++);
+        _sp(i,1) = _buf(myrecv,m++);
+        _sp(i,2) = _buf(myrecv,m++);
+        _sp(i,3) = _buf(myrecv,m++);
+      }
+
       if (_datamask & RADIUS_MASK)
         _radius(i) = _buf(myrecv,m++);
 
@@ -2002,6 +2432,24 @@ struct AtomVecHybridKokkos_UnpackExchangeFunctor {
         _omega(i,1) = _buf(myrecv,m++);
         _omega(i,2) = _buf(myrecv,m++);
       }
+
+      if (_datamask & DPDTHETA_MASK)
+        _dpdTheta(i) = _buf(myrecv,m++);
+
+      if (_datamask & UCOND_MASK)
+        _uCond(i) = _buf(myrecv,m++);
+
+      if (_datamask & UMECH_MASK)
+        _uMech(i) = _buf(myrecv,m++);
+
+      if (_datamask & UCHEM_MASK)
+        _uChem(i) = _buf(myrecv,m++);
+
+      if (_datamask & UCG_MASK)
+        _uCG(i) = _buf(myrecv,m++);
+
+      if (_datamask & UCGNEW_MASK)
+        _uCGnew(i) = _buf(myrecv,m++);
     }
 
     if (OUTPUT_INDICES)
