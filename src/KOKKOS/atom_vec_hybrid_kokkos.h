@@ -78,6 +78,14 @@ class AtomVecHybridKokkos : public AtomVecKokkos, public AtomVecHybrid {
                             const DAT::tdual_double_2d_lr &buf,
                             ExecutionSpace space) override;
 
+  int pack_border_vel_kokkos(int n, DAT::tdual_int_1d k_sendlist,
+                             DAT::tdual_double_2d_lr buf,
+                             int pbc_flag, int *pbc, ExecutionSpace space) override;
+
+  void unpack_border_vel_kokkos(const int &n, const int &nfirst,
+                                const DAT::tdual_double_2d_lr &buf,
+                                ExecutionSpace space) override;
+
   int pack_exchange_kokkos(const int &nsend,DAT::tdual_double_2d_lr &buf,
                            DAT::tdual_int_1d k_sendlist,
                            DAT::tdual_int_1d k_copylist,
@@ -154,6 +162,13 @@ class AtomVecHybridKokkos : public AtomVecKokkos, public AtomVecHybrid {
 
   DAT::t_kkfloat_1d_4 d_mu;
   HAT::t_kkfloat_1d_4 h_mu;
+
+  DAT::t_kkfloat_1d d_radius;
+  HAT::t_kkfloat_1d h_radius;
+  DAT::t_kkfloat_1d d_rmass;
+  HAT::t_kkfloat_1d h_rmass;
+  DAT::t_kkfloat_1d_3 d_torque;
+  HAT::t_kkfloat_1d_3 h_torque;
 };
 
 } // namespace LAMMPS_NS
