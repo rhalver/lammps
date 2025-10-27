@@ -52,6 +52,16 @@ AtomVecKokkos::~AtomVecKokkos()
   ngrow = 0;
 }
 
+/* ----------------------------------------------------------------------
+   process field strings to initialize data structs for all other methods
+------------------------------------------------------------------------- */
+
+void AtomVecKokkos::setup_fields()
+{
+  AtomVec::setup_fields();
+  set_atom_masks();
+}
+
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType,int PBC_FLAG,int TRICLINIC>
@@ -930,30 +940,44 @@ int AtomVecKokkos::field2mask(std::string field)
 void AtomVecKokkos::set_atom_masks()
 {
   datamask_grow = EMPTY_MASK;
+  for (int i = 0; i < default_grow.size(); i++)
+    datamask_grow |= field2mask(default_grow[i]);
   for (int i = 0; i < ngrow; i++)
     datamask_grow |= field2mask(fields_grow[i]);
 
   datamask_comm = EMPTY_MASK;
+  for (int i = 0; i < default_comm.size(); i++)
+    datamask_comm |= field2mask(default_comm[i]);
   for (int i = 0; i < ncomm; i++)
     datamask_comm |= field2mask(fields_comm[i]);
 
   datamask_comm_vel = EMPTY_MASK;
+  for (int i = 0; i < default_comm_vel.size(); i++)
+    datamask_comm_vel |= field2mask(default_comm_vel[i]);
   for (int i = 0; i < ncomm_vel; i++)
     datamask_comm_vel |= field2mask(fields_comm_vel[i]);
 
   datamask_reverse = EMPTY_MASK;
+  for (int i = 0; i < default_reverse.size(); i++)
+    datamask_reverse |= field2mask(default_reverse[i]);
   for (int i = 0; i < nreverse; i++)
     datamask_reverse |= field2mask(fields_reverse[i]);
 
   datamask_border = EMPTY_MASK;
+  for (int i = 0; i < default_border.size(); i++)
+    datamask_border |= field2mask(default_border[i]);
   for (int i = 0; i < nborder; i++)
     datamask_border |= field2mask(fields_border[i]);
 
   datamask_border_vel = EMPTY_MASK;
+  for (int i = 0; i < default_border_vel.size(); i++)
+    datamask_border_vel |= field2mask(default_border_vel[i]);
   for (int i = 0; i < nborder_vel; i++)
     datamask_border_vel |= field2mask(fields_border_vel[i]);
 
   datamask_exchange = EMPTY_MASK;
+  for (int i = 0; i < default_exchange.size(); i++)
+    datamask_exchange |= field2mask(default_exchange[i]);
   for (int i = 0; i < nexchange; i++)
     datamask_exchange |= field2mask(fields_exchange[i]);
 }
