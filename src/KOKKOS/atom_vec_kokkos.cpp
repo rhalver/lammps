@@ -52,6 +52,16 @@ AtomVecKokkos::~AtomVecKokkos()
   ngrow = 0;
 }
 
+/* ----------------------------------------------------------------------
+   process field strings to initialize data structs for all other methods
+------------------------------------------------------------------------- */
+
+void AtomVecKokkos::setup_fields()
+{
+  AtomVec::setup_fields();
+  set_atom_masks();
+}
+
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType,int PBC_FLAG,int TRICLINIC>
@@ -855,4 +865,170 @@ void AtomVecKokkos::unpack_reverse_kokkos(const int &n,
     Kokkos::parallel_for(n,f);
     atomKK->modified(Device,F_MASK);
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+int AtomVecKokkos::field2mask(std::string field)
+{
+  if (field == "id")
+    return TAG_MASK;
+  else if (field == "type")
+    return TYPE_MASK;
+  else if (field == "mask")
+    return MASK_MASK;
+  else if (field == "image")
+    return IMAGE_MASK;
+  else if (field == "x")
+    return X_MASK;
+  else if (field == "v")
+    return V_MASK;
+  else if (field == "f")
+    return F_MASK;
+  else if (field == "rmass")
+    return RMASS_MASK;
+  else if (field == "q")
+    return Q_MASK;
+  else if (field == "mu")
+    return MU_MASK;
+  else if (field == "mu3")
+    return MU_MASK;
+  else if (field == "radius")
+    return RADIUS_MASK;
+  else if (field == "omega")
+    return OMEGA_MASK;
+  else if (field == "torque")
+    return TORQUE_MASK;
+  else if (field == "molecule")
+    return MOLECULE_MASK;
+  else if (field == "nspecial")
+    return SPECIAL_MASK;
+  else if (field == "num_bond")
+    return BOND_MASK;
+  else if (field == "num_angle")
+    return ANGLE_MASK;
+  else if (field == "num_dihedral")
+    return DIHEDRAL_MASK;
+  else if (field == "num_improper")
+    return IMPROPER_MASK;
+  else if (field == "sp")
+    return SP_MASK;
+  else if (field == "fm")
+    return FM_MASK;
+  else if (field == "fm_long")
+    return FML_MASK;
+  else if (field == "rho") // conflicts with SPH package "rho"
+    return DPDRHO_MASK;
+  else if (field == "dpdTheta")
+    return DPDTHETA_MASK;
+  else if (field == "uCond")
+    return UCOND_MASK;
+  else if (field == "uMech")
+    return UMECH_MASK;
+  else if (field == "uChem")
+    return UCHEM_MASK;
+  else if (field == "uCG")
+    return UCG_MASK;
+  else if (field == "uCGnew")
+    return UCGNEW_MASK;
+  else if (field == "duChem")
+    return DUCHEM_MASK;
+  else
+    return EMPTY_MASK;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int AtomVecKokkos::field2size(std::string field)
+{
+  if (field == "id") return 1;
+  else if (field == "type") return 1;
+  else if (field == "mask") return 1;
+  else if (field == "image") return 1;
+  else if (field == "x") return 3;
+  else if (field == "v") return 3;
+  else if (field == "f") return 3;
+  else if (field == "rmass") return 1;
+  else if (field == "q") return 1;
+  else if (field == "mu") return 4;
+  else if (field == "mu3") return 3;
+  else if (field == "radius") return 1;
+  else if (field == "omega") return 3;
+  else if (field == "torque") return 3;
+  else if (field == "molecule") return 1;
+  else if (field == "special") return 3+atom->maxspecial;
+  else if (field == "num_bond") return 1+2*atom->bond_per_atom;
+  else if (field == "num_angle") return 1+4*atom->angle_per_atom;
+  else if (field == "num_dihedral") return 1+5*atom->dihedral_per_atom;
+  else if (field == "num_improper") return 1+5*atom->dihedral_per_atom;
+  else if (field == "sp") return 4;
+  else if (field == "fm") return 3;
+  else if (field == "fm_long") return 3;
+  else if (field == "rho") return 1;
+  else if (field == "dpdTheta") return 1;
+  else if (field == "uCond") return 1;
+  else if (field == "uMech") return 1;
+  else if (field == "uChem") return 1;
+  else if (field == "uCG") return 1;
+  else if (field == "uCGnew") return 1;
+  else if (field == "duChem") return 1;
+  else return 0;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void AtomVecKokkos::set_atom_masks()
+{
+  datamask_grow = EMPTY_MASK;
+  for (int i = 0; i < default_grow.size(); i++)
+    datamask_grow |= field2mask(default_grow[i]);
+  for (int i = 0; i < ngrow; i++)
+    datamask_grow |= field2mask(fields_grow[i]);
+
+  datamask_comm = EMPTY_MASK;
+  for (int i = 0; i < default_comm.size(); i++)
+    datamask_comm |= field2mask(default_comm[i]);
+  for (int i = 0; i < ncomm; i++)
+    datamask_comm |= field2mask(fields_comm[i]);
+
+  datamask_comm_vel = EMPTY_MASK;
+  for (int i = 0; i < default_comm_vel.size(); i++)
+    datamask_comm_vel |= field2mask(default_comm_vel[i]);
+  for (int i = 0; i < ncomm_vel; i++)
+    datamask_comm_vel |= field2mask(fields_comm_vel[i]);
+
+  datamask_reverse = EMPTY_MASK;
+  for (int i = 0; i < default_reverse.size(); i++)
+    datamask_reverse |= field2mask(default_reverse[i]);
+  for (int i = 0; i < nreverse; i++)
+    datamask_reverse |= field2mask(fields_reverse[i]);
+
+  datamask_border = EMPTY_MASK;
+  for (int i = 0; i < default_border.size(); i++)
+    datamask_border |= field2mask(default_border[i]);
+  for (int i = 0; i < nborder; i++)
+    datamask_border |= field2mask(fields_border[i]);
+
+  datamask_border_vel = EMPTY_MASK;
+  for (int i = 0; i < default_border_vel.size(); i++)
+    datamask_border_vel |= field2mask(default_border_vel[i]);
+  for (int i = 0; i < nborder_vel; i++)
+    datamask_border_vel |= field2mask(fields_border_vel[i]);
+
+  datamask_exchange = EMPTY_MASK;
+  for (int i = 0; i < default_exchange.size(); i++)
+    datamask_exchange |= field2mask(default_exchange[i]);
+  for (int i = 0; i < nexchange; i++)
+    datamask_exchange |= field2mask(fields_exchange[i]);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void AtomVecKokkos::set_size_exchange()
+{
+  size_exchange = 1; // 1 to store buffer length
+  for (int i = 0; i < default_exchange.size(); i++)
+    size_exchange += field2size(default_exchange[i]);
+  for (int i = 0; i < nexchange; i++)
+    size_exchange += field2size(fields_exchange[i]);
 }

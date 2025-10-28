@@ -34,9 +34,9 @@ class AtomVecKokkos : virtual public AtomVec {
   virtual void
     sort_kokkos(Kokkos::BinSort<KeyViewType, BinOp> &Sorter) = 0;
 
-  virtual void sync(ExecutionSpace space, unsigned int mask) = 0;
-  virtual void modified(ExecutionSpace space, unsigned int mask) = 0;
-  virtual void sync_pinned(ExecutionSpace space, unsigned int mask, int async_flag = 0) = 0;
+  virtual void sync(ExecutionSpace space, uint64_t mask) = 0;
+  virtual void modified(ExecutionSpace space, uint64_t mask) = 0;
+  virtual void sync_pinned(ExecutionSpace space, uint64_t mask, int async_flag = 0) = 0;
 
   virtual int
     pack_comm_self(const int &n, const DAT::tdual_int_1d &list,
@@ -126,6 +126,20 @@ class AtomVecKokkos : virtual public AtomVec {
   void* buffer;
 
   DAT::tdual_int_1d k_count;
+
+  int datamask_grow;
+  int datamask_comm;
+  int datamask_comm_vel;
+  int datamask_reverse;
+  int datamask_border;
+  int datamask_border_vel;
+  int datamask_exchange;
+
+  void setup_fields() override;
+  int field2mask(std::string);
+  int field2size(std::string);
+  void set_atom_masks();
+  void set_size_exchange();
 
  public:
 

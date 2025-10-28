@@ -51,9 +51,9 @@ class AtomVecAtomicKokkos : public AtomVecKokkos, public AtomVecAtomic {
                              ExecutionSpace space,
                              DAT::tdual_int_1d &k_indices) override;
 
-  void sync(ExecutionSpace space, unsigned int mask) override;
-  void modified(ExecutionSpace space, unsigned int mask) override;
-  void sync_pinned(ExecutionSpace space, unsigned int mask, int async_flag = 0) override;
+  void sync(ExecutionSpace space, uint64_t mask) override;
+  void modified(ExecutionSpace space, uint64_t mask) override;
+  void sync_pinned(ExecutionSpace space, uint64_t mask, int async_flag = 0) override;
 
  protected:
   DAT::t_tagint_1d d_tag;

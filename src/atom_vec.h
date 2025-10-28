@@ -213,7 +213,7 @@ class AtomVec : protected Pointers {
 
   void grow_nmax();
   int grow_nmax_bonus(int);
-  void setup_fields();
+  virtual void setup_fields();
   int process_fields(const std::vector<std::string> &, const std::vector<std::string> &, Method *);
   void init_method(int, Method *);
 };
