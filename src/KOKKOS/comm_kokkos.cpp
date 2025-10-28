@@ -115,16 +115,6 @@ void CommKokkos::init()
   reverse_comm_on_host = lmp->kokkos->reverse_comm_on_host;
 
   CommBrick::init();
-
-  if (!comm_f_only) {// not all Kokkos atom_vec styles have reverse pack/unpack routines yet
-    reverse_comm_legacy = true;
-    lmp->kokkos->reverse_comm_legacy = 1;
-  }
-
-  if (ghost_velocity && atomKK->avecKK->no_comm_vel_flag) { // not all Kokkos atom_vec styles have comm vel pack/unpack routines yet
-    forward_comm_legacy = true;
-    lmp->kokkos->forward_comm_legacy = 1;
-  }
 }
 
 /* ----------------------------------------------------------------------
@@ -741,22 +731,14 @@ void CommKokkos::exchange()
           break;
         }
       }
-
-      if (!atomKK->avecKK->unpack_exchange_indices_flag || !flag) {
-        if (!atomKK->avecKK->unpack_exchange_indices_flag) {
-          if (comm->me == 0) {
-            error->warning(FLERR,"Atom style not compatible with fix sending data in Kokkos communication, "
-                           "switching to legacy exchange/border communication");
-          }
-        } else if (!flag) {
-          if (comm->me == 0) {
-            error->warning(FLERR,"Fix with atom-based arrays not compatible with sending data in Kokkos communication, "
-                           "switching to legacy exchange/border communication");
-          }
+      if (!flag) {
+        if (comm->me == 0) {
+          error->warning(FLERR,"Fix with atom-based arrays not compatible with sending data in Kokkos communication, "
+                         "switching to legacy exchange/border communication");
         }
-        exchange_comm_legacy = true;
-        lmp->kokkos->exchange_comm_legacy = 1;
       }
+      exchange_comm_legacy = true;
+      lmp->kokkos->exchange_comm_legacy = 1;
     }
   }
 
@@ -1056,8 +1038,7 @@ void CommKokkos::borders()
 {
   if (!exchange_comm_legacy) {
 
-    if (atom->nextra_border || mode != Comm::SINGLE || bordergroup ||
-         (ghost_velocity && atomKK->avecKK->no_border_vel_flag)) {
+    if (atom->nextra_border || mode != Comm::SINGLE || bordergroup) {
 
       if (comm->me == 0) {
         error->warning(FLERR,"Required border comm not yet implemented in Kokkos communication, "

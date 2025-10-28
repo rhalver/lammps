@@ -82,11 +82,6 @@ void CommTiledKokkos::init()
   reverse_comm_on_host = lmp->kokkos->reverse_comm_on_host;
 
   CommTiled::init();
-
-  if (!comm_f_only) { // not all Kokkos atom_vec styles have reverse pack/unpack routines yet
-    reverse_comm_legacy = true;
-    lmp->kokkos->reverse_comm_legacy = 1;
-  }
 }
 
 /* ----------------------------------------------------------------------
