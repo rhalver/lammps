@@ -891,6 +891,8 @@ int AtomVecKokkos::field2mask(std::string field)
     return Q_MASK;
   else if (field == "mu")
     return MU_MASK;
+  else if (field == "mu3")
+    return MU_MASK;
   else if (field == "radius")
     return RADIUS_MASK;
   else if (field == "omega")
@@ -899,7 +901,7 @@ int AtomVecKokkos::field2mask(std::string field)
     return TORQUE_MASK;
   else if (field == "molecule")
     return MOLECULE_MASK;
-  else if (field == "special")
+  else if (field == "nspecial")
     return SPECIAL_MASK;
   else if (field == "num_bond")
     return BOND_MASK;
@@ -933,6 +935,44 @@ int AtomVecKokkos::field2mask(std::string field)
     return DUCHEM_MASK;
   else
     return EMPTY_MASK;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int AtomVecKokkos::field2size(std::string field)
+{
+  if (field == "id") return 1;
+  else if (field == "type") return 1;
+  else if (field == "mask") return 1;
+  else if (field == "image") return 1;
+  else if (field == "x") return 3;
+  else if (field == "v") return 3;
+  else if (field == "f") return 3;
+  else if (field == "rmass") return 1;
+  else if (field == "q") return 1;
+  else if (field == "mu") return 4;
+  else if (field == "mu3") return 3;
+  else if (field == "radius") return 1;
+  else if (field == "omega") return 3;
+  else if (field == "torque") return 3;
+  else if (field == "molecule") return 1;
+  else if (field == "special") return 3+atom->maxspecial;
+  else if (field == "num_bond") return 1+2*atom->bond_per_atom;
+  else if (field == "num_angle") return 1+4*atom->angle_per_atom;
+  else if (field == "num_dihedral") return 1+5*atom->dihedral_per_atom;
+  else if (field == "num_improper") return 1+5*atom->dihedral_per_atom;
+  else if (field == "sp") return 4;
+  else if (field == "fm") return 3;
+  else if (field == "fm_long") return 3;
+  else if (field == "rho") return 1;
+  else if (field == "dpdTheta") return 1;
+  else if (field == "uCond") return 1;
+  else if (field == "uMech") return 1;
+  else if (field == "uChem") return 1;
+  else if (field == "uCG") return 1;
+  else if (field == "uCGnew") return 1;
+  else if (field == "duChem") return 1;
+  else return 0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -980,4 +1020,15 @@ void AtomVecKokkos::set_atom_masks()
     datamask_exchange |= field2mask(default_exchange[i]);
   for (int i = 0; i < nexchange; i++)
     datamask_exchange |= field2mask(fields_exchange[i]);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void AtomVecKokkos::set_size_exchange()
+{
+  size_exchange = 1; // 1 to store buffer length
+  for (int i = 0; i < default_exchange.size(); i++)
+    size_exchange += field2size(default_exchange[i]);
+  for (int i = 0; i < nexchange; i++)
+    size_exchange += field2size(fields_exchange[i]);
 }

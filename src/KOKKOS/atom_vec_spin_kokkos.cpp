@@ -617,7 +617,7 @@ void AtomVecSpinKokkos::force_clear(int /*n*/, size_t nbytes)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecSpinKokkos::sync(ExecutionSpace space, unsigned int mask)
+void AtomVecSpinKokkos::sync(ExecutionSpace space, uint64_t mask)
 {
   if (space == Device) {
     if (mask & X_MASK) atomKK->k_x.sync_device();
@@ -657,7 +657,7 @@ void AtomVecSpinKokkos::sync(ExecutionSpace space, unsigned int mask)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecSpinKokkos::modified(ExecutionSpace space, unsigned int mask)
+void AtomVecSpinKokkos::modified(ExecutionSpace space, uint64_t mask)
 {
   if (space == Device) {
     if (mask & X_MASK) atomKK->k_x.modify_device();
@@ -695,7 +695,7 @@ void AtomVecSpinKokkos::modified(ExecutionSpace space, unsigned int mask)
   }
 }
 
-void AtomVecSpinKokkos::sync_pinned(ExecutionSpace space, unsigned int mask, int async_flag)
+void AtomVecSpinKokkos::sync_pinned(ExecutionSpace space, uint64_t mask, int async_flag)
 {
   if (space == Device) {
     if ((mask & X_MASK) && atomKK->k_x.need_sync_device())

@@ -70,7 +70,7 @@ struct AtomVecHybridKokkos_PackComm {
   typename AT::t_int_1d_const _list;
   double _xprd,_yprd,_zprd,_xy,_xz,_yz;
   double _pbc[6];
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_PackComm(
       const AtomKokkos* atomKK,
@@ -78,7 +78,7 @@ struct AtomVecHybridKokkos_PackComm {
       const typename DAT::tdual_int_1d &list,
       const double &xprd, const double &yprd, const double &zprd,
       const double &xy, const double &xz, const double &yz, const int* const pbc,
-      const unsigned int &datamask):
+      const uint64_t &datamask):
       _x(atomKK->k_x.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),
       _sp(atomKK->k_sp.view<DeviceType>()),
@@ -234,7 +234,7 @@ struct AtomVecHybridKokkos_PackCommSelf {
   typename AT::t_int_1d_const _list;
   double _xprd,_yprd,_zprd,_xy,_xz,_yz;
   double _pbc[6];
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_PackCommSelf(
       const AtomKokkos* atomKK,
@@ -242,7 +242,7 @@ struct AtomVecHybridKokkos_PackCommSelf {
       const typename DAT::tdual_int_1d &list,
       const double &xprd, const double &yprd, const double &zprd,
       const double &xy, const double &xz, const double &yz, const int* const pbc,
-      const unsigned int datamask):
+      const uint64_t datamask):
       _x(atomKK->k_x.view<DeviceType>()),_xw(atomKK->k_x.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),_muw(atomKK->k_mu.view<DeviceType>()),
       _sp(atomKK->k_sp.view<DeviceType>()),_spw(atomKK->k_sp.view<DeviceType>()),
@@ -390,7 +390,7 @@ struct AtomVecHybridKokkos_PackCommSelfFused {
   typename AT::t_int_1d_const _sendnum_scan;
   typename AT::t_int_1d_const _g2l;
   double _xprd,_yprd,_zprd,_xy,_xz,_yz;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_PackCommSelfFused(
       const AtomKokkos* atomKK,
@@ -402,7 +402,7 @@ struct AtomVecHybridKokkos_PackCommSelfFused {
       const typename DAT::tdual_int_1d &g2l,
       const double &xprd, const double &yprd, const double &zprd,
       const double &xy, const double &xz, const double &yz,
-      const unsigned int datamask):
+      const uint64_t datamask):
       _x(atomKK->k_x.view<DeviceType>()),_xw(atomKK->k_x.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),_muw(atomKK->k_mu.view<DeviceType>()),
       _sp(atomKK->k_sp.view<DeviceType>()),_spw(atomKK->k_sp.view<DeviceType>()),
@@ -529,12 +529,12 @@ struct AtomVecHybridKokkos_UnpackComm {
   typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem;
   typename AT::t_double_2d_lr_const _buf;
   int _first;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_UnpackComm(
     const AtomKokkos* atomKK,
     const typename DAT::tdual_double_2d_lr &buf,
-    const int &first, const unsigned int &datamask):
+    const int &first, const uint64_t &datamask):
       _x(atomKK->k_x.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),
       _sp(atomKK->k_sp.view<DeviceType>()),
@@ -620,7 +620,7 @@ struct AtomVecHybridKokkos_PackCommVel {
   double _pbc[6];
   double _h_rate[6];
   const int _deform_vremap;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_PackCommVel(
     const AtomKokkos* atomKK,
@@ -630,7 +630,7 @@ struct AtomVecHybridKokkos_PackCommVel {
     const double &xy, const double &xz, const double &yz, const int* const pbc,
     const double * const h_rate,
     const int &deform_vremap,
-    const unsigned int &datamask):
+    const uint64_t &datamask):
     _x(atomKK->k_x.view<DeviceType>()),
     _mask(atomKK->k_mask.view<DeviceType>()),
     _v(atomKK->k_v.view<DeviceType>()),
@@ -873,7 +873,7 @@ struct AtomVecHybridKokkos_UnpackCommVel {
   typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem;
   typename AT::t_double_2d_lr_const _buf;
   int _first;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_UnpackCommVel(
     const AtomKokkos* atomKK,
@@ -966,12 +966,12 @@ struct AtomVecHybridKokkos_PackReverse {
   typename AT::t_kkfloat_1d_3_randomread _torque;
   typename AT::t_double_2d_lr _buf;
   int _first;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_PackReverse(
     const AtomKokkos* atomKK,
     const typename DAT::tdual_double_2d_lr &buf,
-    const int &first, const unsigned int &datamask):
+    const int &first, const uint64_t &datamask):
       _f(atomKK->k_f.view<DeviceType>()),
       _fm(atomKK->k_fm.view<DeviceType>()),
       _fm_long(atomKK->k_fm_long.view<DeviceType>()),
@@ -1039,13 +1039,13 @@ struct AtomVecHybridKokkos_UnPackReverseSelf {
   typename AT::t_kkfloat_1d_3 _torquew;
   typename AT::t_int_1d_const _list;
   int _nfirst;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_UnPackReverseSelf(
     const AtomKokkos* atomKK,
     const int &nfirst,
     const typename DAT::tdual_int_1d &list,
-    const unsigned int &datamask):
+    const uint64_t &datamask):
       _f(atomKK->k_f.view<DeviceType>()),_fw(atomKK->k_f.view<DeviceType>()),
       _fm(atomKK->k_fm.view<DeviceType>()),_fmw(atomKK->k_fm.view<DeviceType>()),
       _fm_long(atomKK->k_fm_long.view<DeviceType>()),_fm_longw(atomKK->k_fm_long.view<DeviceType>()),
@@ -1110,13 +1110,13 @@ struct AtomVecHybridKokkos_UnPackReverse {
   typename AT::t_kkfloat_1d_3 _torque;
   typename AT::t_double_2d_lr_const _buf;
   typename AT::t_int_1d_const _list;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_UnPackReverse(
     const AtomKokkos* atomKK,
     const typename DAT::tdual_double_2d_lr &buf,
     const typename DAT::tdual_int_1d &list,
-    const unsigned int datamask):
+    const uint64_t datamask):
       _f(atomKK->k_f.view<DeviceType>()),
       _fm(atomKK->k_fm.view<DeviceType>()),
       _fm_long(atomKK->k_fm_long.view<DeviceType>()),
@@ -1198,14 +1198,14 @@ struct AtomVecHybridKokkos_PackBorder {
   typename AT::t_kkfloat_1d _radius,_rmass;
   typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
   double _dx,_dy,_dz;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_PackBorder(
     const AtomKokkos* atomKK,
     const typename AT::t_double_2d_lr &buf,
     const typename AT::t_int_1d_const &list,
     const double &dx, const double &dy, const double &dz,
-    const unsigned int &datamask):
+    const uint64_t &datamask):
       _buf(buf),_list(list),
       _x(atomKK->k_x.view<DeviceType>()),
       _tag(atomKK->k_tag.view<DeviceType>()),
@@ -1357,12 +1357,12 @@ struct AtomVecHybridKokkos_UnpackBorder {
   typename AT::t_kkfloat_1d _radius,_rmass;
   typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
   int _first;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_UnpackBorder(
     const AtomKokkos* atomKK,
     const typename AT::t_double_2d_lr_const &buf,
-    const int &first, const unsigned int &datamask):
+    const int &first, const uint64_t &datamask):
     _buf(buf),
     _x(atomKK->k_x.view<DeviceType>()),
     _tag(atomKK->k_tag.view<DeviceType>()),
@@ -1482,7 +1482,7 @@ struct AtomVecHybridKokkos_PackBorderVel {
   typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
   double _dx,_dy,_dz, _dvx, _dvy, _dvz;
   const int _deform_groupbit;
-  const unsigned int _datamask;
+  const uint64_t _datamask;
 
   AtomVecHybridKokkos_PackBorderVel(
     const AtomKokkos* atomKK,
@@ -1491,7 +1491,7 @@ struct AtomVecHybridKokkos_PackBorderVel {
     const double &dx, const double &dy, const double &dz,
     const double &dvx, const double &dvy, const double &dvz,
     const int &deform_groupbit,
-    const unsigned int &datamask):
+    const uint64_t &datamask):
       _buf(buf),_list(list),_datamask(datamask),
       _x(atomKK->k_x.view<DeviceType>()),
       _tag(atomKK->k_tag.view<DeviceType>()),
@@ -1692,13 +1692,13 @@ struct AtomVecHybridKokkos_UnpackBorderVel {
   typename AT::t_kkfloat_1d_3 _omega;
   typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
   int _first;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_UnpackBorderVel(
     const AtomKokkos* atomKK,
     const typename AT::t_double_2d_lr_const &buf,
     const int &first,
-    const unsigned int &datamask):
+    const uint64_t &datamask):
     _buf(buf),
     _x(atomKK->k_x.view<DeviceType>()),
     _tag(atomKK->k_tag.view<DeviceType>()),
@@ -1878,14 +1878,14 @@ struct AtomVecHybridKokkos_PackExchangeFunctor {
   typename AT::t_int_1d_const _sendlist;
   typename AT::t_int_1d_const _copylist;
   int _size_exchange;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_PackExchangeFunctor(
       const AtomKokkos* atomKK,
       const DAT::tdual_double_2d_lr buf,
       DAT::tdual_int_1d sendlist,
       DAT::tdual_int_1d copylist,
-      const unsigned int datamask):
+      const uint64_t datamask):
     _x(atomKK->k_x.view<DeviceType>()),
     _v(atomKK->k_v.view<DeviceType>()),
     _tag(atomKK->k_tag.view<DeviceType>()),
@@ -2216,6 +2216,8 @@ int AtomVecHybridKokkos::pack_exchange_kokkos(const int &nsend,DAT::tdual_double
                                                  DAT::tdual_int_1d k_copylist,
                                                  ExecutionSpace space)
 {
+  set_size_exchange();
+
   if (nsend > (int) (k_buf.view_host().extent(0)*
               k_buf.view_host().extent(1))/size_exchange) {
     int newsize = nsend*size_exchange/k_buf.view_host().extent(1)+1;
@@ -2277,7 +2279,7 @@ struct AtomVecHybridKokkos_UnpackExchangeFunctor {
   int _dim;
   double _lo,_hi;
   int _size_exchange;
-  unsigned int _datamask;
+  uint64_t _datamask;
 
   AtomVecHybridKokkos_UnpackExchangeFunctor(
     const AtomKokkos* atomKK,
@@ -2285,7 +2287,7 @@ struct AtomVecHybridKokkos_UnpackExchangeFunctor {
     DAT::tdual_int_1d nlocal,
     DAT::tdual_int_1d indices,
     int dim, double lo, double hi,
-    unsigned int datamask):
+    uint64_t datamask):
       _x(atomKK->k_x.view<DeviceType>()),
       _v(atomKK->k_v.view<DeviceType>()),
       _tag(atomKK->k_tag.view<DeviceType>()),
@@ -2507,21 +2509,21 @@ int AtomVecHybridKokkos::unpack_exchange_kokkos(DAT::tdual_double_2d_lr &k_buf, 
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecHybridKokkos::sync(ExecutionSpace space, unsigned int h_mask)
+void AtomVecHybridKokkos::sync(ExecutionSpace space, uint64_t h_mask)
 {
   for (int k = 0; k < nstyles; k++) (dynamic_cast<AtomVecKokkos*>(styles[k]))->sync(space,h_mask);
 }
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecHybridKokkos::sync_pinned(ExecutionSpace space, unsigned int h_mask, int async_flag)
+void AtomVecHybridKokkos::sync_pinned(ExecutionSpace space, uint64_t h_mask, int async_flag)
 {
   for (int k = 0; k < nstyles; k++) (dynamic_cast<AtomVecKokkos*>(styles[k]))->sync_pinned(space,h_mask,async_flag);
 }
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecHybridKokkos::modified(ExecutionSpace space, unsigned int h_mask)
+void AtomVecHybridKokkos::modified(ExecutionSpace space, uint64_t h_mask)
 {
   for (int k = 0; k < nstyles; k++) (dynamic_cast<AtomVecKokkos*>(styles[k]))->modified(space,h_mask);
 }

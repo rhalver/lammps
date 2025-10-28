@@ -869,7 +869,7 @@ int AtomVecMolecularKokkos::unpack_exchange_kokkos(DAT::tdual_double_2d_lr &k_bu
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecMolecularKokkos::sync(ExecutionSpace space, unsigned int mask)
+void AtomVecMolecularKokkos::sync(ExecutionSpace space, uint64_t mask)
 {
   if (space == Device) {
     if (mask & X_MASK) atomKK->k_x.sync_device();
@@ -997,7 +997,7 @@ void AtomVecMolecularKokkos::sync(ExecutionSpace space, unsigned int mask)
   }
 }
 
-void AtomVecMolecularKokkos::sync_pinned(ExecutionSpace space, unsigned int mask, int async_flag)
+void AtomVecMolecularKokkos::sync_pinned(ExecutionSpace space, uint64_t mask, int async_flag)
 {
   if (space == Device) {
     if ((mask & X_MASK) && atomKK->k_x.need_sync_device())
@@ -1144,7 +1144,7 @@ void AtomVecMolecularKokkos::sync_pinned(ExecutionSpace space, unsigned int mask
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecMolecularKokkos::modified(ExecutionSpace space, unsigned int mask)
+void AtomVecMolecularKokkos::modified(ExecutionSpace space, uint64_t mask)
 {
   if (space == Device) {
     if (mask & X_MASK) atomKK->k_x.modify_device();
