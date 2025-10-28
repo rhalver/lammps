@@ -44,15 +44,13 @@ _texture( q_tex,int2);
 #define EPSILON (acctyp)(1.0e-20)
 #define EPS_EWALD (acctyp)(1.0e-6)
 #define EPS_EWALD_SQR (acctyp)(1.0e-12)
-#elif defined _SINGLE_DOUBLE
-#define EPSILON (acctyp)(1.0e-8)
-#define EPS_EWALD (acctyp)(1.0e-5)
-#define EPS_EWALD_SQR (acctyp)(1.0e-8)
 #else
 #define EPSILON (numtyp)(1.0e-7)
-#define EPS_EWALD (numtyp)(1.0e-4)
+#define EPS_EWALD (numtyp)(1.0e-6)
 #define EPS_EWALD_SQR (numtyp)(1.0e-7)
 #endif
+
+#define ucl_recip2(x) ((numtyp)1.0/(x))
 
 __kernel void k_born_coul_long_cs(const __global numtyp4 *restrict x_,
                           const __global numtyp4 *restrict coeff1,
@@ -127,7 +125,7 @@ __kernel void k_born_coul_long_cs(const __global numtyp4 *restrict x_,
         numtyp forcecoul,forceborn,force,r6inv,prefactor,_erfc,rexp;
 
         rsq += EPSILON; // Add Epsilon for case: r = 0; Interaction must be removed by special bond;
-        numtyp r2inv = ucl_recip(rsq);
+        numtyp r2inv = ucl_recip2(rsq);
 
         if (rsq < cut_coulsq) {
           numtyp r = ucl_sqrt(rsq);
@@ -139,21 +137,21 @@ __kernel void k_born_coul_long_cs(const __global numtyp4 *restrict x_,
             // used approximation functions valid
             numtyp grij = g_ewald * (r+EPS_EWALD);
             numtyp expm2 = ucl_exp(-grij*grij);
-            acctyp t = ucl_recip((numtyp)1.0 + CS_EWALD_P*grij);
+            acctyp t = ucl_recip2((numtyp)1.0 + CS_EWALD_P*grij);
             numtyp u = (numtyp)1.0 - t;
             _erfc = t * ((numtyp)1.0 + u*(B0+u*(B1+u*(B2+u*(B3+u*(B4+u*B5)))))) * expm2;
-            prefactor *= ucl_recip(r+EPS_EWALD);
+            prefactor *= ucl_recip2(r+EPS_EWALD);
             forcecoul = prefactor * (_erfc + EWALD_F*grij*expm2 - factor_coul);
             // Additionally r2inv needs to be accordingly modified since the later
             // scaling of the overall force shall be consistent
-            r2inv = ucl_recip(rsq + EPS_EWALD_SQR);
+            r2inv = ucl_recip2(rsq + EPS_EWALD_SQR);
           } else {
             numtyp grij = g_ewald * r;
             numtyp expm2 = ucl_exp(-grij*grij);
-            acctyp t = ucl_recip((numtyp)1.0 + CS_EWALD_P*grij);
+            acctyp t = ucl_recip2((numtyp)1.0 + CS_EWALD_P*grij);
             numtyp u = (numtyp)1.0 - t;
             _erfc = t * ((numtyp)1.0 + u*(B0+u*(B1+u*(B2+u*(B3+u*(B4+u*B5)))))) * expm2;
-            prefactor *= ucl_recip(r);
+            prefactor *= ucl_recip2(r);
             forcecoul = prefactor*(_erfc + EWALD_F*grij*expm2);
           }
         } else forcecoul = (numtyp)0.0;
@@ -272,7 +270,7 @@ __kernel void k_born_coul_long_cs_fast(const __global numtyp4 *restrict x_,
         numtyp forcecoul,forceborn,force,r6inv,prefactor,_erfc,rexp;
 
         rsq += EPSILON; // Add Epsilon for case: r = 0; Interaction must be removed by special bond;
-        numtyp r2inv = ucl_recip(rsq);
+        numtyp r2inv = ucl_recip2(rsq);
 
         if (rsq < cut_coulsq) {
           numtyp r = ucl_sqrt(rsq);
@@ -285,23 +283,23 @@ __kernel void k_born_coul_long_cs_fast(const __global numtyp4 *restrict x_,
             // used approximation functions valid
             numtyp grij = g_ewald * (r+EPS_EWALD);
             numtyp expm2 = ucl_exp(-grij*grij);
-            numtyp t = ucl_recip((numtyp)1.0 + CS_EWALD_P*grij);
+            numtyp t = ucl_recip2((numtyp)1.0 + CS_EWALD_P*grij);
             numtyp u = (numtyp)1.0 - t;
             _erfc = t * ((numtyp)1.0 + u*(B0+u*(B1+u*(B2+u*(B3+u*(B4+u*B5)))))) * expm2;
-            prefactor *= ucl_recip(r+EPS_EWALD);
+            prefactor *= ucl_recip2(r+EPS_EWALD);
             forcecoul = prefactor * (_erfc + EWALD_F*grij*expm2 - factor_coul);
             // Additionally r2inv needs to be accordingly modified since the later
             // scaling of the overall force shall be consistent
-            r2inv = ucl_recip(rsq + EPS_EWALD_SQR);
+            r2inv = ucl_recip2(rsq + EPS_EWALD_SQR);
           }
 
           else {
             numtyp grij = g_ewald * r;
             numtyp expm2 = ucl_exp(-grij*grij);
-            numtyp t = ucl_recip((numtyp)1.0 + CS_EWALD_P*grij);
+            numtyp t = ucl_recip2((numtyp)1.0 + CS_EWALD_P*grij);
             numtyp u = (numtyp)1.0 - t;
             _erfc = t * ((numtyp)1.0 + u*(B0+u*(B1+u*(B2+u*(B3+u*(B4+u*B5)))))) * expm2;
-            prefactor *= ucl_recip(r);
+            prefactor *= ucl_recip2(r);
             forcecoul = prefactor*(_erfc + EWALD_F*grij*expm2);
           }
 
