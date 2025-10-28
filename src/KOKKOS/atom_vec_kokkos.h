@@ -198,7 +198,7 @@ class AtomVecKokkos : virtual public AtomVec {
   uint64_t datamask_exchange;
 
   void setup_fields() override;
-  int field2mask(std::string);
+  uint64_t field2mask(std::string);
   int field2size(std::string);
   void set_atom_masks();
   void set_size_exchange();

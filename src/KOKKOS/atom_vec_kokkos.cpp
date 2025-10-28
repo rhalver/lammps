@@ -2512,7 +2512,7 @@ int AtomVecKokkos::unpack_exchange_kokkos(DAT::tdual_double_2d_lr &k_buf, int nr
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecKokkos::field2mask(std::string field)
+uint64_t AtomVecKokkos::field2mask(std::string field)
 {
   if (field == "id")
     return TAG_MASK;
