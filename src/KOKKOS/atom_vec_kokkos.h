@@ -159,6 +159,10 @@ class AtomVecKokkos : virtual public AtomVec {
   HAT::t_int_2d h_dihedral_type;
   HAT::t_tagint_2d h_dihedral_atom1,h_dihedral_atom2,
     h_dihedral_atom3,h_dihedral_atom4;
+  HAT::t_int_1d h_num_improper;
+  HAT::t_int_2d h_improper_type;
+  HAT::t_tagint_2d h_improper_atom1,h_improper_atom2,
+    h_improper_atom3,h_improper_atom4;
 
   DAT::t_kkfloat_1d_4 d_mu;
   HAT::t_kkfloat_1d_4 h_mu;
@@ -185,13 +189,13 @@ class AtomVecKokkos : virtual public AtomVec {
 
   DAT::tdual_int_1d k_count;
 
-  int datamask_grow;
-  int datamask_comm;
-  int datamask_comm_vel;
-  int datamask_reverse;
-  int datamask_border;
-  int datamask_border_vel;
-  int datamask_exchange;
+  uint64_t datamask_grow;
+  uint64_t datamask_comm;
+  uint64_t datamask_comm_vel;
+  uint64_t datamask_reverse;
+  uint64_t datamask_border;
+  uint64_t datamask_border_vel;
+  uint64_t datamask_exchange;
 
   void setup_fields() override;
   int field2mask(std::string);

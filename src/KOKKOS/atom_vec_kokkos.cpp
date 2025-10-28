@@ -883,7 +883,7 @@ struct AtomVecKokkos_UnpackCommVel {
   AtomVecKokkos_UnpackCommVel(
     const AtomKokkos* atomKK,
     const typename DAT::tdual_double_2d_lr &buf,
-    const int &first, const int &datamask):
+    const int &first, const uint64_t &datamask):
     _x(atomKK->k_x.view<DeviceType>()),
     _v(atomKK->k_v.view<DeviceType>()),
     _mu(atomKK->k_mu.view<DeviceType>()),
