@@ -154,13 +154,13 @@ rate of molecule deletion. The number of deletion occurrences is limited to
 Nlimit within an interval of Nsteps timesteps. Nlimit can be specified with
 an equal-style :doc:`variable <variable>`. When using the
 *delete_rate_limit* keyword, no deletions are permitted to occur within the
-first Nsteps timesteps of the first run (after reading a either a data or
+first Nsteps timesteps of the first run (after reading either a data or
 restart file).
 
 The *delete* keyword can output information about the deleted molecules in
 either legacy format or JSON format. The latter is activated when the
 *filedel* argument has a '.json' extension.  The legacy format lists how
-many of each species is deleted, while the JSON format provides the atom ID,
+many of each species are deleted, while the JSON format provides the atom ID,
 atom type, and coordinates of deleted atoms within each molecule.  The
 format for legacy output changes depending on the keyword used.  When using
 the *specieslist* keyword and legacy format, the *filedel* file has the
