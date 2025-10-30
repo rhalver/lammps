@@ -260,7 +260,7 @@ For example, for Neon, :math:`m = 20.1797` Dalton, :math:`\varepsilon = 3.0747 \
 .. math::
    \Lambda^{\ast} = 4.135667403e-3 eV * ps / (2.7616 Å * sqrt(20.1797 Dalton * 3.0747e-3 eV * 1.0364269e-4 eV / Dalton / Å^2 * ps^2)) = 0.600.
 Thus for a fully quantum simulation of Neon using *lj* units, *sp* should be set to 0.600.
-The modification of the quantumness should be done by scaling :math:`\Lambda^{\ast}`. 
+The modification of the quantumness should be done by scaling :math:`\Lambda^{\ast}`.
 
 The keyword *ensemble* for fix style *pimd/langevin* determines which ensemble is it
 going to sample. The value can be *nve* (microcanonical), *nvt* (canonical), *nph* (isoenthalpic),
