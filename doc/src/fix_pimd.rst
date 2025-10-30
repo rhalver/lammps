@@ -46,6 +46,7 @@ Syntax
      *ensemble* value = *nvt* or *nve* or *nph* or *npt*
      *fmmode* value = *physical* or *normal*
      *fmass* value = scaling factor on mass
+     *sp* value = scaling factor on Planck constant
      *temp* value = temperature (temperature unit)
           temperature = target temperature of the thermostat
      *thermostat* values = style seed
@@ -247,9 +248,19 @@ a value other than *physical*, due to the lack of support for bosonic normal mod
    (:math:`\sum_{i=1}^P \frac{1}{2}m\omega_P^2(q_i - q_{i+1})^2`, :math:`m` is always the
    actual mass of the particles).
 
-The keyword *sp* is a scaling factor on Planck's constant, which can
-be useful for debugging or other purposes.  The default value of 1.0
-is appropriate for most situations.
+The keyword *sp* is a scaling factor on Planck's constant. Scaling the Planck's constant means modifying the "quantumness" of the PIMD simulation. Using the physical value of Planck's constant corresponds to a fully quantum simulation, and 0 corresponds to the classical limit.
+For unit styles other than *lj*, the default value of 1.0 is appropriate for most situations.
+For *lj* units, a fully quantum simulation translates into setting *sp* to the de Boer quantumness parameter :math:`\Lambda^{\ast}`(see :ref:`de Boer <de Boer>`):
+.. math::
+
+   \Lambda^{\ast}=h/\sigma\sqrt{m\varepsilon}
+
+where :math:`h` is Planck's constant, :math:`\sigma` is the length scale, :math:`\epsilon` is the energy scale, and :math:`m` is the mass of the particles.
+For example, for Neon, :math:`m = 20.1797` Dalton, :math:`\varepsilon = 3.0747 \times 10^{-3}` eV and :math:`\sigma = 2.7616` Å. Then we have
+.. math::
+   \Lambda^{\ast} = 4.135667403e-3 eV * ps / (2.7616 Å * sqrt(20.1797 Dalton * 3.0747e-3 eV * 1.0364269e-4 eV / Dalton / Å^2 * ps^2)) = 0.600.
+Thus for a fully quantum simulation of Neon using *lj* units, *sp* should be set to 0.600.
+The modification of the quantumness should be done by scaling :math:`\Lambda^{\ast}`. 
 
 The keyword *ensemble* for fix style *pimd/langevin* determines which ensemble is it
 going to sample. The value can be *nve* (microcanonical), *nvt* (canonical), *nph* (isoenthalpic),
@@ -534,6 +545,10 @@ Path Integrals, McGraw-Hill, New York (1965).
 .. _Cao2:
 
 **(Cao2)** J. Cao and G. Voth, J Chem Phys, 100, 5093 (1994).
+
+.. _de Boer:
+
+**(de Boer)** J. de Boer, "Quantum Effects and Exchange Effects on the Thermodynamic Properties of Liquid Helium," Progress in Low Temperature Physics, Volume 2, Pages 1-58 (1957).
 
 .. _Hone:
 
