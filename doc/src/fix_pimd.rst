@@ -276,7 +276,7 @@ a positive floating-point number.
    for nve pimd, since the spring elastic frequency between the beads will be affected by the temperature.
 
 The keyword *thermostat* reads *style* and *seed* of thermostat for fix style *pimd/langevin*.
-*style* can only be *PILE_L* (path integral Langevin equation local thermostat, as described in :ref:`Ceriotti <Ceriotti2>`), and *seed* should a positive integer number, which serves as the seed of the pseudo random number generator.
+*style* can only be *PILE_L* (path integral Langevin equation local thermostat, as described in :ref:`Ceriotti <_Ceriotti3>`), and *seed* should a positive integer number, which serves as the seed of the pseudo random number generator.
 
 .. note::
 
