@@ -4476,7 +4476,7 @@ void FixBondReact::write_restart(FILE *fp)
   // to store, for each RateLimit: Nrxns rxn_IDs[Nrxns] NSteps store_rxn_counts[Nsteps]
   // NOTE: rxn_IDs only valid in reference to this restart file's reaction list
   int rbufcount = rate_limits.size()*2;
-  for (auto rlm : rate_limits)
+  for (const auto &rlm : rate_limits)
     rbufcount += rlm.Nsteps + rlm.Nrxns;
 
   int ii = 0;
