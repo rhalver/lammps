@@ -262,13 +262,13 @@ void FixRattle::vrattle3angle(int m)
   // matrix coeffs and rhs for lamda equations
 
   if (rmass) {
-    imass[0] = 1.0/rmass[i0];
-    imass[1] = 1.0/rmass[i1];
-    imass[2] = 1.0/rmass[i2];
+    imass[0] = 1.0 / rmass[i0];
+    imass[1] = 1.0 / rmass[i1];
+    imass[2] = 1.0 / rmass[i2];
   } else {
-    imass[0] = 1.0/mass[type[i0]];
-    imass[1] = 1.0/mass[type[i1]];
-    imass[2] = 1.0/mass[type[i2]];
+    imass[0] = 1.0 / mass[type[i0]];
+    imass[1] = 1.0 / mass[type[i1]];
+    imass[2] = 1.0 / mass[type[i2]];
   }
 
   // setup matrix
@@ -333,11 +333,11 @@ void FixRattle::vrattle2(int m)
   // matrix coeffs and rhs for lamda equations
 
   if (rmass) {
-    imass[0] = 1.0/rmass[i0];
-    imass[1] = 1.0/rmass[i1];
+    imass[0] = 1.0 / rmass[i0];
+    imass[1] = 1.0 / rmass[i1];
   } else {
-    imass[0] = 1.0/mass[type[i0]];
-    imass[1] = 1.0/mass[type[i1]];
+    imass[0] = 1.0 / mass[type[i0]];
+    imass[1] = 1.0 / mass[type[i1]];
   }
 
   // Lagrange multiplier: exact solution
@@ -385,13 +385,13 @@ void FixRattle::vrattle3(int m)
   MathExtra::sub3(vp[i2],vp[i0],vp02);
 
   if (rmass) {
-    imass[0] = 1.0/rmass[i0];
-    imass[1] = 1.0/rmass[i1];
-    imass[2] = 1.0/rmass[i2];
+    imass[0] = 1.0 / rmass[i0];
+    imass[1] = 1.0 / rmass[i1];
+    imass[2] = 1.0 / rmass[i2];
   } else {
-    imass[0] = 1.0/mass[type[i0]];
-    imass[1] = 1.0/mass[type[i1]];
-    imass[2] = 1.0/mass[type[i2]];
+    imass[0] = 1.0 / mass[type[i0]];
+    imass[1] = 1.0 / mass[type[i1]];
+    imass[2] = 1.0 / mass[type[i2]];
   }
 
   // setup matrix
@@ -460,15 +460,15 @@ void FixRattle::vrattle4(int m)
   // matrix coeffs and rhs for lamda equations
 
   if (rmass) {
-    imass[0] = 1.0/rmass[i0];
-    imass[1] = 1.0/rmass[i1];
-    imass[2] = 1.0/rmass[i2];
-    imass[3] = 1.0/rmass[i3];
+    imass[0] = 1.0 / rmass[i0];
+    imass[1] = 1.0 / rmass[i1];
+    imass[2] = 1.0 / rmass[i2];
+    imass[3] = 1.0 / rmass[i3];
   } else {
-    imass[0] = 1.0/mass[type[i0]];
-    imass[1] = 1.0/mass[type[i1]];
-    imass[2] = 1.0/mass[type[i2]];
-    imass[3] = 1.0/mass[type[i3]];
+    imass[0] = 1.0 / mass[type[i0]];
+    imass[1] = 1.0 / mass[type[i1]];
+    imass[2] = 1.0 / mass[type[i2]];
+    imass[3] = 1.0 / mass[type[i3]];
   }
 
   // setup matrix
@@ -604,7 +604,7 @@ void FixRattle::update_v_half_nocons()
   }
   else {
     for (int i = 0; i < nlocal; i++) {
-      dtfvinvm = dtfv/mass[type[i]];
+      dtfvinvm = dtfv / mass[type[i]];
       if (shake_flag[i]) {
         for (int k=0; k<3; k++)
           vp[i][k] = v[i][k] + dtfvinvm * f[i][k];

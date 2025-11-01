@@ -2070,11 +2070,11 @@ void FixShake::shake(int ilist)
   // a,b,c = coeffs in quadratic equation for lamda
 
   if (rmass) {
-    invmass0 = 1.0/rmass[i0];
-    invmass1 = 1.0/rmass[i1];
+    invmass0 = 1.0 / rmass[i0];
+    invmass1 = 1.0 / rmass[i1];
   } else {
-    invmass0 = 1.0/mass[type[i0]];
-    invmass1 = 1.0/mass[type[i1]];
+    invmass0 = 1.0 / mass[type[i0]];
+    invmass1 = 1.0 / mass[type[i1]];
   }
 
   double a = (invmass0+invmass1)*(invmass0+invmass1) * r01sq;
@@ -2187,13 +2187,13 @@ void FixShake::shake3(int ilist)
   // matrix coeffs and rhs for lamda equations
 
   if (rmass) {
-    invmass0 = 1.0/rmass[i0];
-    invmass1 = 1.0/rmass[i1];
-    invmass2 = 1.0/rmass[i2];
+    invmass0 = 1.0 / rmass[i0];
+    invmass1 = 1.0 / rmass[i1];
+    invmass2 = 1.0 / rmass[i2];
   } else {
-    invmass0 = 1.0/mass[type[i0]];
-    invmass1 = 1.0/mass[type[i1]];
-    invmass2 = 1.0/mass[type[i2]];
+    invmass0 = 1.0 / mass[type[i0]];
+    invmass1 = 1.0 / mass[type[i1]];
+    invmass2 = 1.0 / mass[type[i2]];
   }
 
   double a11 = 2.0 * (invmass0+invmass1) *
@@ -2375,15 +2375,15 @@ void FixShake::shake4(int ilist)
   // matrix coeffs and rhs for lamda equations
 
   if (rmass) {
-    invmass0 = 1.0/rmass[i0];
-    invmass1 = 1.0/rmass[i1];
-    invmass2 = 1.0/rmass[i2];
-    invmass3 = 1.0/rmass[i3];
+    invmass0 = 1.0 / rmass[i0];
+    invmass1 = 1.0 / rmass[i1];
+    invmass2 = 1.0 / rmass[i2];
+    invmass3 = 1.0 / rmass[i3];
   } else {
-    invmass0 = 1.0/mass[type[i0]];
-    invmass1 = 1.0/mass[type[i1]];
-    invmass2 = 1.0/mass[type[i2]];
-    invmass3 = 1.0/mass[type[i3]];
+    invmass0 = 1.0 / mass[type[i0]];
+    invmass1 = 1.0 / mass[type[i1]];
+    invmass2 = 1.0 / mass[type[i2]];
+    invmass3 = 1.0 / mass[type[i3]];
   }
 
   double a11 = 2.0 * (invmass0+invmass1) *
@@ -2626,13 +2626,13 @@ void FixShake::shake3angle(int ilist)
   // matrix coeffs and rhs for lamda equations
 
   if (rmass) {
-    invmass0 = 1.0/rmass[i0];
-    invmass1 = 1.0/rmass[i1];
-    invmass2 = 1.0/rmass[i2];
+    invmass0 = 1.0 / rmass[i0];
+    invmass1 = 1.0 / rmass[i1];
+    invmass2 = 1.0 / rmass[i2];
   } else {
-    invmass0 = 1.0/mass[type[i0]];
-    invmass1 = 1.0/mass[type[i1]];
-    invmass2 = 1.0/mass[type[i2]];
+    invmass0 = 1.0 / mass[type[i0]];
+    invmass1 = 1.0 / mass[type[i1]];
+    invmass2 = 1.0 / mass[type[i2]];
   }
 
   double a11 = 2.0 * (invmass0+invmass1) *
@@ -3523,7 +3523,7 @@ void FixShake::correct_coordinates(int vflag) {
   double dtfmsq;
   if (rmass) {
     for (int i = 0; i < nlocal; i++) {
-      dtfmsq = dtfsq/ rmass[i];
+      dtfmsq = dtfsq / rmass[i];
       x[i][0] = x[i][0] + dtfmsq*f[i][0];
       x[i][1] = x[i][1] + dtfmsq*f[i][1];
       x[i][2] = x[i][2] + dtfmsq*f[i][2];
