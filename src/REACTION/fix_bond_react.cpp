@@ -211,7 +211,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
       if (iarg+rlm.Nrxns+4 > narg) utils::missing_cmd_args(FLERR,"fix bond/react rate_limit", error);
       for (int i = 0; i < rlm.Nrxns; i++) {
         std::string tmpstr = arg[iarg+1+i];
-        rlm.rxn_names.push_back(tmpstr);
+        rlm.rxn_names.push_back(std::move(tmpstr));
       }
       char *myarg = arg[iarg+rlm.Nrxns+1]; // Nlimit
       if (strncmp(myarg,"v_",2) == 0) {
@@ -4543,11 +4543,11 @@ void FixBondReact::restart(char *buf)
       for (int i = 0; i < r_rlm.Nrxns; i++) {
         r_rlm.rxnIDs.push_back(ibuf[ii++]);
         std::string myrxn_name = set_restart[r_rlm.rxnIDs[i]].rxn_name;
-        r_rlm.rxn_names.push_back(myrxn_name);
+        r_rlm.rxn_names.push_back(std::move(myrxn_name));
       }
       r_rlm.Nsteps = ibuf[ii++];
       for (int i = 0; i < r_rlm.Nsteps; i++) r_rlm.store_rxn_counts.push_back(ibuf[ii++]);
-      restart_rate_limits.push_back(r_rlm);
+      restart_rate_limits.push_back(std::move(r_rlm));
     }
     // restore rate_limits store_rxn_counts if all rxn_names match
     // assumes there are no repeats - perhaps should error-check this?
