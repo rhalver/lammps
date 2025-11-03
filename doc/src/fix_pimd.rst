@@ -250,7 +250,7 @@ a value other than *physical*, due to the lack of support for bosonic normal mod
 
 The keyword *sp* is a scaling factor on Planck's constant. Scaling the Planck's constant means modifying the "quantumness" of the PIMD simulation. Using the physical value of Planck's constant corresponds to a fully quantum simulation, and 0 corresponds to the classical limit.
 For unit styles other than *lj*, the default value of 1.0 is appropriate for most situations.
-For *lj* units, a fully quantum simulation translates into setting *sp* to the de Boer quantumness parameter :math:`\Lambda^{\ast}`(see :ref:`de Boer <de Boer>`):
+For *lj* units, a fully quantum simulation translates into setting *sp* to the de Boer quantumness parameter :math:`\Lambda^{\ast}` (see :ref:`de Boer <de Boer>`):
 .. math::
 
    \Lambda^{\ast}=h/\sigma\sqrt{m\varepsilon}
