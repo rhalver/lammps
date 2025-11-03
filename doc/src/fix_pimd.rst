@@ -251,14 +251,18 @@ a value other than *physical*, due to the lack of support for bosonic normal mod
 The keyword *sp* is a scaling factor on Planck's constant. Scaling the Planck's constant means modifying the "quantumness" of the PIMD simulation. Using the physical value of Planck's constant corresponds to a fully quantum simulation, and 0 corresponds to the classical limit.
 For unit styles other than *lj*, the default value of 1.0 is appropriate for most situations.
 For *lj* units, a fully quantum simulation translates into setting *sp* to the de Boer quantumness parameter :math:`\Lambda^{\ast}` (see :ref:`de Boer <de Boer>`):
+
 .. math::
 
    \Lambda^{\ast}=h/\sigma\sqrt{m\varepsilon}
 
 where :math:`h` is Planck's constant, :math:`\sigma` is the length scale, :math:`\epsilon` is the energy scale, and :math:`m` is the mass of the particles.
 For example, for Neon, :math:`m = 20.1797` Dalton, :math:`\varepsilon = 3.0747 \times 10^{-3}` eV and :math:`\sigma = 2.7616` Å. Then we have
+
 .. math::
-   \Lambda^{\ast} = 4.135667403e-3 eV * ps / (2.7616 Å * sqrt(20.1797 Dalton * 3.0747e-3 eV * 1.0364269e-4 eV / Dalton / Å^2 * ps^2)) = 0.600.
+
+   \Lambda^{\ast} = \frac{4.135667403\times 10^{-3}\ \mathrm{eV} \cdot\ \mathrm{ps}}{2.7616\ \mathrm{Å}\times \sqrt{20.1797\ \mathrm{Dalton}\times\ 3.0747\times 10^{-3}\ \mathrm{eV}\times 1.0364269\times 10^{-4}\ \mathrm{eV}\cdot\mathrm{Dalton}^{-1}\cdot\mathrm{Å}^{-2}\cdot\mathrm{ps}^{2}}} = 0.600.
+
 Thus for a fully quantum simulation of Neon using *lj* units, *sp* should be set to 0.600.
 The modification of the quantumness should be done by scaling :math:`\Lambda^{\ast}`.
 
