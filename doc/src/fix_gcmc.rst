@@ -69,7 +69,7 @@ Description
 """""""""""
 
 This fix performs grand canonical Monte Carlo (GCMC) exchanges of atoms
-or molecules with an imaginary ideal gas reservoir at the specified T
+or molecules with an imaginary ideal gas reservoir at the specified *T*
 and chemical potential (:math:`\mu`) as discussed in :ref:`(Frenkel)
 <Frenkel2>`.  It also attempts Monte Carlo (MC) moves (translations and
 molecule rotations) within the simulation cell or region.  If used with
