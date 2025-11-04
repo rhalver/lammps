@@ -488,8 +488,7 @@ __kernel void calc_neigh_list_cell(const __global numtyp4 *restrict x_,
 
 ucl_inline int minimum_image_check(numtyp dx, numtyp dy, numtyp dz,
                                    numtyp xprd_half, numtyp yprd_half, numtyp zprd_half,
-                                   int xperiodic, int yperiodic, int zperiodic) 
-{
+                                   int xperiodic, int yperiodic, int zperiodic) {
   if (xperiodic && ucl_abs(dx) > xprd_half) return 1;
   if (yperiodic && ucl_abs(dy) > yprd_half) return 1;
   if (zperiodic && ucl_abs(dz) > zprd_half) return 1;
@@ -519,9 +518,9 @@ __kernel void kernel_special(const __global numtyp4 *restrict x_,
     int n2=nspecial[ii*3+1];
     int n3=nspecial[ii*3+2];
 
-    numtyp4 atom_i;   
+    numtyp4 atom_i;
     fetch4(atom_i,ii,pos_tex); //pos[i];
-    
+
     int myj;
     if (ii < inum) {
       stride=inum;

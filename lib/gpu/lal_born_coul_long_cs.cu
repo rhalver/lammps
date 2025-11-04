@@ -131,7 +131,7 @@ __kernel void k_born_coul_long_cs(const __global numtyp4 *restrict x_,
           numtyp r = ucl_sqrt(rsq);
           fetch(prefactor,j,q_tex);
           prefactor *= qqrd2e * qtmp;
-          if (factor_coul>(acctyp)0) {
+          if (factor_coul > (acctyp)0) {
             // When bonded parts are being calculated, a minimal distance (EPS_EWALD)
             // has to be added to the prefactor and erfc in order to make the
             // used approximation functions valid
@@ -277,7 +277,7 @@ __kernel void k_born_coul_long_cs_fast(const __global numtyp4 *restrict x_,
           fetch(prefactor,j,q_tex);
           prefactor *= qqrd2e * qtmp;
           
-          if (factor_coul>(acctyp)0) {
+          if (factor_coul > (acctyp)0) {
             // When bonded parts are being calculated, a minimal distance (EPS_EWALD)
             // has to be added to the prefactor and erfc in order to make the
             // used approximation functions valid
