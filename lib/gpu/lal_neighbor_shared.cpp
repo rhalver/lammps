@@ -108,7 +108,8 @@ void NeighborShared::compile_kernels(UCL_Device &dev, const int gpu_nbor,
     }
     k_build_nbor.set_function(*build_program,"calc_neigh_list_cell");
     k_transpose.set_function(*build_program,"transpose");
-    k_special.set_function(*build_program,"kernel_special");
+    //k_special.set_function(*build_program,"kernel_special");
+    k_special.set_function(*build_program,"kernel_special2");
     neigh_tex.get_texture(*build_program,"pos_tex");
   }
   _compiled=true;

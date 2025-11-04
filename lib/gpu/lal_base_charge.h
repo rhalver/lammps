@@ -129,6 +129,13 @@ class BaseCharge {
                        double *sublo, double *subhi, tagint *tag, int **nspecial,
                        tagint **special, bool &success);
 
+  void build_nbor_list(const int inum, const int host_inum,
+                       const int nall, double **host_x, int *host_type,
+                       double *sublo, double *subhi, tagint *tag, int **nspecial,
+                       tagint **special, double xprd_half, double yprd_half,
+                       double zprd_half, int xperiodic, int yperiodic,
+                       int zperiodic, bool &success);
+
   /// Pair loop with host neighboring
   void compute(const int f_ago, const int inum_full, const int nall,
                double **host_x, int *host_type, int *ilist, int *numj,
@@ -144,7 +151,7 @@ class BaseCharge {
                 tagint **special, const bool eflag, const bool vflag,
                 const bool eatom, const bool vatom, int &host_start,
                 int **ilist, int **numj, const double cpu_time, bool &success,
-                double *charge, double *boxlo, double *prd);
+                double *charge, double *boxlo, double *prd, int* periodicity=nullptr);
 
   // -------------------------- DEVICE DATA -------------------------
 
