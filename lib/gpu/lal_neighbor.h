@@ -195,13 +195,12 @@ class Neighbor {
                        int &max_nbors, UCL_Vector<int,int> &error_flag);
 
   template <class numtyp, class acctyp>
-  void build_nbor_list2(double **x, const int inum, const int host_inum,
+  void build_nbor_list(double **x, const int inum, const int host_inum,
                        const int nall, Atom<numtyp,acctyp> &atom,
                        double *sublo, double *subhi, tagint *tag,
                        int **nspecial, tagint **special, bool &success,
-                       int &max_nbors, double xprd_half, double yprd_half,
-                       double zprd_half, int xperiodic, int yperiodic,
-                       int zperiodic, UCL_Vector<int,int> &error_flag);
+                       int &max_nbors, double* prd, int* periodicity,
+                       UCL_Vector<int,int> &error_flag);
 
   /// Return the number of bytes used on device
   inline double gpu_bytes() {

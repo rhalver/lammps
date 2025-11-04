@@ -857,13 +857,12 @@ void Neighbor::build_nbor_list(double **x, const int inum, const int host_inum,
 }
 
 template <class numtyp, class acctyp>
-void Neighbor::build_nbor_list2(double **x, const int inum, const int host_inum,
+void Neighbor::build_nbor_list(double **x, const int inum, const int host_inum,
                                const int nall, Atom<numtyp,acctyp> &atom,
                                double *sublo, double *subhi, tagint *tag,
                                int **nspecial, tagint **special, bool &success,
-                               int &mn, double xprd_half, double yprd_half,
-                               double zprd_half, int xperiodic, int yperiodic,
-                               int zperiodic, UCL_Vector<int,int> &error_flag) {
+                               int &mn, double* prd, int* periodicity,
+                               UCL_Vector<int,int> &error_flag) {
   _nbor_time_avail=true;
   const int nt=inum+host_inum;
 
@@ -1194,9 +1193,8 @@ void Neighbor::build_nbor_list2(double **x, const int inum, const int host_inum,
       time_kernel.stop();
       if (_time_device)
         time_kernel.add_to_total();
-      build_nbor_list2(x, inum, host_inum, nall, atom, sublo, subhi, tag,
-                       nspecial, special, success, mn, xprd_half, yprd_half,
-                       zprd_half, xperiodic, yperiodic, zperiodic,
+      build_nbor_list(x, inum, host_inum, nall, atom, sublo, subhi, tag,
+                       nspecial, special, success, mn, prd, periodicity,
                        error_flag);
       return;
     }
@@ -1205,13 +1203,12 @@ void Neighbor::build_nbor_list2(double **x, const int inum, const int host_inum,
   if (_maxspecial>0) {
     const int GX2=static_cast<int>(ceil(static_cast<double>
                                           (nt*_threads_per_atom)/cell_block));
-    const auto _xprd_half=static_cast<numtyp>(xprd_half);
-    const auto _yprd_half=static_cast<numtyp>(yprd_half);
-    const auto _zprd_half=static_cast<numtyp>(zprd_half);
-    if (_cutoff > _xprd_half || _cutoff > _yprd_half ||
-        _cutoff > _zprd_half) {
-      
-    }
+    const auto _xprd_half=static_cast<numtyp>(0.5*prd[0]);
+    const auto _yprd_half=static_cast<numtyp>(0.5*prd[1]);
+    const auto _zprd_half=static_cast<numtyp>(0.5*prd[2]);
+    const int xperiodic=periodicity[0];
+    const int yperiodic=periodicity[1];
+    const int zperiodic=periodicity[2];
     _shared->k_special.set_size(GX2,cell_block);
     _shared->k_special.run(&atom.x, &dev_nbor, &nbor_host, &dev_numj_host,
                            &atom.dev_tag, &dev_nspecial, &dev_special,
@@ -1247,9 +1244,8 @@ template void Neighbor::build_nbor_list<PRECISION,ACC_PRECISION>
       tagint *, int **, tagint **, bool &success, int &mn,
       UCL_Vector<int,int> &error_flag);
 
-template void Neighbor::build_nbor_list2<PRECISION,ACC_PRECISION>
+template void Neighbor::build_nbor_list<PRECISION,ACC_PRECISION>
      (double **x, const int inum, const int host_inum, const int nall,
       Atom<PRECISION,ACC_PRECISION> &atom, double *sublo, double *subhi,
-      tagint *, int **, tagint **, bool &success, int &mn, double xprd_half,
-      double yprd_half, double zprd_half, int xperiodic, int yperiodic,
-      int zperiodic, UCL_Vector<int,int> &error_flag);
+      tagint *, int **, tagint **, bool &success, int &mn, double* prd,
+      int* periodicity, UCL_Vector<int,int> &error_flag);

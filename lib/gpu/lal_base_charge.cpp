@@ -190,9 +190,7 @@ inline void BaseChargeT::build_nbor_list(const int inum, const int host_inum,
                                          int *host_type, double *sublo,
                                          double *subhi, tagint *tag,
                                          int **nspecial, tagint **special,
-                                         double xprd_half, double yprd_half,
-                                         double zprd_half, int xperiodic, int yperiodic,
-                                         int zperiodic, bool &success) {
+                                         double* prd, int* periodicity, bool &success) {
   success=true;
   resize_atom(inum,nall,success);
   resize_local(inum,host_inum,nbor->max_nbors(),success);
@@ -201,10 +199,9 @@ inline void BaseChargeT::build_nbor_list(const int inum, const int host_inum,
   atom->cast_copy_x(host_x,host_type);
 
   int mn;
-  nbor->build_nbor_list2(host_x, inum, host_inum, nall, *atom, sublo, subhi,
-                        tag, nspecial, special, success, mn, xprd_half,
-                        yprd_half, zprd_half, xperiodic, yperiodic,
-                        zperiodic, ans->error_flag);
+  nbor->build_nbor_list(host_x, inum, host_inum, nall, *atom, sublo, subhi,
+                        tag, nspecial, special, success, mn, prd, periodicity,
+                        ans->error_flag);
 
   double bytes=ans->gpu_bytes()+nbor->gpu_bytes();
   if (bytes>_max_an_bytes)
@@ -316,14 +313,9 @@ int** BaseChargeT::compute(const int ago, const int inum_full,
 
   // Build neighbor list on GPU if necessary
   if (ago==0) {
-    double xprd_half = prd[0] * 0.5;
-    double yprd_half = prd[1] * 0.5;
-    double zprd_half = prd[2] * 0.5;
     build_nbor_list(inum, inum_full-inum, nall, host_x, host_type,
                     sublo, subhi, tag, nspecial, special,
-                    xprd_half, yprd_half, zprd_half,
-                    periodicity[0], periodicity[1], periodicity[2],
-                    success);
+                    prd, periodicity, success);
 
     if (!success)
       return nullptr;
