@@ -178,8 +178,8 @@ class AtomVecKokkos : virtual public AtomVec {
   HAT::t_kkfloat_1d h_radius;
   DAT::t_kkfloat_1d d_rmass;
   HAT::t_kkfloat_1d h_rmass;
-  DAT::t_kkfloat_1d_3 d_torque;
-  HAT::t_kkfloat_1d_3 h_torque;
+  DAT::t_kkacc_1d_3 d_torque;
+  HAT::t_kkacc_1d_3 h_torque;
 
   DAT::t_kkfloat_1d d_uCond, d_uMech, d_uChem, d_uCG, d_uCGnew,d_rho,d_dpdTheta,d_duChem;
   HAT::t_kkfloat_1d h_uCond, h_uMech, h_uChem, h_uCG, h_uCGnew,h_rho,h_dpdTheta,h_duChem;

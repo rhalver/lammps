@@ -208,7 +208,7 @@ void AtomVecSphereKokkos::sync_pinned(ExecutionSpace space, uint64_t mask, int a
     if ((mask & OMEGA_MASK) && atomKK->k_omega.need_sync_device())
       perform_pinned_copy_transform<DAT::ttransform_kkfloat_1d_3>(atomKK->k_omega,space,async_flag);
     if ((mask & TORQUE_MASK) && atomKK->k_torque.need_sync_device())
-      perform_pinned_copy_transform<DAT::ttransform_kkfloat_1d_3>(atomKK->k_torque,space,async_flag);
+      perform_pinned_copy_transform<DAT::ttransform_kkacc_1d_3>(atomKK->k_torque,space,async_flag);
   } else {
     if ((mask & X_MASK) && atomKK->k_x.need_sync_host())
       perform_pinned_copy_transform<DAT::ttransform_kkfloat_1d_3_lr>(atomKK->k_x,space,async_flag);
@@ -231,7 +231,7 @@ void AtomVecSphereKokkos::sync_pinned(ExecutionSpace space, uint64_t mask, int a
     if ((mask & OMEGA_MASK) && atomKK->k_omega.need_sync_host())
       perform_pinned_copy_transform<DAT::ttransform_kkfloat_1d_3>(atomKK->k_omega,space,async_flag);
     if ((mask & TORQUE_MASK) && atomKK->k_torque.need_sync_host())
-      perform_pinned_copy_transform<DAT::ttransform_kkfloat_1d_3>(atomKK->k_torque,space,async_flag);
+      perform_pinned_copy_transform<DAT::ttransform_kkacc_1d_3>(atomKK->k_torque,space,async_flag);
   }
 }
 
