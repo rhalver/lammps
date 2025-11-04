@@ -486,113 +486,6 @@ __kernel void calc_neigh_list_cell(const __global numtyp4 *restrict x_,
 #define UNROLL_FACTOR_LIST 4
 #define UNROLL_FACTOR_SPECIAL 2
 
-__kernel void kernel_special(__global int *dev_nbor,
-                             __global int *host_nbor_list,
-                             const __global int *host_numj,
-                             const __global tagint *restrict tag,
-                             const __global int *restrict nspecial,
-                             const __global tagint *restrict special,
-                             int inum, int nt, int max_nbors, int t_per_atom) {
-  int tid=THREAD_ID_X;
-  int ii=fast_mul((int)BLOCK_ID_X,(int)(BLOCK_SIZE_X)/t_per_atom);
-  ii+=tid/t_per_atom;
-  int offset=tid & (t_per_atom-1);
-
-  if (ii<nt) {
-    int stride;
-    __global int *list;
-
-    int n1=nspecial[ii*3];
-    int n2=nspecial[ii*3+1];
-    int n3=nspecial[ii*3+2];
-
-    int myj;
-    if (ii < inum) {
-      stride=inum;
-      list=dev_nbor+stride+ii;
-      int numj=*list;
-      list+=stride+fast_mul(ii,t_per_atom-1);
-      stride=fast_mul(inum,t_per_atom);
-      myj=numj/t_per_atom;
-      if (offset < (numj & (t_per_atom-1)))
-        myj++;
-      list+=offset;
-    } else {
-      stride=1;
-      list=host_nbor_list+(ii-inum)*max_nbors;
-      myj=host_numj[ii-inum];
-    }
-
-#if SPECIAL_DATA_PRELOAD_SIZE > 0
-    tagint special_preload[SPECIAL_DATA_PRELOAD_SIZE];
-    for (int i = 0, j = 0; (i < n3) && (j < SPECIAL_DATA_PRELOAD_SIZE); i+=UNROLL_FACTOR_SPECIAL, j++) {
-      special_preload[j] = special[ii + i*nt];
-    }
-#endif
-
-    for (int m=0; m<myj; m+=UNROLL_FACTOR_LIST) {
-      int nbor[UNROLL_FACTOR_LIST];
-      tagint jtag[UNROLL_FACTOR_LIST];
-      __global int* list_addr[UNROLL_FACTOR_LIST];
-      int lmax = myj - m;
-      for (int l=0; l<UNROLL_FACTOR_LIST; l++) {
-        list_addr[l] = list + l*stride;
-        if (l < lmax)
-          nbor[l] = *list_addr[l];
-      }
-      for (int l=0; l<UNROLL_FACTOR_LIST; l++) {
-        if (l < lmax)
-          jtag[l] = tag[nbor[l]];
-      }
-
-      for (int i=0, j=0; i<n3; i+=UNROLL_FACTOR_SPECIAL, j++) {
-        tagint special_data[UNROLL_FACTOR_SPECIAL];
-        int which[UNROLL_FACTOR_SPECIAL];
-
-        for (int c = 0; c < UNROLL_FACTOR_SPECIAL; c++) {
-          which[c] = 1;
-          if (i + c < n3)
-          {
-#if SPECIAL_DATA_PRELOAD_SIZE > 0
-            if ((c == 0) && (j < SPECIAL_DATA_PRELOAD_SIZE)) {
-              special_data[c] = special_preload[j];
-            }
-            else
-#endif
-              special_data[c] = special[ii + (i+c)*nt];
-          }
-        }
-
-        for (int k=0; k<UNROLL_FACTOR_SPECIAL; k++) {
-          if (i+k >= n1) {
-            which[k]++;
-          }
-        }
-        for (int k=0; k<UNROLL_FACTOR_SPECIAL; k++) {
-          if (i+k >= n2) {
-            which[k]++;
-          }
-          which[k] <<= SBBITS;
-        }
-        for (int c = 0; c < UNROLL_FACTOR_SPECIAL; c++) {
-          if (i + c < n3) {
-            for (int l=0; l<UNROLL_FACTOR_LIST; l++) {
-              if (l < lmax && special_data[c] == jtag[l]) {
-                nbor[l]=nbor[l] ^ which[c];
-              }
-            }
-          }
-        }
-      }
-      for (int l=0; l<UNROLL_FACTOR_LIST; l++) {
-        if (l < lmax)
-          *list_addr[l] = nbor[l];
-      }
-      list+=UNROLL_FACTOR_LIST * stride;
-    }
-  } // if ii
-}
-
 ucl_inline int minimum_image_check(numtyp dx, numtyp dy, numtyp dz,
                                    numtyp xprd_half, numtyp yprd_half, numtyp zprd_half,
                                    int xperiodic, int yperiodic, int zperiodic) 
@@ -603,7 +496,7 @@ ucl_inline int minimum_image_check(numtyp dx, numtyp dy, numtyp dz,
   return 0;
 }
 
-__kernel void kernel_special2(const __global numtyp4 *restrict x_,
+__kernel void kernel_special(const __global numtyp4 *restrict x_,
                              __global int *dev_nbor,
                              __global int *host_nbor_list,
                              const __global int *host_numj,

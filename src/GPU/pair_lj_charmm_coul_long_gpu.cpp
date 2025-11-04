@@ -101,18 +101,20 @@ void PairLJCharmmCoulLongGPU::compute(int eflag, int vflag)
       domain->bbox(domain->sublo_lamda, domain->subhi_lamda, sublo, subhi);
     }
     inum = atom->nlocal;
-    firstneigh = crml_gpu_compute_n(neighbor->ago, inum, nall, atom->x, atom->type, sublo, subhi,
-                                    atom->tag, atom->nspecial, atom->special, eflag, vflag,
-                                    eflag_atom, vflag_atom, host_start, &ilist, &numneigh, cpu_time,
-                                    success, atom->q, domain->boxlo, domain->prd, domain->periodicity);
+    firstneigh = crml_gpu_compute_n(
+        neighbor->ago, inum, nall, atom->x, atom->type, sublo, subhi,
+        atom->tag, atom->nspecial, atom->special, eflag, vflag,
+        eflag_atom, vflag_atom, host_start, &ilist, &numneigh, cpu_time,
+        success, atom->q, domain->boxlo, domain->prd, domain->periodicity);
   } else {
     inum = list->inum;
     ilist = list->ilist;
     numneigh = list->numneigh;
     firstneigh = list->firstneigh;
-    crml_gpu_compute(neighbor->ago, inum, nall, atom->x, atom->type, ilist, numneigh, firstneigh,
-                     eflag, vflag, eflag_atom, vflag_atom, host_start, cpu_time, success, atom->q,
-                     atom->nlocal, domain->boxlo, domain->prd);
+    crml_gpu_compute(neighbor->ago, inum, nall, atom->x, atom->type,
+                     ilist, numneigh, firstneigh, eflag, vflag,
+                     eflag_atom, vflag_atom, host_start, cpu_time,
+                     success, atom->q, atom->nlocal, domain->boxlo, domain->prd);
   }
   if (!success) error->one(FLERR, "Insufficient memory on accelerator");
 
