@@ -1215,7 +1215,7 @@ void Neighbor::build_nbor_list(double **x, const int inum, const int host_inum,
                            &inum, &nt, &_max_nbors, &_threads_per_atom,
                            &_xprd_half, &_yprd_half, &_zprd_half,
                            &xperiodic, &yperiodic, &zperiodic);
-                           
+
   }
   time_kernel.stop();
 
