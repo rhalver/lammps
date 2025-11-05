@@ -75,7 +75,11 @@ swapped atoms are not well equilibrated.
    run for *M* steps (to attempt *M* total swaps), you will get the
    same result, but there will be 3x more energy evaluations due to
    the requirements of (what LAMMPS presumes is a) hybrid MC+MD
-   simulation.
+   simulation.  If you wish to monitor the progress of an MC-only
+   simulation (e.g. attempted/accepted swaps, potential energy), you
+   can run for a small number of *M* steps and divide *X* by *M*, with
+   little loss in efficiency.  If thermo output is performed every
+   timestep, then *M* steps of MC progress will be output.
 
 The *types* keyword is required. At least two atom types must be
 specified. If not using *semi-grand*, exactly two atom types are
