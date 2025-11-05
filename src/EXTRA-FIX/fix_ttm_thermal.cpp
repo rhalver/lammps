@@ -356,7 +356,7 @@ void FixTTMThermal::end_of_step()
 
           if (T_electron[iz][iy][ix] > 0) {
             T_electron[iz][iy][ix] =
-              T_electron_old[iz][iy][ix] + 
+              T_electron_old[iz][iy][ix] +
               inner_dt/c_e_grid[iz][iy][ix] *
               ((safe_effective_kappa(k_e_grid[iz][iy][xleft],k_e_grid[iz][iy][ix]))*
                (T_electron_old[iz][iy][xleft]-T_electron_old[iz][iy][ix])/dx/dx*left +
