@@ -132,18 +132,9 @@ void CommKokkos::forward_comm(int dummy)
 
   k_sendlist.sync_host();
 
-  if (comm_x_only) {
-    atomKK->sync(Host,X_MASK);
-    atomKK->modified(Host,X_MASK);
-  } else if (ghost_velocity) {
-    atomKK->sync(Host,X_MASK | V_MASK);
-    atomKK->modified(Host,X_MASK | V_MASK);
-  } else {
-    atomKK->sync(Host,ALL_MASK);
-    atomKK->modified(Host,ALL_MASK);
-  }
-
+  atomKK->sync(Host,atomKK->avecKK->datamask_comm_vel);
   CommBrick::forward_comm(dummy);
+  atomKK->modified(Host,atomKK->avecKK->datamask_comm_vel);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -259,17 +250,9 @@ void CommKokkos::reverse_comm()
 
   k_sendlist.sync_host();
 
-  if (comm_f_only)
-    atomKK->sync(Host,F_MASK);
-  else
-    atomKK->sync(Host,ALL_MASK);
-
+  atomKK->sync(Host,atomKK->avecKK->datamask_reverse);
   CommBrick::reverse_comm();
-
-  if (comm_f_only)
-    atomKK->modified(Host,F_MASK);
-  else
-    atomKK->modified(Host,ALL_MASK);
+  atomKK->modified(Host,atomKK->avecKK->datamask_reverse);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -748,12 +731,12 @@ void CommKokkos::exchange()
     return;
   }
 
-  atomKK->sync(Host,ALL_MASK);
+  atomKK->sync(Host,atomKK->avecKK->datamask_exchange);
   int prev_auto_sync = lmp->kokkos->auto_sync;
   lmp->kokkos->auto_sync = 1;
   CommBrick::exchange();
   lmp->kokkos->auto_sync = prev_auto_sync;
-  atomKK->modified(Host,ALL_MASK);
+  atomKK->modified(Host,atomKK->avecKK->datamask_exchange);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -827,7 +810,7 @@ void CommKokkos::exchange_device()
       subhi = domain->subhi_lamda;
     }
 
-    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,ALL_MASK);
+    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,atomKK->avecKK->datamask_border_vel);
 
     // loop over dimensions
     for (int dim = 0; dim < 3; dim++) {
@@ -1013,7 +996,7 @@ void CommKokkos::exchange_device()
         }
       }
     }
-    atomKK->modified(ExecutionSpaceFromDevice<DeviceType>::space,ALL_MASK);
+    atomKK->modified(ExecutionSpaceFromDevice<DeviceType>::space,atomKK->avecKK->datamask_border_vel);
   }
 
   if (atom->firstgroupname) {
@@ -1053,14 +1036,14 @@ void CommKokkos::borders()
     if (exchange_comm_on_host) borders_device<LMPHostType>();
     else borders_device<LMPDeviceType>();
   } else {
-    atomKK->sync(Host,ALL_MASK);
+    atomKK->sync(Host,atomKK->avecKK->datamask_border_vel);
     k_sendlist.sync_host();
     int prev_auto_sync = lmp->kokkos->auto_sync;
     lmp->kokkos->auto_sync = 1;
     CommBrick::borders();
     lmp->kokkos->auto_sync = prev_auto_sync;
     k_sendlist.modify_host();
-    atomKK->modified(Host,ALL_MASK);
+    atomKK->modified(Host,atomKK->avecKK->datamask_border_vel);
   }
 
   if (comm->nprocs == 1 && !ghost_velocity && !forward_comm_legacy)
@@ -1130,7 +1113,8 @@ void CommKokkos::borders_device() {
   MPI_Request request;
 
   ExecutionSpace exec_space = ExecutionSpaceFromDevice<DeviceType>::space;
-  atomKK->sync(exec_space,ALL_MASK);
+  atomKK->sync(exec_space,atomKK->avecKK->datamask_border_vel);
+
   k_sendlist.sync<DeviceType>();
 
   int team_size = 1;
@@ -1345,7 +1329,7 @@ void CommKokkos::borders_device() {
   max = MAX(maxforward*rmax,maxreverse*smax);
   if (max > maxrecv) grow_recv_kokkos(max);
 
-  atomKK->modified(exec_space,ALL_MASK);
+  atomKK->modified(exec_space,atomKK->avecKK->datamask_border_vel);
 
   // reset global->local map
 

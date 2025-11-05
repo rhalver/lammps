@@ -100,6 +100,14 @@ class AtomVecKokkos : virtual public AtomVec {
 
   int size_exchange;
 
+  uint64_t datamask_grow;
+  uint64_t datamask_comm;
+  uint64_t datamask_comm_vel;
+  uint64_t datamask_reverse;
+  uint64_t datamask_border;
+  uint64_t datamask_border_vel;
+  uint64_t datamask_exchange;
+
  protected:
   DAT::t_tagint_1d d_tag;
   DAT::t_int_1d d_type, d_mask;
@@ -188,14 +196,6 @@ class AtomVecKokkos : virtual public AtomVec {
   void* buffer;
 
   DAT::tdual_int_1d k_count;
-
-  uint64_t datamask_grow;
-  uint64_t datamask_comm;
-  uint64_t datamask_comm_vel;
-  uint64_t datamask_reverse;
-  uint64_t datamask_border;
-  uint64_t datamask_border_vel;
-  uint64_t datamask_exchange;
 
   void setup_fields() override;
   uint64_t field2mask(std::string);
