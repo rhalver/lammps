@@ -1,4 +1,3 @@
-// clang-format off
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    https://www.lammps.org/, Sandia National Laboratories
@@ -23,6 +22,7 @@
 
 ------------------------------------------------------------------------- */
 
+// clang-format on
 
 #include "fix_ttm_thermal.h"
 
@@ -32,15 +32,15 @@
 #include "error.h"
 #include "force.h"
 #include "memory.h"
+#include "potential_file_reader.h"
 #include "random_mars.h"
 #include "respa.h"
-#include "potential_file_reader.h"
 #include "update.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <exception>
-#include <algorithm>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -57,68 +57,52 @@ static constexpr double SHIFT = 0.0;
 /* ---------------------------------------------------------------------- */
 
 FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
-  Fix(lmp, narg, arg),
-  random(nullptr),
-  gfactor1(nullptr), gfactor2(nullptr), ratio(nullptr), flangevin(nullptr),
-  T_electron(nullptr), T_electron_old(nullptr),
-  net_energy_transfer(nullptr), net_energy_transfer_all(nullptr) ,
-  gamma_p_grid(nullptr), inductive_response_grid(nullptr),
-  c_e_grid(nullptr), k_e_grid(nullptr)
+    FixTTM(lmp, narg, arg), gamma_p_grid(nullptr), inductive_response_grid(nullptr),
+    c_e_grid(nullptr), k_e_grid(nullptr)
 
 {
-  if (narg < 8) error->all(FLERR,"Illegal fix ttm command");
-  vector_flag = 1;
-  size_vector = 2;
-  global_freq = 1;
-  extvector = 1;
-  nevery = 1;
-  restart_peratom = 1;
-  restart_global = 1;
+  if (narg < 8) utils::missing_cmd_args(FLERR, "fix ttm/thermal", error);
 
-  e_property_file = nullptr;
-
-  seed = utils::inumeric(FLERR,arg[3],false,lmp);
-  e_property_file = utils::strdup(arg[4]);
-  nxgrid = utils::inumeric(FLERR,arg[5],false,lmp);
-  nygrid = utils::inumeric(FLERR,arg[6],false,lmp);
-  nzgrid = utils::inumeric(FLERR,arg[7],false,lmp);
-
+  seed = utils::inumeric(FLERR, arg[3], false, lmp);
+  e_property_file = arg[4];
+  nxgrid = utils::inumeric(FLERR, arg[5], false, lmp);
+  nygrid = utils::inumeric(FLERR, arg[6], false, lmp);
+  nzgrid = utils::inumeric(FLERR, arg[7], false, lmp);
 
   inductive_power = 0.0;
   tinit = 0.0;
-  infile = outfile = nullptr;
+  gamma_p = 0.0;    // to avoid uninitialzed data access when calling FixTTM::init()
 
   int iarg = 8;
   while (iarg < narg) {
-    if (strcmp(arg[iarg],"set") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal fix ttm command");
-      tinit = (utils::numeric(FLERR,arg[iarg+1],false,lmp));
+    if (strcmp(arg[iarg], "set") == 0) {
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix ttm/thermal set", error);
+      tinit = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
       if (tinit <= 0.0)
-        error->all(FLERR,"Fix ttm initial temperature must be > 0.0");
+        error->all(FLERR, iarg + 1, "Fix ttm/thermal initial temperature must be > 0.0");
       iarg += 2;
-    } else if (strcmp(arg[iarg],"source") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal fix ttm command");
-      inductive_power = (utils::numeric(FLERR,arg[iarg+1],false,lmp));
+    } else if (strcmp(arg[iarg], "source") == 0) {
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix ttm/thermal source", error);
+      inductive_power = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
-    } else if (strcmp(arg[iarg],"infile") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal fix ttm command");
-      infile = utils::strdup(arg[iarg+1]);
+    } else if (strcmp(arg[iarg], "infile") == 0) {
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix ttm/thermal infile", error);
+      infile = arg[iarg + 1];
       iarg += 2;
-    } else if (strcmp(arg[iarg],"outfile") == 0) {
-      if (iarg+3 > narg) error->all(FLERR,"Illegal fix ttm command");
-      outevery = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
-      outfile = utils::strdup(arg[iarg+2]);
+    } else if (strcmp(arg[iarg], "outfile") == 0) {
+      if (iarg + 3 > narg) utils::missing_cmd_args(FLERR, "fix ttm/thermal outfile", error);
+      outevery = utils::inumeric(FLERR, arg[iarg + 1], false, lmp);
+      outfile = arg[iarg + 2];
       iarg += 3;
-    } else error->all(FLERR,"Illegal fix ttm command");
+    } else
+      error->all(FLERR, iarg, "Unknown fix ttm/thermal keyword {}", arg[iarg]);
   }
 
   // error check
 
-  if (seed <= 0)
-    error->all(FLERR,"Invalid random number seed in fix ttm command");
+  if (seed <= 0) error->all(FLERR, 3, "Invalid random number seed in fix ttm/thermal command");
   if (nxgrid <= 0 || nygrid <= 0 || nzgrid <= 0)
-    error->all(FLERR,"Fix ttm grid sizes must be > 0");
-
+    error->all(FLERR, Error::NOPOINTER, "Fix ttm grid sizes must be > 0");
 
   // grid OFFSET to perform
   // SHIFT to map atom to nearest or lower-left grid point
@@ -127,24 +111,23 @@ FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
 
   // initialize Marsaglia RNG with processor-unique seed
 
-  random = new RanMars(lmp,seed + comm->me);
+  random = new RanMars(lmp, seed + comm->me);
 
   // allocate per-type arrays for force prefactors
 
-  gfactor1 = new double[atom->ntypes+1];
-  gfactor2 = new double[atom->ntypes+1];
+  gfactor1 = new double[atom->ntypes + 1];
+  gfactor2 = new double[atom->ntypes + 1];
 
   // check for allowed maximum number of total grid points
 
   bigint totalgrid = (bigint) nxgrid * nygrid * nzgrid;
   if (totalgrid > MAXSMALLINT)
-    error->all(FLERR,"Too many grid points in fix ttm");
+    error->all(FLERR, Error::NOPOINTER, "Too many grid points in fix ttm/thermal");
   ngridtotal = totalgrid;
 
   // allocate per-atom flangevin and zero it
 
-  flangevin = nullptr;
-  FixTTMThermal::grow_arrays(atom->nmax);
+  FixTTM::grow_arrays(atom->nmax);
 
   for (int i = 0; i < atom->nmax; i++) {
     flangevin[i][0] = 0.0;
@@ -156,132 +139,47 @@ FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
 
   atom->add_callback(Atom::GROW);
   atom->add_callback(Atom::RESTART);
-
-  // determines which class deallocate_grid() is called from
-
-  deallocate_flag = 0;
-
 }
 
 /* ---------------------------------------------------------------------- */
 
 FixTTMThermal::~FixTTMThermal()
 {
-  delete[] infile;
-  delete[] e_property_file;
-
-  delete random;
-
-  delete[] gfactor1;
-  delete[] gfactor2;
-
-  memory->destroy(flangevin);
-
-  if (!deallocate_flag) FixTTMThermal::deallocate_grid();
+  FixTTMThermal::deallocate_grid();
 }
 
 /* ---------------------------------------------------------------------- */
-  inline double safe_effective_kappa(double a, double b) {
-       if (a == 0 || b == 0) return 0;
-       return 2.0 * a * b / (a + b);
-      }
+static inline double safe_effective_kappa(double a, double b)
+{
+  if (a == 0 || b == 0) return 0;
+  return 2.0 * a * b / (a + b);
+}
 /* ---------------------------------------------------------------------- */
 
 void FixTTMThermal::post_constructor()
 {
-  // allocate global grid on each proc
-  // needs to be done in post_contructor() beccause is virtual method
-
-  allocate_grid();
-
-  // initialize electron temperatures on grid
-
-  int ix,iy,iz;
-  for (iz = 0; iz < nzgrid; iz++)
-    for (iy = 0; iy < nygrid; iy++)
-      for (ix = 0; ix < nxgrid; ix++)
-        T_electron[iz][iy][ix] = tinit;
-
-  // zero net_energy_transfer_all
-  // in case compute_vector accesses it on timestep 0
-
-  outflag = 0;
-  memset(&net_energy_transfer_all[0][0][0],0,ngridtotal*sizeof(double));
+  FixTTM::post_constructor();
 
   // set electron grid properties from file
   read_electron_properties(e_property_file);
-
-  // set initial electron temperatures from user input file
-
-  if (infile) read_electron_temperatures(infile);
-}
-
-/* ---------------------------------------------------------------------- */
-
-int FixTTMThermal::setmask()
-{
-  int mask = 0;
-  mask |= POST_FORCE;
-  mask |= POST_FORCE_RESPA;
-  mask |= END_OF_STEP;
-  return mask;
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixTTMThermal::init()
 {
-  if (domain->dimension == 2)
-    error->all(FLERR,"Cannot use fix ttm with 2d simulation");
-  if (domain->nonperiodic != 0)
-    error->all(FLERR,"Cannot use non-periodic boundares with fix ttm");
-  if (domain->triclinic)
-    error->all(FLERR,"Cannot use fix ttm with triclinic box");
+  FixTTM::init();
 
   // to allow this, would have to reset grid bounds dynamically
   // for RCB balancing would have to reassign grid pts to procs
   //   and create a new GridComm, and pass old GC data to new GC
 
   if (domain->box_change)
-    error->all(FLERR,"Cannot use fix ttm with changing box shape, size, or sub-domains");
-
-  // set force prefactors
-
-  if (utils::strmatch(update->integrate_style,"^respa"))
-    nlevels_respa = (dynamic_cast<Respa *>(update->integrate))->nlevels;
+    error->all(FLERR, Error::NOLASTLINE,
+               "Cannot use fix ttm/thermal with changing box shape, size, or sub-domains");
 }
 
-/* ---------------------------------------------------------------------- */
-
-void FixTTMThermal::setup(int vflag)
-{
-  if (utils::strmatch(update->integrate_style,"^verlet")) {
-    post_force_setup(vflag);
-  } else {
-    (dynamic_cast<Respa *>(update->integrate))->copy_flevel_f(nlevels_respa-1);
-    post_force_respa_setup(vflag,nlevels_respa-1,0);
-    (dynamic_cast<Respa *>(update->integrate))->copy_f_flevel(nlevels_respa-1);
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixTTMThermal::post_force_setup(int /*vflag*/)
-{
-  double **f = atom->f;
-  int *mask = atom->mask;
-  int nlocal = atom->nlocal;
-
-  // apply langevin forces that have been stored from previous run
-
-  for (int i = 0; i < nlocal; i++) {
-    if (mask[i] & groupbit) {
-      f[i][0] += flangevin[i][0];
-      f[i][1] += flangevin[i][1];
-      f[i][2] += flangevin[i][2];
-    }
-  }
-}
+// clang-format off
 
 /* ---------------------------------------------------------------------- */
 
@@ -317,42 +215,27 @@ void FixTTMThermal::post_force(int /*vflag*/)
       if (iz >= nzgrid) iz -= nzgrid;
 
       if (T_electron[iz][iy][ix] < 0)
-        error->one(FLERR,"Electronic temperature dropped below zero");
-        //Come back and check this for scaling
+        error->one(FLERR, Error::NOLASTLINE, "Electronic temperature dropped below zero");
+      //Come back and check this for scaling
       for (int i = 1; i <= atom->ntypes; i++) {
-            gfactor1[i] = - gamma_p_grid[iz][iy][ix] / force->ftm2v;
-            gfactor2[i] = sqrt(24.0*force->boltz*gamma_p_grid[iz][iy][ix]/update->dt/force->mvv2e) / force->ftm2v;
-          }
+        gfactor1[i] = - gamma_p_grid[iz][iy][ix] / force->ftm2v;
+        gfactor2[i] = sqrt(24.0*force->boltz*gamma_p_grid[iz][iy][ix]/update->dt/force->mvv2e) / force->ftm2v;
+      }
 
       double tsqrt = sqrt(T_electron[iz][iy][ix]);
-
       gamma1 = gfactor1[type[i]];
       gamma2 = gfactor2[type[i]] * tsqrt;
       if (T_electron[iz][iy][ix] > 0) {
-                        flangevin[i][0] = gamma1*v[i][0] + gamma2*(random->uniform()-0.5);
-                        flangevin[i][1] = gamma1*v[i][1] + gamma2*(random->uniform()-0.5);
-                        flangevin[i][2] = gamma1*v[i][2] + gamma2*(random->uniform()-0.5);
+        flangevin[i][0] = gamma1*v[i][0] + gamma2*(random->uniform()-0.5);
+        flangevin[i][1] = gamma1*v[i][1] + gamma2*(random->uniform()-0.5);
+        flangevin[i][2] = gamma1*v[i][2] + gamma2*(random->uniform()-0.5);
 
-                        f[i][0] += flangevin[i][0];
-                        f[i][1] += flangevin[i][1];
-                        f[i][2] += flangevin[i][2];
-                }
+        f[i][0] += flangevin[i][0];
+        f[i][1] += flangevin[i][1];
+        f[i][2] += flangevin[i][2];
+      }
     }
   }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixTTMThermal::post_force_respa_setup(int vflag, int ilevel, int /*iloop*/)
-{
-  if (ilevel == nlevels_respa-1) post_force_setup(vflag);
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixTTMThermal::post_force_respa(int vflag, int ilevel, int /*iloop*/)
-{
-  if (ilevel == nlevels_respa-1) post_force(vflag);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -497,11 +380,10 @@ void FixTTMThermal::end_of_step()
                +(inductive_power*inductive_response_grid[iz][iy][ix]));
           }
         }
-
   }
 
   // output of grid electron temperatures to file
-  if (outfile && (update->ntimestep % outevery == 0))
+  if (!outfile.empty() && (update->ntimestep % outevery == 0))
     write_electron_temperatures(fmt::format("{}.{}",outfile,update->ntimestep));
 }
 
@@ -537,24 +419,22 @@ void FixTTMThermal::read_electron_properties(const std::string &filename)
         double gamma_p_tmp  = values.next_double();
         double ind_tmp  = values.next_double();
 
-
-
         // check correctness of input data
 
         if ((ix < 0) || (ix >= nxgrid) || (iy < 0) || (iy >= nygrid) || (iz < 0) || (iz >= nzgrid))
-          throw TokenizerException("Fix ttm invalid grid index in fix ttm grid file","");
+          throw TokenizerException("Fix ttm/thermal invalid grid index in grid file","");
 
         if (c_e_tmp < 0.0)
-          throw TokenizerException("Fix ttm electron specific heat must be > 0.0","");
+          throw TokenizerException("Fix ttm/thermal electron specific heat must be > 0.0","");
 
         if (k_e_tmp < 0.0)
-          throw TokenizerException("Fix ttm electron conductivity must be > 0.0","");
+          throw TokenizerException("Fix ttm/thermal electron conductivity must be > 0.0","");
 
         if (gamma_p_tmp < 0.0)
-          throw TokenizerException("Fix ttm electron coupling must be > 0.0","");
+          throw TokenizerException("Fix ttm/thermal electron coupling must be > 0.0","");
 
         if (ind_tmp < 0.0)
-          throw TokenizerException("Fix ttm electron inductive response must be >= 0.0","");
+          throw TokenizerException("Fix ttm/thermal electron inductive response must be >= 0.0","");
 
         c_e_grid[iz][iy][ix] = c_e_tmp;
         k_e_grid[iz][iy][ix] = k_e_tmp;
@@ -563,7 +443,7 @@ void FixTTMThermal::read_electron_properties(const std::string &filename)
         prop_initial_set[iz][iy][ix] = 1;
       }
     } catch (std::exception &e) {
-      error->one(FLERR, e.what());
+      error->one(FLERR, Error::NOLASTLINE, e.what());
     }
 
     // check completeness of input data
@@ -572,7 +452,8 @@ void FixTTMThermal::read_electron_properties(const std::string &filename)
       for (int iy = 0; iy < nygrid; iy++)
         for (int ix = 0; ix < nxgrid; ix++)
           if (prop_initial_set[iz][iy][ix] == 0)
-            error->all(FLERR,"Fix ttm infile did not set all properties");
+            error->all(FLERR, Error::NOLASTLINE,
+                       "Fix ttm/thermal infile did not set all properties");
 
     memory->destroy(prop_initial_set);
   }
@@ -580,212 +461,6 @@ void FixTTMThermal::read_electron_properties(const std::string &filename)
   MPI_Bcast(&k_e_grid[0][0][0],ngridtotal,MPI_DOUBLE,0,world);
   MPI_Bcast(&gamma_p_grid[0][0][0],ngridtotal,MPI_DOUBLE,0,world);
   MPI_Bcast(&inductive_response_grid[0][0][0],ngridtotal,MPI_DOUBLE,0,world);
-}
-/* ----------------------------------------------------------------------
-   read in initial electron temperatures from a user-specified file
-   only read by proc 0, grid values are Bcast to other procs
-------------------------------------------------------------------------- */
-
-void FixTTMThermal::read_electron_temperatures(const std::string &filename)
-{
-  if (comm->me == 0) {
-
-    int ***T_initial_set;
-    memory->create(T_initial_set,nzgrid,nygrid,nxgrid,"ttm:T_initial_set");
-    memset(&T_initial_set[0][0][0],0,ngridtotal*sizeof(int));
-
-    // read initial electron temperature values from file
-    bigint nread = 0;
-
-    try {
-      PotentialFileReader reader(lmp, filename, "electron temperature grid");
-
-      while (nread < ngridtotal) {
-        // reader will skip over comment-only lines
-        auto values = reader.next_values(4);
-        ++nread;
-
-        int ix = values.next_int() - 1;
-        int iy = values.next_int() - 1;
-        int iz = values.next_int() - 1;
-        double T_tmp  = values.next_double();
-
-        // check correctness of input data
-
-        if ((ix < 0) || (ix >= nxgrid) || (iy < 0) || (iy >= nygrid) || (iz < 0) || (iz >= nzgrid))
-          throw TokenizerException("Fix ttm invalid grid index in fix ttm grid file","");
-
-        if (T_tmp < 0.0)
-          throw TokenizerException("Fix ttm electron temperatures must be > 0.0","");
-
-        T_electron[iz][iy][ix] = T_tmp;
-        T_initial_set[iz][iy][ix] = 1;
-      }
-    } catch (std::exception &e) {
-      error->one(FLERR, e.what());
-    }
-
-    // check completeness of input data
-
-    for (int iz = 0; iz < nzgrid; iz++)
-      for (int iy = 0; iy < nygrid; iy++)
-        for (int ix = 0; ix < nxgrid; ix++)
-          if (T_initial_set[iz][iy][ix] == 0)
-            error->all(FLERR,"Fix ttm infile did not set all temperatures");
-
-    memory->destroy(T_initial_set);
-  }
-
-  MPI_Bcast(&T_electron[0][0][0],ngridtotal,MPI_DOUBLE,0,world);
-}
-
-/* ----------------------------------------------------------------------
-   write out current electron temperatures to user-specified file
-   only written by proc 0
-------------------------------------------------------------------------- */
-
-void FixTTMThermal::write_electron_temperatures(const std::string &filename)
-{
-  if (comm->me) return;
-
-  FILE *fp = fopen(filename.c_str(),"w");
-  if (!fp) error->one(FLERR,"Fix ttm could not open output file {}: {}",
-                      filename,utils::getsyserror());
-  utils::print(fp,"# DATE: {} UNITS: {} COMMENT: Electron temperature "
-             "{}x{}x{} grid at step {}. Created by fix {}\n #Grid       X,Y,Z	Temperature\n", utils::current_date(),
-             update->unit_style, nxgrid, nygrid, nzgrid, update->ntimestep, style);
-
-  int ix,iy,iz;
-
-  for (iz = 0; iz < nzgrid; iz++)
-    for (iy = 0; iy < nygrid; iy++)
-      for (ix = 0; ix < nxgrid; ix++)
-        fprintf(fp,"%d %d %d %20.16g\n",ix+1,iy+1,iz+1,T_electron[iz][iy][ix]);
-
-  fclose(fp);
-}
-
-/* ---------------------------------------------------------------------- */
-void FixTTMThermal::grow_arrays(int ngrow)
-{
-  memory->grow(flangevin,ngrow,3,"ttm:flangevin");
-}
-
-/* ----------------------------------------------------------------------
-   pack entire state of Fix into one write
-------------------------------------------------------------------------- */
-
-void FixTTMThermal::write_restart(FILE *fp)
-{
-  double *rlist;
-  memory->create(rlist,nxgrid*nygrid*nzgrid+4,"ttm:rlist");
-
-  int n = 0;
-  rlist[n++] = nxgrid;
-  rlist[n++] = nygrid;
-  rlist[n++] = nzgrid;
-  rlist[n++] = seed;
-
-  // store global grid values
-
-  for (int iz = 0; iz < nzgrid; iz++)
-    for (int iy = 0; iy < nygrid; iy++)
-      for (int ix = 0; ix < nxgrid; ix++)
-        rlist[n++] =  T_electron[iz][iy][ix];
-
-  if (comm->me == 0) {
-    int size = n * sizeof(double);
-    fwrite(&size,sizeof(int),1,fp);
-    fwrite(rlist,sizeof(double),n,fp);
-  }
-
-  memory->destroy(rlist);
-}
-
-/* ----------------------------------------------------------------------
-   use state info from restart file to restart the Fix
-------------------------------------------------------------------------- */
-
-void FixTTMThermal::restart(char *buf)
-{
-  int n = 0;
-  auto *rlist = (double *) buf;
-
-  // check that restart grid size is same as current grid size
-
-  int nxgrid_old = static_cast<int> (rlist[n++]);
-  int nygrid_old = static_cast<int> (rlist[n++]);
-  int nzgrid_old = static_cast<int> (rlist[n++]);
-
-  if (nxgrid_old != nxgrid || nygrid_old != nygrid || nzgrid_old != nzgrid)
-    error->all(FLERR,"Must restart fix ttm with same grid size");
-
-  // change RN seed from initial seed, to avoid same Langevin factors
-  // just increment by 1, since for RanMars that is a new RN stream
-
-  seed = static_cast<int> (rlist[n++]) + 1;
-  delete random;
-  random = new RanMars(lmp,seed+comm->me);
-
-  // restore global grid values
-
-  for (int iz = 0; iz < nzgrid; iz++)
-    for (int iy = 0; iy < nygrid; iy++)
-      for (int ix = 0; ix < nxgrid; ix++)
-        T_electron[iz][iy][ix] = rlist[n++];
-}
-
-/* ----------------------------------------------------------------------
-   pack values in local atom-based arrays for restart file
-------------------------------------------------------------------------- */
-
-int FixTTMThermal::pack_restart(int i, double *buf)
-{
-  // pack buf[0] this way because other fixes unpack it
-
-  buf[0] = 4;
-  buf[1] = flangevin[i][0];
-  buf[2] = flangevin[i][1];
-  buf[3] = flangevin[i][2];
-  return 4;
-}
-
-/* ----------------------------------------------------------------------
-   unpack values from atom->extra array to restart the fix
-------------------------------------------------------------------------- */
-
-void FixTTMThermal::unpack_restart(int nlocal, int nth)
-{
-  double **extra = atom->extra;
-
-  // skip to Nth set of extra values
-  // unpack the Nth first values this way because other fixes pack them
-
-  int m = 0;
-  for (int i = 0; i < nth; i++) m += static_cast<int> (extra[nlocal][m]);
-  m++;
-
-  flangevin[nlocal][0] = extra[nlocal][m++];
-  flangevin[nlocal][1] = extra[nlocal][m++];
-  flangevin[nlocal][2] = extra[nlocal][m++];
-}
-
-/* ----------------------------------------------------------------------
-   size of atom nlocal's restart data
-------------------------------------------------------------------------- */
-
-int FixTTMThermal::size_restart(int /*nlocal*/)
-{
-  return 4;
-}
-
-/* ----------------------------------------------------------------------
-   maxsize of any atom's restart data
-------------------------------------------------------------------------- */
-
-int FixTTMThermal::maxsize_restart()
-{
-  return 4;
 }
 
 /* ----------------------------------------------------------------------
@@ -806,16 +481,14 @@ double FixTTMThermal::compute_vector(int n)
     double dz = domain->zprd/nzgrid;
     double del_vol = dx*dy*dz;
 
-    for (iz = 0; iz < nzgrid; iz++)
-      for (iy = 0; iy < nygrid; iy++)
-        for (ix = 0; ix < nxgrid; ix++) {
-          e_energy +=
-            T_electron[iz][iy][ix]*c_e_grid[iz][iy][ix]*del_vol;
-          transfer_energy +=
-            net_energy_transfer_all[iz][iy][ix]*update->dt;
+    for (int iz = 0; iz < nzgrid; iz++) {
+      for (int iy = 0; iy < nygrid; iy++) {
+        for (int ix = 0; ix < nxgrid; ix++) {
+          e_energy += T_electron[iz][iy][ix]*c_e_grid[iz][iy][ix]*del_vol;
+          transfer_energy += net_energy_transfer_all[iz][iy][ix]*update->dt;
         }
-
-
+      }
+    }
     outflag = 1;
   }
 
@@ -830,9 +503,8 @@ double FixTTMThermal::compute_vector(int n)
 
 double FixTTMThermal::memory_usage()
 {
-  double bytes = 0.0;
-  bytes += (double) atom->nmax * 3 * sizeof(double);
-  bytes += (double) 4*ngridtotal * sizeof(int);
+  double bytes = FixTTM::memory_usage();
+  bytes += (double) 4*ngridtotal * sizeof(double);
   return bytes;
 }
 
@@ -842,16 +514,11 @@ double FixTTMThermal::memory_usage()
 
 void FixTTMThermal::allocate_grid()
 {
-  memory->create(T_electron_old,nzgrid,nygrid,nxgrid,"ttm:T_electron_old");
-  memory->create(T_electron,nzgrid,nygrid,nxgrid,"ttm:T_electron");
+  FixTTM::allocate_grid();
   memory->create(c_e_grid,nzgrid,nygrid,nxgrid,"ttm:c_e_grid");
   memory->create(k_e_grid,nzgrid,nygrid,nxgrid,"ttm:k_e_grid");
   memory->create(gamma_p_grid,nzgrid,nygrid,nxgrid,"ttm:gamma_p_grid");
   memory->create(inductive_response_grid,nzgrid,nygrid,nxgrid,"ttm:gamma_p_grid");
-  memory->create(net_energy_transfer,nzgrid,nygrid,nxgrid,
-                 "ttm:net_energy_transfer");
-  memory->create(net_energy_transfer_all,nzgrid,nygrid,nxgrid,
-                 "ttm:net_energy_transfer_all");
 }
 
 /* ----------------------------------------------------------------------
@@ -860,12 +527,8 @@ void FixTTMThermal::allocate_grid()
 
 void FixTTMThermal::deallocate_grid()
 {
-  memory->destroy(T_electron_old);
-  memory->destroy(T_electron);
   memory->destroy(c_e_grid);
   memory->destroy(k_e_grid);
   memory->destroy(gamma_p_grid);
   memory->destroy(inductive_response_grid);
-  memory->destroy(net_energy_transfer);
-  memory->destroy(net_energy_transfer_all);
 }
