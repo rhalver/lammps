@@ -2122,6 +2122,7 @@ void Thermo::compute_enthalpy()
 void Thermo::compute_ecouple()
 {
   dvalue = modify->energy_couple();
+  if (normflag) dvalue /= natoms;
 }
 
 /* ---------------------------------------------------------------------- */
