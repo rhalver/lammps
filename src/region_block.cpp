@@ -23,8 +23,6 @@
 
 using namespace LAMMPS_NS;
 
-enum { CONSTANT, VARIABLE };
-
 static constexpr double BIG = 1.0e20;
 
 /* ---------------------------------------------------------------------- */
@@ -158,7 +156,7 @@ RegBlock::RegBlock(LAMMPS *lmp, int narg, char **arg) :
 
   // extent of block
 
-  if (interior) {
+  if (interior && !dynamic && !varshape) {
     bboxflag = 1;
     extent_xlo = xlo;
     extent_xhi = xhi;
@@ -264,6 +262,7 @@ RegBlock::RegBlock(LAMMPS *lmp, int narg, char **arg) :
 RegBlock::~RegBlock()
 {
   if (copymode) return;
+
   delete[] xlostr;
   delete[] xhistr;
   delete[] ylostr;

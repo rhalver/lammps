@@ -3,10 +3,8 @@
 
 #include "lammps.h"
 
-#include "info.h"
 #include "input.h"
 #include "update.h"
-#include "variable.h"
 
 #include "../../src/LEPTON/lepton_utils.h"
 #include "Lepton.h"
@@ -18,6 +16,7 @@
 
 #include "../testing/core.h"
 
+#include <cstring>
 #include <exception>
 #include <iostream>
 #include <limits>
@@ -130,7 +129,10 @@ TEST(LeptonCustomFunction, zbl)
 
 class ExampleFunction : public Lepton::CustomFunction {
     int getNumArguments() const override { return 2; }
-    double evaluate(const double *arguments) const override { return 2.0 * arguments[0] * arguments[1]; }
+    double evaluate(const double *arguments) const override
+    {
+        return 2.0 * arguments[0] * arguments[1];
+    }
     double evaluateDerivative(const double *arguments, const int *derivOrder) const override
     {
         if (derivOrder[0] == 1) {

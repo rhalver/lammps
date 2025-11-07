@@ -26,30 +26,36 @@
 #include "comm.h"
 #include "domain.h"
 #include "error.h"
+#include "label_map.h"
 #include "memory.h"
 #include "special.h"
-#include "label_map.h"
 
+#include <cmath>
 #include <cstring>
 
 using namespace LAMMPS_NS;
 
 static constexpr double LB_FACTOR = 1.1;
-static constexpr double EPSILON =   1.0e-6;
+static constexpr double EPSILON = 1.0e-6;
 
 /* ---------------------------------------------------------------------- */
 
-Replicate::Replicate(LAMMPS *lmp) : Command(lmp) {}
+Replicate::Replicate(LAMMPS *lmp) : Command(lmp), old(nullptr), old_x(nullptr), old_tag(nullptr)
+{
+  bbox_flag = 0;
+  bond_flag = 0;
+}
 
 /* ---------------------------------------------------------------------- */
 
 void Replicate::command(int narg, char **arg)
 {
-  int i,j,m,n;
+  int i,n;
 
   if (domain->box_exist == 0)
-    error->all(FLERR,"Replicate command before simulation box is defined");
-  if (narg < 3 || narg > 4) error->all(FLERR,"Illegal replicate command");
+    error->all(FLERR,"Replicate command before simulation box is defined" + utils::errorurl(33));
+
+  if (narg < 3 || narg > 4) error->all(FLERR,"Illegal number of arguments for replicate command");
 
   int me = comm->me;
   int nprocs = comm->nprocs;
@@ -78,9 +84,6 @@ void Replicate::command(int narg, char **arg)
 
   // optional keywords
 
-  bbox_flag = 0;
-  bond_flag = 0;
-
   int iarg = 3;
   while (iarg < narg) {
     if (strcmp(arg[iarg],"bbox") == 0) {
@@ -89,17 +92,15 @@ void Replicate::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"bond/periodic") == 0) {
       bond_flag = 1;
       iarg++;
-    } else error->all(FLERR,"Illegal replicate command");
+    } else error->all(FLERR, iarg, "Unknown replicate keyword {}", arg[iarg]);
   }
 
   if (bond_flag) bbox_flag = 1;
 
   // error and warning checks
 
-  if (nx <= 0 || ny <= 0 || nz <= 0)
-    error->all(FLERR,"Illegal replicate command");
   if (domain->dimension == 2 && nz != 1)
-    error->all(FLERR,"Cannot replicate 2d simulation in z dimension");
+    error->all(FLERR, 2, "Cannot replicate 2d simulation in z dimension");
   if ((nx > 1 && domain->xperiodic == 0) ||
       (ny > 1 && domain->yperiodic == 0) ||
       (nz > 1 && domain->zperiodic == 0)) {
@@ -402,7 +403,8 @@ void Replicate::command(int narg, char **arg)
   }
 
   if (natoms != atom->natoms)
-    error->all(FLERR,"Replicate did not assign all atoms correctly");
+    error->all(FLERR, Error::NOLASTLINE, "Replicate did not assign all atoms correctly"
+               + utils::errorurl(16));
 
   if (me == 0) {
     const char *molstyle = "";

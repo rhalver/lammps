@@ -12,7 +12,7 @@ Syntax
 
 * file = name of data file to read in
 * zero or more keyword/arg pairs may be appended
-* keyword = *add* or *offset* or *shift* or *extra/atom/types* or *extra/bond/types* or *extra/angle/types* or *extra/dihedral/types* or *extra/improper/types* or *extra/bond/per/atom* or *extra/angle/per/atom* or *extra/dihedral/per/atom* or *extra/improper/per/atom* or *group* or *nocoeff* or *fix*
+* keyword = *add* or *offset* or *shift* or *extra/atom/types* or *extra/bond/types* or *extra/angle/types* or *extra/dihedral/types* or *extra/improper/types* or *extra/bond/per/atom* or *extra/angle/per/atom* or *extra/dihedral/per/atom* or *extra/improper/per/atom* or *extra/special/per/atom* or *group* or *nocoeff* or *fix*
 
   .. parsed-literal::
 
@@ -750,7 +750,7 @@ example:
 
        2 2 17 29 430
 
-The 3 atoms are ordered linearly within the angle.  Thus the central
+The three atoms are ordered linearly within the angle.  Thus the central
 atom (around which the angle is computed) is the atom2 in the list.
 E.g. H,O,H for a water molecule.  The *Angles* section must appear
 after the *Atoms* section.
@@ -859,6 +859,10 @@ of analysis.
      - atom-ID molecule-ID atom-type x y z
    * - peri
      - atom-ID atom-type volume density x y z
+   * - rheo
+     - atom-ID atom-type status rho x y z
+   * - rheo/thermal
+     - atom-ID atom-type status rho energy x y z
    * - smd
      - atom-ID atom-type molecule volume mass kradius cradius x0 y0 z0 x y z
    * - sph
@@ -873,8 +877,6 @@ of analysis.
      - atom-ID atom-type molecule-ID template-index template-atom x y z
    * - tri
      - atom-ID molecule-ID atom-type triangleflag density x y z
-   * - wavepacket
-     - atom-ID atom-type charge espin eradius etag cs_re cs_im x y z
    * - hybrid
      - atom-ID atom-type x y z sub-style1 sub-style2 ...
 
@@ -885,7 +887,6 @@ The per-atom values have these meanings and units, listed alphabetically:
 * bodyflag = 1 for body particles, 0 for point particles
 * ccN = chemical concentration for tDPD particles for each species (mole/volume units)
 * cradius = contact radius for SMD particles (distance units)
-* cs_re,cs_im = real/imaginary parts of wave packet coefficients
 * cv = heat capacity (need units) for SPH particles
 * density = density of particle (mass/distance\^3 or mass/distance\^2 or mass/distance units, depending on dimensionality of particle)
 * diameter = diameter of spherical atom (distance units)
@@ -895,7 +896,6 @@ The per-atom values have these meanings and units, listed alphabetically:
 * eradius = electron radius (or fixed-core radius)
 * esph = energy (need units) for SPH particles
 * espin = electron spin (+1/-1), 0 = nuclei, 2 = fixed-core, 3 = pseudo-cores (i.e. ECP)
-* etag = integer ID of electron that each wave packet belongs to
 * kradius = kernel radius for SMD particles (distance units)
 * lineflag = 1 for line segment particles, 0 for point or spherical particles
 * mass = mass of particle (mass units)

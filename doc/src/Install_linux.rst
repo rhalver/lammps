@@ -35,11 +35,11 @@ packages listed below), they do not depend on any installed software and
 thus should run on *any* 64-bit x86 machine with *any* Linux version.
 
 These executable include most of the available packages and multi-thread
-parallelization (via INTEL, KOKKOS, or OPENMP package).  They are **not**
-compatible with MPI.  Several of the LAMMPS tools executables (e.g. ``msi2lmp``)
-and the ``lammps-shell`` program are included as well.  Because of the
-static linkage, there is no ``liblammps.so`` library file and thus also the
-LAMMPS python module, which depends on it, is not included.
+parallelization (via INTEL, KOKKOS, or OPENMP package).  They are
+**not** compatible with MPI.  Several of the LAMMPS tools executables
+(e.g. ``msi2lmp``) are included as well.  Because of the static linkage,
+there is no ``liblammps.so`` library file and thus also the LAMMPS
+python module, which depends on it, is not included.
 
 The compressed tar archives available for download have names following
 the pattern ``lammps-linux-x86_64-<version>.tar.gz`` and will all unpack
@@ -79,7 +79,7 @@ potentials from `openkim.org <openkim_>`_, you can also install the
 
    sudo apt-get install openkim-models
 
-Or use the `KIM-API commands <https://openkim.org/doc/usage/obtaining-models/#installing_api>`_
+Or use the `KIM-API commands <https://openkim.org/doc/usage/obtaining-models/#source_install>`_
 to download and install individual models.
 
 This LAMMPS executable can then be used in the usual way to run input

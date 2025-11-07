@@ -53,7 +53,7 @@ enum{ISO,ANISO,TRICLINIC};
  ---------------------------------------------------------------------- */
 
 FixNH::FixNH(LAMMPS *lmp, int narg, char **arg) :
-    Fix(lmp, narg, arg), id_dilate(nullptr), irregular(nullptr), id_temp(nullptr),
+    Fix(lmp, narg, arg), id_dilate(nullptr), irregular(nullptr), step_respa(nullptr), id_temp(nullptr),
     id_press(nullptr), eta(nullptr), eta_dot(nullptr), eta_dotdot(nullptr), eta_mass(nullptr),
     etap(nullptr), etap_dot(nullptr), etap_dotdot(nullptr), etap_mass(nullptr)
 {
@@ -272,7 +272,7 @@ FixNH::FixNH(LAMMPS *lmp, int narg, char **arg) :
         delete[] id_dilate;
         id_dilate = utils::strdup(arg[iarg+1]);
         int idilate = group->find(id_dilate);
-        if (idilate == -1)
+        if (idilate < 0)
           error->all(FLERR,"Fix {} dilate group ID {} does not exist", style, id_dilate);
       }
       iarg += 2;
@@ -630,18 +630,14 @@ void FixNH::init()
 {
   // recheck that dilate group has not been deleted
 
-  if (allremap == 0) {
-    int idilate = group->find(id_dilate);
-    if (idilate == -1)
-      error->all(FLERR,"Fix {} dilate group ID {} does not exist", style, id_dilate);
-    dilate_group_bit = group->bitmask[idilate];
-  }
+  if (allremap == 0)
+    dilate_group_bit = group->get_bitmask_by_id(FLERR, id_dilate, fmt::format("fix {}", style));
 
   // ensure no conflict with fix deform
 
   if (pstat_flag)
-    for (auto &ifix : modify->get_fix_by_style("^deform")) {
-      auto deform = dynamic_cast<FixDeform *>(ifix);
+    for (const auto &ifix : modify->get_fix_by_style("^deform")) {
+      auto *deform = dynamic_cast<FixDeform *>(ifix);
       if (deform) {
         int *dimflag = deform->dimflag;
         if ((p_flag[0] && dimflag[0]) || (p_flag[1] && dimflag[1]) ||
@@ -655,14 +651,21 @@ void FixNH::init()
   // set temperature and pressure ptrs
 
   temperature = modify->get_compute_by_id(id_temp);
-  if (!temperature) error->all(FLERR,"Temperature ID {} for fix {} does not exist", id_temp, style);
-
-  if (temperature->tempbias) which = BIAS;
-  else which = NOBIAS;
+  if (!temperature) {
+    error->all(FLERR,"Temperature compute ID {} for fix {} does not exist", id_temp, style);
+  } else {
+    if (temperature->tempflag == 0)
+      error->all(FLERR, "Compute ID {} for fix {} does not compute a temperature", id_temp, style);
+    if (temperature->tempbias) which = BIAS;
+    else which = NOBIAS;
+  }
 
   if (pstat_flag) {
     pressure = modify->get_compute_by_id(id_press);
-    if (!pressure) error->all(FLERR,"Pressure ID {} for fix {} does not exist", id_press, style);
+    if (!pressure)
+      error->all(FLERR,"Pressure compute ID {} for fix {} does not exist", id_press, style);
+    if (pressure->pressflag == 0)
+      error->all(FLERR,"Compute ID {} for fix {} does not compute pressure", id_press, style);
   }
 
   // set timesteps and frequencies
@@ -713,15 +716,17 @@ void FixNH::init()
   else kspace_flag = 0;
 
   if (utils::strmatch(update->integrate_style,"^respa")) {
-    nlevels_respa = (dynamic_cast<Respa *>(update->integrate))->nlevels;
-    step_respa = (dynamic_cast<Respa *>(update->integrate))->step;
+    auto *respa_ptr = dynamic_cast<Respa *>(update->integrate);
+    if (!respa_ptr) error->all(FLERR, "Failure to access Respa style {}", update->integrate_style);
+    nlevels_respa = respa_ptr->nlevels;
+    step_respa = respa_ptr->step;
     dto = 0.5*step_respa[0];
   }
 
   // detect if any rigid fixes exist so rigid bodies move when box is remapped
 
   rfix.clear();
-  for (auto &ifix : modify->get_fix_list())
+  for (const auto &ifix : modify->get_fix_list())
     if (ifix->rigid_flag) rfix.push_back(ifix);
 }
 
@@ -1037,7 +1042,7 @@ void FixNH::couple()
   }
 
   if (!std::isfinite(p_current[0]) || !std::isfinite(p_current[1]) || !std::isfinite(p_current[2]))
-    error->all(FLERR,"Non-numeric pressure - simulation unstable");
+    error->all(FLERR,"Non-numeric pressure - simulation unstable" + utils::errorurl(6));
 
   // switch order from xy-xz-yz to Voigt ordering
 
@@ -1047,7 +1052,7 @@ void FixNH::couple()
     p_current[5] = tensor[3];
 
     if (!std::isfinite(p_current[3]) || !std::isfinite(p_current[4]) || !std::isfinite(p_current[5]))
-      error->all(FLERR,"Non-numeric pressure - simulation unstable");
+      error->all(FLERR,"Non-numeric pressure - simulation unstable" + utils::errorurl(6));
   }
 }
 
@@ -1329,7 +1334,7 @@ int FixNH::pack_restart_data(double *list)
 void FixNH::restart(char *buf)
 {
   int n = 0;
-  auto list = (double *) buf;
+  auto *list = (double *) buf;
   int flag = static_cast<int> (list[n++]);
   if (flag) {
     int m = static_cast<int> (list[n++]);
@@ -1400,7 +1405,7 @@ int FixNH::modify_param(int narg, char **arg)
     // reset id_temp of pressure to new temperature ID
 
     if (pstat_flag) {
-      auto icompute = modify->get_compute_by_id(id_press);
+      auto *icompute = modify->get_compute_by_id(id_press);
       if (!icompute)
         error->all(FLERR,"Pressure ID {} for fix modify does not exist", id_press);
       icompute->reset_extra_compute_fix(id_temp);
@@ -1854,8 +1859,13 @@ void FixNH::reset_dt()
 
   // If using respa, then remap is performed in innermost level
 
-  if (utils::strmatch(update->integrate_style,"^respa"))
+  if (utils::strmatch(update->integrate_style,"^respa")) {
+    auto *respa_ptr = dynamic_cast<Respa *>(update->integrate);
+    if (!respa_ptr) error->all(FLERR, "Failure to access Respa style {}", update->integrate_style);
+    nlevels_respa = respa_ptr->nlevels;
+    step_respa = respa_ptr->step;
     dto = 0.5*step_respa[0];
+  }
 
   if (pstat_flag)
     pdrag_factor = 1.0 - (update->dt * p_freq_max * drag / nc_pchain);
@@ -2237,7 +2247,7 @@ void FixNH::compute_sigma()
   // every nreset_h0 timesteps
 
   if (nreset_h0 > 0) {
-    int delta = update->ntimestep - update->beginstep;
+    bigint delta = update->ntimestep - update->beginstep;
     if (delta % nreset_h0 == 0) {
       if (dimension == 3) vol0 = domain->xprd * domain->yprd * domain->zprd;
       else vol0 = domain->xprd * domain->yprd;

@@ -41,7 +41,7 @@ class ComputePropertyGrid : public Compute {
   double memory_usage() override;
 
  private:
-  int nxgrid,nygrid,nzgrid;
+  int nxgrid, nygrid, nzgrid;
   int nvalues;
   int dimension;
   int triclinic;
@@ -49,19 +49,19 @@ class ComputePropertyGrid : public Compute {
   class Grid2d *grid2d;
   class Grid3d *grid3d;
 
-  int nxlo_in,nxhi_in,nylo_in,nyhi_in,nzlo_in,nzhi_in;
-  int nxlo_out,nxhi_out,nylo_out,nyhi_out,nzlo_out,nzhi_out;
+  int nxlo_in, nxhi_in, nylo_in, nyhi_in, nzlo_in, nzhi_in;
+  int nxlo_out, nxhi_out, nylo_out, nyhi_out, nzlo_out, nzhi_out;
   int ngridout;
 
-  double **vec2d,***vec3d;
-  double ***array2d,****array3d;
+  double **vec2d, ***vec3d;
+  double ***array2d, ****array3d;
 
   // local methods
 
   void allocate_grid();
   void deallocate_grid();
 
-  typedef void (ComputePropertyGrid::*FnPtrPack)(int);
+  using FnPtrPack = void (ComputePropertyGrid::*)(int);
   FnPtrPack *pack_choice;    // ptrs to pack functions
 
   void pack_id(int);

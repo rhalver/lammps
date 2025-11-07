@@ -8,7 +8,6 @@
 #include <mpi.h>
 #include <string>
 
-#include "../testing/utils.h"
 #include "gtest/gtest.h"
 
 const char *demo_input[] = {"region       box block 0 $x 0 2 0 2", "create_box 1 box",
@@ -22,9 +21,9 @@ protected:
     LAMMPS *lmp;
     Input_commands()
     {
-        const char * args[] = {"LAMMPS_test", nullptr};
-        char ** argv = (char**)args;
-        int argc = 1;
+        const char *args[] = {"LAMMPS_test", nullptr};
+        char **argv        = (char **)args;
+        int argc           = 1;
 
         int flag;
         MPI_Initialized(&flag);
