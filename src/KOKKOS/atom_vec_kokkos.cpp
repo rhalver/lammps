@@ -51,16 +51,6 @@ AtomVecKokkos::~AtomVecKokkos()
   ngrow = 0;
 }
 
-/* ----------------------------------------------------------------------
-   process field strings to initialize data structs for all other methods
-------------------------------------------------------------------------- */
-
-void AtomVecKokkos::setup_fields()
-{
-  AtomVec::setup_fields();
-  set_atom_masks();
-}
-
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType,int PBC_FLAG,int TRICLINIC,int DEFAULT>
@@ -426,6 +416,7 @@ int AtomVecKokkos::pack_comm_self(const int &n, const DAT::tdual_int_1d &list,
         }
       }
     }
+    atomKK->modified(HostKK,datamask_comm);
   } else {
     atomKK->sync(Device,datamask_comm);
     if (pbc_flag) {
@@ -481,6 +472,7 @@ int AtomVecKokkos::pack_comm_self(const int &n, const DAT::tdual_int_1d &list,
         }
       }
     }
+    atomKK->modified(Device,datamask_comm);
   }
 
   return n*size_forward;
@@ -734,23 +726,21 @@ struct AtomVecKokkos_UnpackComm {
 void AtomVecKokkos::unpack_comm_kokkos(const int &n, const int &first,
     const DAT::tdual_double_2d_lr &buf) {
   if (lmp->kokkos->forward_comm_on_host) {
+    atomKK->sync(HostKK,datamask_comm);
     if (comm_x_only) {
-      atomKK->sync(HostKK,datamask_comm);
       struct AtomVecKokkos_UnpackComm<LMPHostType,1> f(atomKK,buf,first,datamask_comm);
       Kokkos::parallel_for(n,f);
     } else {
-      atomKK->sync(HostKK,datamask_comm);
       struct AtomVecKokkos_UnpackComm<LMPHostType,0> f(atomKK,buf,first,datamask_comm);
       Kokkos::parallel_for(n,f);
     }
     atomKK->modified(HostKK,datamask_comm);
   } else {
+    atomKK->sync(Device,datamask_comm);
     if (comm_x_only) {
-      atomKK->sync(Device,datamask_comm);
       struct AtomVecKokkos_UnpackComm<LMPDeviceType,1> f(atomKK,buf,first,datamask_comm);
       Kokkos::parallel_for(n,f);
     } else {
-      atomKK->sync(Device,datamask_comm);
       struct AtomVecKokkos_UnpackComm<LMPDeviceType,0> f(atomKK,buf,first,datamask_comm);
       Kokkos::parallel_for(n,f);
     }
@@ -1600,9 +1590,9 @@ struct AtomVecKokkos_UnpackBorder {
 void AtomVecKokkos::unpack_border_kokkos(const int &n, const int &first,
                                                const DAT::tdual_double_2d_lr &buf,
                                                ExecutionSpace space) {
-  atomKK->sync(space,datamask_border);
-
   while (first+n >= nmax) grow(0);
+
+  atomKK->sync(space,datamask_border);
 
   if (space == Host) {
     struct AtomVecKokkos_UnpackBorder<LMPHostType>
@@ -1945,7 +1935,11 @@ struct AtomVecKokkos_UnpackBorderVel {
 void AtomVecKokkos::unpack_border_vel_kokkos(
     const int &n, const int &first,
     const DAT::tdual_double_2d_lr &buf,ExecutionSpace space) {
+
   while (first+n >= nmax) grow(0);
+
+  atomKK->sync(space,datamask_border_vel);
+
   if (space == Host) {
     struct AtomVecKokkos_UnpackBorderVel<LMPHostType> f(
       atomKK,
@@ -2300,6 +2294,7 @@ int AtomVecKokkos::pack_exchange_kokkos(const int &nsend,DAT::tdual_double_2d_lr
                                                  DAT::tdual_int_1d k_copylist,
                                                  ExecutionSpace space)
 {
+  atomKK->sync(space,datamask_exchange);
   set_size_exchange();
 
   if (nsend > (int) (k_buf.view_host().extent(0)*
@@ -2552,6 +2547,8 @@ int AtomVecKokkos::unpack_exchange_kokkos(DAT::tdual_double_2d_lr &k_buf, int nr
 {
   while (nlocal + nrecv/size_exchange >= nmax) grow(0);
 
+  atomKK->sync(space,datamask_exchange);
+
   if (space == HostKK) {
     if (k_indices.view_host().data()) {
       k_count.view_host()(0) = nlocal;
@@ -2585,6 +2582,8 @@ int AtomVecKokkos::unpack_exchange_kokkos(DAT::tdual_double_2d_lr &k_buf, int nr
       k_count.sync_host();
     }
   }
+
+  atomKK->modified(space,datamask_exchange);
 
   return k_count.view_host()(0);
 }

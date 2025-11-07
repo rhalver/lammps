@@ -810,7 +810,7 @@ void CommKokkos::exchange_device()
       subhi = domain->subhi_lamda;
     }
 
-    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,atomKK->avecKK->datamask_border_vel);
+    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,X_MASK);
 
     // loop over dimensions
     for (int dim = 0; dim < 3; dim++) {
@@ -996,7 +996,6 @@ void CommKokkos::exchange_device()
         }
       }
     }
-    atomKK->modified(ExecutionSpaceFromDevice<DeviceType>::space,atomKK->avecKK->datamask_border_vel);
   }
 
   if (atom->firstgroupname) {
@@ -1107,13 +1106,11 @@ void CommKokkos::borders_device() {
   int i,n,itype,iswap,dim,ineed,twoneed,smax,rmax;
   int nsend,nrecv,sendflag,nfirst,nlast,ngroup;
   double lo,hi;
-  int *type;
-  double **x;
   double *mlo,*mhi;
   MPI_Request request;
 
   ExecutionSpace exec_space = ExecutionSpaceFromDevice<DeviceType>::space;
-  atomKK->sync(exec_space,atomKK->avecKK->datamask_border_vel);
+  atomKK->sync(exec_space,X_MASK);
 
   k_sendlist.sync<DeviceType>();
 
@@ -1137,12 +1134,10 @@ void CommKokkos::borders_device() {
       //   for later swaps in a dim, only check newly arrived ghosts
       // store sent atom indices in list for use in future timesteps
 
-      x = atom->x;
       if (mode == Comm::SINGLE) {
         lo = slablo[iswap];
         hi = slabhi[iswap];
       } else {
-        type = atom->type;
         mlo = multilo[iswap];
         mhi = multihi[iswap];
       }
@@ -1203,19 +1198,19 @@ void CommKokkos::borders_device() {
           } else {
             error->all(FLERR,"Required border comm not yet "
                        "implemented with Kokkos");
-            for (i = nfirst; i < nlast; i++) {
+            /*for (i = nfirst; i < nlast; i++) {
               itype = type[i];
               if (x[i][dim] >= mlo[itype] && x[i][dim] <= mhi[itype]) {
                 if (nsend == maxsendlist[iswap]) grow_list(iswap,nsend);
                 sendlist[iswap][nsend++] = i;
               }
-            }
+            }*/
           }
 
         } else {
           error->all(FLERR,"Required border comm not yet "
                      "implemented with Kokkos");
-          if (mode == Comm::SINGLE) {
+          /*if (mode == Comm::SINGLE) {
             ngroup = atom->nfirst;
             for (i = 0; i < ngroup; i++)
               if (x[i][dim] >= lo && x[i][dim] <= hi) {
@@ -1243,7 +1238,7 @@ void CommKokkos::borders_device() {
                 sendlist[iswap][nsend++] = i;
               }
             }
-          }
+          }*/
         }
       }
 

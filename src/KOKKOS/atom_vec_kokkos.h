@@ -197,7 +197,6 @@ class AtomVecKokkos : virtual public AtomVec {
 
   DAT::tdual_int_1d k_count;
 
-  void setup_fields() override;
   uint64_t field2mask(std::string);
   int field2size(std::string);
   void set_atom_masks();
