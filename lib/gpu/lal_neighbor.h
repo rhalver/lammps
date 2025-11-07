@@ -24,6 +24,7 @@
 
 #define IJ_SIZE 131072
 
+// same settings with lal_neighbor_gpu.cu
 #if !defined(USE_OPENCL) && !defined(USE_HIP)
 #ifndef LAL_USE_OLD_NEIGHBOR
 // Issue with incorrect results with CUDA >= 11.2 and pre-12.0

@@ -34,14 +34,15 @@ _texture( pos_tex,float4);
 _texture_2d( pos_tex,int4);
 #endif
 
+// same settings with lal_neighbor.h
 #ifdef NV_KERNEL
-// Issue with incorrect results with CUDA >= 11.2 and pre-12.0 (same in lal_neighbor.h)
+// Issue with incorrect results with CUDA >= 11.2 and pre-12.0
 #if (CUDA_VERSION > 11019) && (CUDA_VERSION < 12000)
 #define LAL_USE_OLD_NEIGHBOR
 #endif
 #endif
 
-#ifdef USE_HIP
+#if defined(USE_HIP) || defined(__APPLE__)
 #define LAL_USE_OLD_NEIGHBOR
 #endif
 
