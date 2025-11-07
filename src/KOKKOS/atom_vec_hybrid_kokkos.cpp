@@ -29,6 +29,15 @@ AtomVecKokkos(lmp), AtomVecHybrid(lmp)
 {
 }
 
+/* ----------------------------------------------------------------------
+   process field strings to initialize data structs for all other methods
+------------------------------------------------------------------------- */
+
+void AtomVecHybridKokkos::init()
+{
+  set_atom_masks();
+}
+
 /* ---------------------------------------------------------------------- */
 
 void AtomVecHybridKokkos::grow(int n)

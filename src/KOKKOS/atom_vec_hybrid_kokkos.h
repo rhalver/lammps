@@ -32,6 +32,7 @@ namespace LAMMPS_NS {
 class AtomVecHybridKokkos : public AtomVecKokkos, public AtomVecHybrid {
  public:
   AtomVecHybridKokkos(class LAMMPS *);
+  void init() override;
 
   void grow(int) override;
   void sort_kokkos(Kokkos::BinSort<KeyViewType, BinOp> &Sorter) override;

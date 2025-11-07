@@ -30,6 +30,15 @@ AtomVecDipoleKokkos::AtomVecDipoleKokkos(LAMMPS *lmp) : AtomVec(lmp),
 AtomVecKokkos(lmp), AtomVecDipole(lmp), q(nullptr) {}
 
 /* ----------------------------------------------------------------------
+   process field strings to initialize data structs for all other methods
+------------------------------------------------------------------------- */
+
+void AtomVecDipoleKokkos::init()
+{
+  set_atom_masks();
+}
+
+/* ----------------------------------------------------------------------
    grow atom arrays
    n = 0 grows arrays by DELTA
    n > 0 allocates arrays to size n

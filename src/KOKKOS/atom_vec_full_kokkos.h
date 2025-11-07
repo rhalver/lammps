@@ -31,6 +31,7 @@ namespace LAMMPS_NS {
 class AtomVecFullKokkos : public AtomVecKokkos, public AtomVecFull {
  public:
   AtomVecFullKokkos(class LAMMPS *);
+  void init() override;
 
   void grow(int) override;
   void grow_pointers() override;

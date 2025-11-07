@@ -32,6 +32,7 @@ namespace LAMMPS_NS {
 class AtomVecSphereKokkos : public AtomVecKokkos, public AtomVecSphere {
  public:
   AtomVecSphereKokkos(class LAMMPS *);
+  void init() override;
 
   void grow(int) override;
   void grow_pointers() override;

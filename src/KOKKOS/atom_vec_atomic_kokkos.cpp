@@ -31,7 +31,6 @@ AtomVecKokkos(lmp), AtomVecAtomic(lmp)
 {
 }
 
-
 /* ----------------------------------------------------------------------
    process field strings to initialize data structs for all other methods
 ------------------------------------------------------------------------- */

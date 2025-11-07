@@ -32,6 +32,15 @@ AtomVecKokkos(lmp), AtomVecBond(lmp)
 }
 
 /* ----------------------------------------------------------------------
+   process field strings to initialize data structs for all other methods
+------------------------------------------------------------------------- */
+
+void AtomVecBondKokkos::init()
+{
+  set_atom_masks();
+}
+
+/* ----------------------------------------------------------------------
    grow atom arrays
    n = 0 grows arrays by DELTA
    n > 0 allocates arrays to size n

@@ -1105,7 +1105,7 @@ void AtomVecKokkos::unpack_comm_vel_kokkos(const int &n, const int &first,
 
 /* ---------------------------------------------------------------------- */
 
-template<class DeviceType>
+template<class DeviceType,int DEFAULT>
 struct AtomVecKokkos_PackReverse {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -1121,9 +1121,9 @@ struct AtomVecKokkos_PackReverse {
     const typename DAT::tdual_double_2d_lr &buf,
     const int &first, const uint64_t &datamask):
       _f(atomKK->k_f.view<DeviceType>()),
+      _torque(atomKK->k_torque.view<DeviceType>()),
       _fm(atomKK->k_fm.view<DeviceType>()),
       _fm_long(atomKK->k_fm_long.view<DeviceType>()),
-      _torque(atomKK->k_torque.view<DeviceType>()),
       _first(first),_datamask(datamask) {
         const size_t elements = atomKK->avecKK->size_reverse;
         const size_t maxsend = (buf.view<DeviceType>().extent(0)*buf.view<DeviceType>().extent(1))/elements;
@@ -1137,22 +1137,24 @@ struct AtomVecKokkos_PackReverse {
     _buf(i,m++) = _f(i+_first,1);
     _buf(i,m++) = _f(i+_first,2);
 
-    if (_datamask & FM_MASK) {
-      _buf(i,m++) = _fm(i+_first,0);
-      _buf(i,m++) = _fm(i+_first,1);
-      _buf(i,m++) = _fm(i+_first,2);
-    }
+    if constexpr (!DEFAULT) {
+      if (_datamask & TORQUE_MASK) {
+        _buf(i,m++) = _torque(i+_first,0);
+        _buf(i,m++) = _torque(i+_first,1);
+        _buf(i,m++) = _torque(i+_first,2);
+      }
 
-    if (_datamask & FML_MASK) {
-      _buf(i,m++) = _fm_long(i+_first,0);
-      _buf(i,m++) = _fm_long(i+_first,1);
-      _buf(i,m++) = _fm_long(i+_first,2);
-    }
+      if (_datamask & FM_MASK) {
+        _buf(i,m++) = _fm(i+_first,0);
+        _buf(i,m++) = _fm(i+_first,1);
+        _buf(i,m++) = _fm(i+_first,2);
+      }
 
-    if (_datamask & TORQUE_MASK) {
-      _buf(i,m++) = _torque(i+_first,0);
-      _buf(i,m++) = _torque(i+_first,1);
-      _buf(i,m++) = _torque(i+_first,2);
+      if (_datamask & FML_MASK) {
+        _buf(i,m++) = _fm_long(i+_first,0);
+        _buf(i,m++) = _fm_long(i+_first,1);
+        _buf(i,m++) = _fm_long(i+_first,2);
+      }
     }
   }
 };
@@ -1163,12 +1165,22 @@ int AtomVecKokkos::pack_reverse_kokkos(const int &n, const int &first,
     const DAT::tdual_double_2d_lr &buf) {
   if (lmp->kokkos->reverse_comm_on_host) {
     atomKK->sync(HostKK,datamask_reverse);
-    struct AtomVecKokkos_PackReverse<LMPHostType> f(atomKK,buf,first,datamask_reverse);
-    Kokkos::parallel_for(n,f);
+    if (comm_f_only) {
+      struct AtomVecKokkos_PackReverse<LMPHostType,1> f(atomKK,buf,first,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_PackReverse<LMPHostType,0> f(atomKK,buf,first,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    }
   } else {
     atomKK->sync(Device,datamask_reverse);
-    struct AtomVecKokkos_PackReverse<LMPDeviceType> f(atomKK,buf,first,datamask_reverse);
-    Kokkos::parallel_for(n,f);
+    if (comm_f_only) {
+      struct AtomVecKokkos_PackReverse<LMPDeviceType,1> f(atomKK,buf,first,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_PackReverse<LMPDeviceType,0> f(atomKK,buf,first,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    }
   }
 
   return n*size_reverse;
@@ -1176,7 +1188,7 @@ int AtomVecKokkos::pack_reverse_kokkos(const int &n, const int &first,
 
 /* ---------------------------------------------------------------------- */
 
-template<class DeviceType>
+template<class DeviceType,int DEFAULT>
 struct AtomVecKokkos_UnPackReverseSelf {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -1193,9 +1205,9 @@ struct AtomVecKokkos_UnPackReverseSelf {
     const typename DAT::tdual_int_1d &list,
     const uint64_t &datamask):
       _f(atomKK->k_f.view<DeviceType>()),
+      _torque(atomKK->k_torque.view<DeviceType>()),
       _fm(atomKK->k_fm.view<DeviceType>()),
       _fm_long(atomKK->k_fm_long.view<DeviceType>()),
-      _torque(atomKK->k_torque.view<DeviceType>()),
       _nfirst(nfirst),_list(list.view<DeviceType>()),
       _datamask(datamask) {};
 
@@ -1206,22 +1218,24 @@ struct AtomVecKokkos_UnPackReverseSelf {
     _f(j,1) += _f(i+_nfirst,1);
     _f(j,2) += _f(i+_nfirst,2);
 
-    if (_datamask & FM_MASK) {
-      _fm(j,0) += _fm(i+_nfirst,0);
-      _fm(j,1) += _fm(i+_nfirst,1);
-      _fm(j,2) += _fm(i+_nfirst,2);
-    }
+    if constexpr (!DEFAULT) {
+      if (_datamask & TORQUE_MASK) {
+        _torque(j,0) += _torque(i+_nfirst,0);
+        _torque(j,1) += _torque(i+_nfirst,1);
+        _torque(j,2) += _torque(i+_nfirst,2);
+      }
 
-    if (_datamask & FML_MASK) {
-      _fm_long(j,0) += _fm_long(i+_nfirst,0);
-      _fm_long(j,1) += _fm_long(i+_nfirst,1);
-      _fm_long(j,2) += _fm_long(i+_nfirst,2);
-    }
+      if (_datamask & FM_MASK) {
+        _fm(j,0) += _fm(i+_nfirst,0);
+        _fm(j,1) += _fm(i+_nfirst,1);
+        _fm(j,2) += _fm(i+_nfirst,2);
+      }
 
-    if (_datamask & TORQUE_MASK) {
-      _torque(j,0) += _torque(i+_nfirst,0);
-      _torque(j,1) += _torque(i+_nfirst,1);
-      _torque(j,2) += _torque(i+_nfirst,2);
+      if (_datamask & FML_MASK) {
+        _fm_long(j,0) += _fm_long(i+_nfirst,0);
+        _fm_long(j,1) += _fm_long(i+_nfirst,1);
+        _fm_long(j,2) += _fm_long(i+_nfirst,2);
+      }
     }
   }
 };
@@ -1232,13 +1246,23 @@ int AtomVecKokkos::pack_reverse_self(const int &n, const DAT::tdual_int_1d &list
                                      const int nfirst) {
   if (lmp->kokkos->reverse_comm_on_host) {
     atomKK->sync(HostKK,datamask_reverse);
-    struct AtomVecKokkos_UnPackReverseSelf<LMPHostType> f(atomKK,nfirst,list,datamask_reverse);
-    Kokkos::parallel_for(n,f);
+    if (comm_f_only) {
+      struct AtomVecKokkos_UnPackReverseSelf<LMPHostType,1> f(atomKK,nfirst,list,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_UnPackReverseSelf<LMPHostType,0> f(atomKK,nfirst,list,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    }
     atomKK->modified(HostKK,datamask_reverse);
   } else {
     atomKK->sync(Device,datamask_reverse);
-    struct AtomVecKokkos_UnPackReverseSelf<LMPDeviceType> f(atomKK,nfirst,list,datamask_reverse);
-    Kokkos::parallel_for(n,f);
+    if (comm_f_only) {
+      struct AtomVecKokkos_UnPackReverseSelf<LMPDeviceType,1> f(atomKK,nfirst,list,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_UnPackReverseSelf<LMPDeviceType,0> f(atomKK,nfirst,list,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    } 
     atomKK->modified(Device,datamask_reverse);
   }
 
@@ -1247,7 +1271,7 @@ int AtomVecKokkos::pack_reverse_self(const int &n, const DAT::tdual_int_1d &list
 
 /* ---------------------------------------------------------------------- */
 
-template<class DeviceType>
+template<class DeviceType,int DEFAULT>
 struct AtomVecKokkos_UnPackReverse {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -1264,9 +1288,9 @@ struct AtomVecKokkos_UnPackReverse {
     const typename DAT::tdual_int_1d &list,
     const uint64_t datamask):
       _f(atomKK->k_f.view<DeviceType>()),
+      _torque(atomKK->k_torque.view<DeviceType>()),
       _fm(atomKK->k_fm.view<DeviceType>()),
       _fm_long(atomKK->k_fm_long.view<DeviceType>()),
-      _torque(atomKK->k_torque.view<DeviceType>()),
       _list(list.view<DeviceType>()),
       _datamask(datamask) {
         const size_t elements = atomKK->avecKK->size_reverse;
@@ -1282,22 +1306,24 @@ struct AtomVecKokkos_UnPackReverse {
     _f(j,1) += _buf(i,m++);
     _f(j,2) += _buf(i,m++);
 
-    if (_datamask & FM_MASK) {
-      _fm(j,0) += _buf(i,m++);
-      _fm(j,1) += _buf(i,m++);
-      _fm(j,2) += _buf(i,m++);
-    }
+    if constexpr (!DEFAULT) {
+      if (_datamask & TORQUE_MASK) {
+        _torque(j,0) += _buf(i,m++);
+        _torque(j,1) += _buf(i,m++);
+        _torque(j,2) += _buf(i,m++);
+      }
 
-    if (_datamask & FML_MASK) {
-      _fm_long(j,0) += _buf(i,m++);
-      _fm_long(j,1) += _buf(i,m++);
-      _fm_long(j,2) += _buf(i,m++);
-    }
+      if (_datamask & FM_MASK) {
+        _fm(j,0) += _buf(i,m++);
+        _fm(j,1) += _buf(i,m++);
+        _fm(j,2) += _buf(i,m++);
+      }
 
-    if (_datamask & TORQUE_MASK) {
-      _torque(j,0) += _buf(i,m++);
-      _torque(j,1) += _buf(i,m++);
-      _torque(j,2) += _buf(i,m++);
+      if (_datamask & FML_MASK) {
+        _fm_long(j,0) += _buf(i,m++);
+        _fm_long(j,1) += _buf(i,m++);
+        _fm_long(j,2) += _buf(i,m++);
+      }
     }
   }
 };
@@ -1313,13 +1339,23 @@ void AtomVecKokkos::unpack_reverse_kokkos(const int &n,
 
   if (lmp->kokkos->reverse_comm_on_host) {
     atomKK->sync(HostKK,datamask_reverse);
-    struct AtomVecKokkos_UnPackReverse<LMPHostType> f(atomKK,buf,list,datamask_reverse);
-    Kokkos::parallel_for(n,f);
+    if (comm_f_only) {
+      struct AtomVecKokkos_UnPackReverse<LMPHostType,1> f(atomKK,buf,list,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_UnPackReverse<LMPHostType,0> f(atomKK,buf,list,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    }
     atomKK->modified(HostKK,datamask_reverse);
   } else {
     atomKK->sync(Device,datamask_reverse);
-    struct AtomVecKokkos_UnPackReverse<LMPDeviceType> f(atomKK,buf,list,datamask_reverse);
-    Kokkos::parallel_for(n,f);
+    if (comm_f_only) {
+      struct AtomVecKokkos_UnPackReverse<LMPDeviceType,1> f(atomKK,buf,list,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_UnPackReverse<LMPDeviceType,0> f(atomKK,buf,list,datamask_reverse);
+      Kokkos::parallel_for(n,f);
+    }
     atomKK->modified(Device,datamask_reverse);
   }
 }
@@ -2300,6 +2336,7 @@ int AtomVecKokkos::pack_exchange_kokkos(const int &nsend,DAT::tdual_double_2d_lr
     int newsize = nsend*size_exchange/k_buf.view_host().extent(1)+1;
     k_buf.resize(newsize,k_buf.view_host().extent(1));
   }
+
   if (space == HostKK) {
     AtomVecKokkos_PackExchangeFunctor<LMPHostType>
       f(atomKK,k_buf,k_sendlist,k_copylist,datamask_exchange);
