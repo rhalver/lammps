@@ -40,10 +40,18 @@
 
 using namespace LAMMPS_NS;
 
-static constexpr int DELTA = 1;
-static constexpr double EPSDT = 1.0e-6;
+namespace {
+constexpr int DELTA = 1;
+constexpr double EPSDT = 1.0e-6;
 
 enum {SETUP, WRITE, RESET_DT};
+
+struct Particle {
+  int tag;
+  int type;
+  double x[3];
+};
+}
 
 /* ----------------------------------------------------------------------
    one instance per dump style in style_dump.h
