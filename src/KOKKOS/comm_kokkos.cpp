@@ -720,14 +720,15 @@ void CommKokkos::exchange()
           break;
         }
       }
+
       if (!flag) {
         if (comm->me == 0) {
           error->warning(FLERR,"Fix with atom-based arrays not compatible with sending data in Kokkos communication, "
                          "switching to legacy exchange/border communication");
         }
+        exchange_comm_legacy = true;
+        lmp->kokkos->exchange_comm_legacy = 1;
       }
-      exchange_comm_legacy = true;
-      lmp->kokkos->exchange_comm_legacy = 1;
     }
   }
 
