@@ -132,9 +132,15 @@ void CommKokkos::forward_comm(int dummy)
 
   k_sendlist.sync_host();
 
-  atomKK->sync(Host,atomKK->avecKK->datamask_comm_vel);
+  if (ghost_velocity)
+    atomKK->sync(Host,atomKK->avecKK->datamask_comm_vel);
+  else
+    atomKK->sync(Host,atomKK->avecKK->datamask_comm);
   CommBrick::forward_comm(dummy);
-  atomKK->modified(Host,atomKK->avecKK->datamask_comm_vel);
+  if (ghost_velocity)
+    atomKK->modified(Host,atomKK->avecKK->datamask_comm_vel);
+  else
+    atomKK->modified(Host,atomKK->avecKK->datamask_comm);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1035,14 +1041,20 @@ void CommKokkos::borders()
     if (exchange_comm_on_host) borders_device<LMPHostType>();
     else borders_device<LMPDeviceType>();
   } else {
-    atomKK->sync(Host,atomKK->avecKK->datamask_border_vel);
+    if (ghost_velocity)
+      atomKK->sync(Host,atomKK->avecKK->datamask_border_vel);
+    else
+      atomKK->sync(Host,atomKK->avecKK->datamask_border);
     k_sendlist.sync_host();
     int prev_auto_sync = lmp->kokkos->auto_sync;
     lmp->kokkos->auto_sync = 1;
     CommBrick::borders();
     lmp->kokkos->auto_sync = prev_auto_sync;
     k_sendlist.modify_host();
-    atomKK->modified(Host,atomKK->avecKK->datamask_border_vel);
+    if (ghost_velocity)
+      atomKK->modified(Host,atomKK->avecKK->datamask_border_vel);
+    else
+      atomKK->modified(Host,atomKK->avecKK->datamask_border);
   }
 
   if (comm->nprocs == 1 && !ghost_velocity && !forward_comm_legacy)
@@ -1323,8 +1335,6 @@ void CommKokkos::borders_device() {
   if (max > maxsend) grow_send_kokkos(max,0);
   max = MAX(maxforward*rmax,maxreverse*smax);
   if (max > maxrecv) grow_recv_kokkos(max);
-
-  atomKK->modified(exec_space,atomKK->avecKK->datamask_border_vel);
 
   // reset global->local map
 

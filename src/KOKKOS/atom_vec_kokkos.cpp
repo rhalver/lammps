@@ -1455,7 +1455,7 @@ int AtomVecKokkos::pack_border_kokkos(int n, DAT::tdual_int_1d k_sendlist,
       dy = pbc[1];
       dz = pbc[2];
     }
-    if (space == Host) {
+    if (space == HostKK) {
       AtomVecKokkos_PackBorder<LMPHostType,1> f(
         atomKK,buf.view_host(), k_sendlist.view_host(),
         dx,dy,dz,datamask_border);
@@ -1469,7 +1469,7 @@ int AtomVecKokkos::pack_border_kokkos(int n, DAT::tdual_int_1d k_sendlist,
 
   } else {
     dx = dy = dz = 0;
-    if (space == Host) {
+    if (space == HostKK) {
       AtomVecKokkos_PackBorder<LMPHostType,0> f(
         atomKK,buf.view_host(), k_sendlist.view_host(),
         dx,dy,dz,datamask_border);
@@ -1594,7 +1594,7 @@ void AtomVecKokkos::unpack_border_kokkos(const int &n, const int &first,
 
   atomKK->sync(space,datamask_border);
 
-  if (space == Host) {
+  if (space == HostKK) {
     struct AtomVecKokkos_UnpackBorder<LMPHostType>
       f(atomKK,buf.view_host(),first,datamask_border);
     Kokkos::parallel_for(n,f);
@@ -1760,7 +1760,7 @@ int AtomVecKokkos::pack_border_vel_kokkos(
       dz = pbc[2];
     }
     if (!deform_vremap) {
-      if (space == Host) {
+      if (space == HostKK) {
         AtomVecKokkos_PackBorderVel<LMPHostType,1,0> f(
           atomKK,
           buf.view_host(), k_sendlist.view_host(),
@@ -1780,7 +1780,7 @@ int AtomVecKokkos::pack_border_vel_kokkos(
       dvx = pbc[0]*h_rate[0] + pbc[5]*h_rate[5] + pbc[4]*h_rate[4];
       dvy = pbc[1]*h_rate[1] + pbc[3]*h_rate[3];
       dvz = pbc[2]*h_rate[2];
-      if (space == Host) {
+      if (space == HostKK) {
         AtomVecKokkos_PackBorderVel<LMPHostType,1,1> f(
           atomKK,
           buf.view_host(), k_sendlist.view_host(),
@@ -1797,7 +1797,7 @@ int AtomVecKokkos::pack_border_vel_kokkos(
       }
     }
   } else {
-    if (space == Host) {
+    if (space == HostKK) {
       AtomVecKokkos_PackBorderVel<LMPHostType,0,0> f(
         atomKK,
         buf.view_host(), k_sendlist.view_host(),
@@ -1813,8 +1813,6 @@ int AtomVecKokkos::pack_border_vel_kokkos(
       Kokkos::parallel_for(n,f);
     }
   }
-
-  atomKK->modified(space,datamask_border_vel);
 
   return n*(size_border + size_velocity);
 }
@@ -1940,7 +1938,7 @@ void AtomVecKokkos::unpack_border_vel_kokkos(
 
   atomKK->sync(space,datamask_border_vel);
 
-  if (space == Host) {
+  if (space == HostKK) {
     struct AtomVecKokkos_UnpackBorderVel<LMPHostType> f(
       atomKK,
       buf.view_host(),
@@ -2311,6 +2309,7 @@ int AtomVecKokkos::pack_exchange_kokkos(const int &nsend,DAT::tdual_double_2d_lr
     AtomVecKokkos_PackExchangeFunctor<LMPDeviceType>
       f(atomKK,k_buf,k_sendlist,k_copylist,datamask_exchange);
     Kokkos::parallel_for(nsend,f);
+
     return nsend*size_exchange;
   }
 }
