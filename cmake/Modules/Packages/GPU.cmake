@@ -154,8 +154,11 @@ if(GPU_API STREQUAL "CUDA")
     endif()
   endif()
 
-  cuda_compile_fatbin(GPU_GEN_OBJS ${GPU_LIB_CU} OPTIONS ${CUDA_REQUEST_PIC}
-          -DUNIX -O3 --use_fast_math -Wno-deprecated-gpu-targets -allow-unsupported-compiler -DNV_KERNEL -DUCL_CUDADR ${GPU_CUDA_GENCODE} -D_${GPU_PREC_SETTING} -DLAMMPS_${LAMMPS_SIZES})
+  set(NVCC_FLAGS -DUNIX -O3 --use_fast_math -Wno-deprecated-gpu-targets -allow-unsupported-compiler -DNV_KERNEL -DUCL_CUDADR ${GPU_CUDA_GENCODE} -D_${GPU_PREC_SETTING} -DLAMMPS_${LAMMPS_SIZES})
+  if(CUDPP_OPT)
+    string(APPEND NVCC_FLAGS " -DUSE_CUDPP")
+  endif()
+  cuda_compile_fatbin(GPU_GEN_OBJS ${GPU_LIB_CU} OPTIONS ${CUDA_REQUEST_PIC} ${NVCC_FLAGS})
 
   cuda_compile(GPU_OBJS ${GPU_LIB_CUDPP_CU} OPTIONS ${CUDA_REQUEST_PIC}
           -DUNIX -O3 --use_fast_math -Wno-deprecated-gpu-targets -allow-unsupported-compiler -DUCL_CUDADR ${GPU_CUDA_GENCODE} -D_${GPU_PREC_SETTING} -DLAMMPS_${LAMMPS_SIZES})

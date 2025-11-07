@@ -35,13 +35,17 @@ _texture_2d( pos_tex,int4);
 #endif
 
 #ifdef NV_KERNEL
-#if (__CUDACC_VER_MAJOR__ == 11) && (__CUDACC_VER_MINOR__ >= 2)
-// Issue with incorrect results in CUDA >= 11.2
+// Issue with incorrect results with CUDA >= 11.2 and pre-12.0 (same in lal_neighbor.h)
+#if (CUDA_VERSION > 11019) && (CUDA_VERSION < 12000)
 #define LAL_USE_OLD_NEIGHBOR
 #endif
 #endif
 
 #ifdef USE_HIP
+#define LAL_USE_OLD_NEIGHBOR
+#endif
+
+#ifdef USE_CUDPP
 #define LAL_USE_OLD_NEIGHBOR
 #endif
 

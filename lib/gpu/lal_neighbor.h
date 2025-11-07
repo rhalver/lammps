@@ -37,6 +37,10 @@
 #define LAL_USE_OLD_NEIGHBOR
 #endif
 
+#ifdef USE_CUDPP
+#define LAL_USE_OLD_NEIGHBOR
+#endif
+
 namespace LAMMPS_AL {
 
 class Neighbor {
