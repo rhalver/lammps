@@ -699,8 +699,9 @@ std::string ComputeReduce::get_thermo_colname(int m) {
     auto &val2 = values[replace[m]];
     return fmt::format("c_{}:c_{}[{}]<-{}(c_{})", id, val1.id, val1.argindex, modestr, val2.id);
   } else {
+    if (m == -1) m = 0; // scalar
     auto &val = values[m];
-    return fmt::format("c_{}:{}(c_{})", id, modestr, val.id);
+    return fmt::format("c_{}:{}(c_{}[{}])", id, modestr, val.id, val.argindex);
   }
   return "none";
 }
