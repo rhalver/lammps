@@ -788,6 +788,13 @@ There is one quantity in the global vector for each *react* argument:
 
   (1) cumulative number of reactions that occurred
 
+This fix supports automatically generated thermo column names when using
+:doc:`thermo_modify colname auto <thermo_modify>`.  The thermo column names
+are 'f_', followed by the fix ID, followed by a colon, followed by the
+react-ID.  E.g., the first example in the Examples section above would
+print a thermo column name of 'f_5:myrxn1', compared to the default column
+output name of 'f_5[1]'.
+
 No parameter of this fix can be used with the *start/stop* keywords
 of the :doc:`run <run>` command.  This fix is not invoked during :doc:`energy minimization <minimize>`.
 
