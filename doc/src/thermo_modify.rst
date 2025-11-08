@@ -21,7 +21,7 @@ Syntax
        *norm* value = *yes* or *no*
        *flush* value = *yes* or *no*
        *line* value = *one* or *multi* or *yaml*
-       *colname* values =  ID string, or *default*
+       *colname* values =  ID string, or *auto* or *default*
          string = new column header name
          ID = integer from 1 to N, or integer from -1 to -N, where N = # of quantities being output
               *or* a thermo keyword or reference to compute, fix, property or variable.
@@ -158,14 +158,20 @@ block ("yaml").  This modify option overrides the *one*, *multi*, or
 
 .. versionadded:: 4May2022
 
-The *colname* keyword can be used to change the default header keyword
-for a column or field of thermodynamic output.  The setting for *ID
-string* replaces the default text with the provided string.  *ID* can be
-a positive integer when it represents the column number counting from
-the left, a negative integer when it represents the column number from
-the right (i.e., :math:`-1` is the last column/keyword), or a thermo keyword
-(or compute, fix, property, or variable reference) and then it replaces the
-string for that specific thermo keyword.
+The *colname* keyword can be used to change the default header keyword for
+a column or field of thermodynamic output.  The column names can either be
+manually set by the user, or automatically generated for certain fixes and
+computes.  The setting for *ID string* replaces the default text with the
+provided string.  *ID* can be a positive integer when it represents the
+column number counting from the left, a negative integer when it represents
+the column number from the right (i.e., :math:`-1` is the last
+column/keyword), or a thermo keyword (or compute, fix, property, or
+variable reference) and then it replaces the string for that specific
+thermo keyword.  With a setting of *auto*, certain fixes or computes will
+generate more descriptive strings as their thermo keywords, which are
+described in the 'output' section of their documentation. Current commands
+that automatically generate descriptive thermo output strings include 'fix
+nvt', 'fix npt', 'fix nph', 'compute reduce', and 'fix bond/react'.
 
 The *colname* keyword can be used multiple times. If multiple *colname*
 settings refer to the same keyword, the last setting has precedence.  A
