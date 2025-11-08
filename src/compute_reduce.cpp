@@ -694,13 +694,13 @@ double ComputeReduce::compute_one(int m, int flag)
 /* ---------------------------------------------------------------------- */
 
 std::string ComputeReduce::get_thermo_colname(int m) {
-  if (replace[m] >= 0) {
+  if (replace && replace[m] >= 0) {
     auto &val1 = values[m];
     auto &val2 = values[replace[m]];
-    return fmt::format("c_{}:c_{}[{}]<-{}(c_{})",id,val1.id,val1.argindex,modestr,val2.id);
+    return fmt::format("c_{}:c_{}[{}]<-{}(c_{})", id, val1.id, val1.argindex, modestr, val2.id);
   } else {
     auto &val = values[m];
-    return fmt::format("c_{}:{}(c_{})",id,modestr,val.id);
+    return fmt::format("c_{}:{}(c_{})", id, modestr, val.id);
   }
   return "none";
 }
