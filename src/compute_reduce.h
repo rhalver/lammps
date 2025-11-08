@@ -40,7 +40,7 @@ class ComputeReduce : public Compute {
  protected:
   int mode, nvalues, input_mode;
   std::string modestr;
-  
+
   struct value_t {
     int which;
     int argindex;
