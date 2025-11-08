@@ -95,7 +95,10 @@ class Region : protected Pointers {
   virtual void length_restart_string(int &);
   virtual void reset_vel();
 
- protected:
+  // track translation and rotation
+  void forward_transform(double &, double &, double &);
+
+protected:
 
   // implemented by each region, generally not called by other classes
 
@@ -112,7 +115,6 @@ class Region : protected Pointers {
   void add_contact(int, double *, double, double, double);
   void options(int, char **);
   void point_on_line_segment(double *, double *, double *, double *);
-  void forward_transform(double &, double &, double &);
   double point[3], runit[3];
 
  private:
