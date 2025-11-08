@@ -243,15 +243,15 @@ scalar or vector values from a compute as input.  See the :doc:`Howto
 output <Howto_output>` doc page for an overview of LAMMPS output
 options.
 
-This fix supports automatically generated thermo column names when using
-:doc:`thermo_modify colname auto <thermo_modify>`.  The thermo column names
-are 'c_', followed by the compute ID, followed by a colon, followed by the
-reduction operation (*mode*), followed by the compute being operated on in
-parentheses.  E.g., for the first in-text example above, the first printed
-thermo column name would be 'c_2:min(c_myPress[1])', rather than the
-default 'c_2[1]'. If the *replace* keyword is used, *vec1* of the *replace*
-keyword is listed after the colon, followed by '<-', followed by the
-reduction operation, followed by *vec2* of the *replace* keyword in
+This compute supports automatically generated thermo column names when
+using :doc:`thermo_modify colname auto <thermo_modify>`.  The thermo column
+names are 'c_', followed by the compute ID, followed by a colon, followed
+by the reduction operation (*mode*), followed by the compute being operated
+on in parentheses.  E.g., for the first in-text example above, the first
+printed thermo column name would be 'c_2:min(c_myPress[1])', rather than
+the default 'c_2[1]'.  If the *replace* keyword is used, *vec1* of the
+*replace* keyword is listed after the colon, followed by '<-', followed by
+the reduction operation, followed by *vec2* of the *replace* keyword in
 parentheses.  E.g., for the second in-text example above, the first printed
 thermo column name would be 'c_3:c_1[1]<-max(c_2)' rather than the default
 'c_3[1]'.
