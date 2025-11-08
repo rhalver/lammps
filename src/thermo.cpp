@@ -117,7 +117,6 @@ Thermo::Thermo(LAMMPS *_lmp, int narg, char **arg) :
   lostflag = lostbond = Thermo::ERROR;
   lostbefore = warnbefore = 0;
   flushflag = 0;
-  autocolname = 0;
   triclinic_general = 0;
   firststep = 0;
   ntimestep = -1;
@@ -696,8 +695,7 @@ void Thermo::modify_params(int narg, char **arg)
         for (auto &item : keyword_user) item.clear();
         iarg += 2;
       } else if (strcmp(arg[iarg + 1], "auto") == 0) {
-        autocolname = 1;
-        parse_fields(line);
+        colname_auto();
         iarg += 2;
       } else {
         if (iarg + 3 > narg) utils::missing_cmd_args(FLERR, "thermo_modify colname", error);
@@ -1143,8 +1141,6 @@ void Thermo::parse_fields(const std::string &str)
           error->all(FLERR, nfield + 1, "Thermo custom compute {} has unsupported format",
                      icompute->id);
         }
-        if (autocolname && icompute->thermo_modify_colname)
-          keyword_user[nfield] = icompute->get_thermo_colname(argindex1[nfield]-1);
         addfield(word.c_str(), &Thermo::compute_compute, FLOAT);
 
       } else if (argi.get_type() == ArgInfo::FIX) {
@@ -1179,9 +1175,6 @@ void Thermo::parse_fields(const std::string &str)
           error->all(FLERR, nfield + 1, "Thermo custom fix {} has unsupported format", ifix->id);
         }
 
-        if (autocolname && ifix->thermo_modify_colname)
-          keyword_user[nfield] = ifix->get_thermo_colname(argindex1[nfield]-1);
-
         field2index[nfield] = add_fix(ifix->id);
         addfield(word.c_str(), &Thermo::compute_fix, FLOAT);
 
@@ -1212,6 +1205,28 @@ void Thermo::parse_fields(const std::string &str)
   }
   field_data.clear();
   field_data.resize(nfield);
+}
+
+/* ----------------------------------------------------------------------
+   update auto-generated column names for computes, fixes
+------------------------------------------------------------------------- */
+
+void Thermo::colname_auto()
+{
+  for (ifield = 0; ifield < nfield; ifield++) {
+    std::string word = keyword[ifield];
+    ArgInfo argi(word);
+    if (argi.get_type() == ArgInfo::COMPUTE) {
+      auto *icompute = modify->get_compute_by_id(argi.get_name());
+      if (icompute->thermo_modify_colname)
+        keyword_user[ifield] = icompute->get_thermo_colname(argindex1[ifield]-1);
+    }
+    if (argi.get_type() == ArgInfo::FIX) {
+      auto *ifix = modify->get_fix_by_id(argi.get_name());
+      if (ifix->thermo_modify_colname)
+        keyword_user[ifield] = ifix->get_thermo_colname(argindex1[ifield]-1);
+    }
+  }
 }
 
 /* ----------------------------------------------------------------------

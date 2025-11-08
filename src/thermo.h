@@ -77,7 +77,7 @@ class Thermo : protected Pointers {
 
   int firststep;
   int lostbefore, warnbefore;
-  int flushflag, lineflag, autocolname;
+  int flushflag, lineflag;
 
   double last_tpcpu, last_spcpu;
   double last_time, last_cpu1, last_cpu2;
@@ -128,6 +128,7 @@ class Thermo : protected Pointers {
   void deallocate();
 
   void parse_fields(const std::string &);
+  void colname_auto();
   int add_compute(const char *, int);
   int add_fix(const char *);
   int add_variable(const char *);
