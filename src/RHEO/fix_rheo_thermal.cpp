@@ -360,8 +360,8 @@ void FixRHEOThermal::post_integrate()
   int *type = atom->type;
 
   double imass;
-  double rmass = atom->rmass;
-  double mass = atom->mass;
+  double *rmass = atom->rmass;
+  double *mass = atom->mass;
 
   int n_melt = 0;
   int n_freeze = 0;
@@ -476,8 +476,8 @@ void FixRHEOThermal::pre_force(int /*vflag*/)
   int *type = atom->type;
 
   double imass;
-  double rmass = atom->rmass;
-  double mass = atom->mass;
+  double *rmass = atom->rmass;
+  double *mass = atom->mass;
 
   int nall = atom->nlocal + atom->nghost;
 
