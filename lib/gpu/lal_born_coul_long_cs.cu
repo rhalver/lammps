@@ -40,14 +40,14 @@ _texture( q_tex,int2);
 #define B4        (acctyp)-5.80844129e-3
 #define B5        (acctyp)1.14652755e-1
 
-#if defined _DOULBE_DOUBLE
+#if defined _DOUBLE_DOUBLE
 #define EPSILON (acctyp)(1.0e-20)
 #define EPS_EWALD (acctyp)(1.0e-6)
 #define EPS_EWALD_SQR (acctyp)(1.0e-12)
 #else
 #define EPSILON (numtyp)(1.0e-7)
 #define EPS_EWALD (numtyp)(1.0e-6)
-#define EPS_EWALD_SQR (numtyp)(1.0e-7)
+#define EPS_EWALD_SQR (numtyp)(1.0e-8)
 #endif
 
 __kernel void k_born_coul_long_cs(const __global numtyp4 *restrict x_,
