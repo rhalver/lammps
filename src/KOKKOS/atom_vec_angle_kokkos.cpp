@@ -39,6 +39,8 @@ AtomVecKokkos(lmp), AtomVecAngle(lmp)
 
 void AtomVecAngleKokkos::init()
 {
+  AtomVecAngle::init();
+
   set_atom_masks();
 }
 

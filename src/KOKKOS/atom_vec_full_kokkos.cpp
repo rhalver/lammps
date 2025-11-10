@@ -37,6 +37,7 @@ AtomVecKokkos(lmp), AtomVecFull(lmp)
 
 void AtomVecFullKokkos::init()
 {
+  AtomVecFull::init();
   set_atom_masks();
 }
 

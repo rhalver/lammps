@@ -35,6 +35,8 @@ AtomVecKokkos(lmp), AtomVecDipole(lmp), q(nullptr) {}
 
 void AtomVecDipoleKokkos::init()
 {
+  AtomVecDipole::init();
+
   set_atom_masks();
 }
 

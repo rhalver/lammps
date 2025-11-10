@@ -37,6 +37,8 @@ AtomVecKokkos(lmp), AtomVecBond(lmp)
 
 void AtomVecBondKokkos::init()
 {
+  AtomVecBond::init();
+
   set_atom_masks();
 }
 

@@ -49,6 +49,8 @@ AtomVecKokkos(lmp), AtomVecSpin(lmp)
 
 void AtomVecSpinKokkos::init()
 {
+  AtomVecSpin::init();
+
   set_atom_masks();
 }
 

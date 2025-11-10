@@ -1116,8 +1116,8 @@ struct BuildBorderListFunctor {
 
 template<class DeviceType>
 void CommKokkos::borders_device() {
-  int i,n,itype,iswap,dim,ineed,twoneed,smax,rmax;
-  int nsend,nrecv,sendflag,nfirst,nlast,ngroup;
+  int n,iswap,dim,ineed,twoneed,smax,rmax;
+  int nsend,nrecv,sendflag,nfirst,nlast;
   double lo,hi;
   double *mlo,*mhi;
   MPI_Request request;

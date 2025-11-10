@@ -37,6 +37,8 @@ AtomVecKokkos(lmp), AtomVecCharge(lmp), q(nullptr)
 
 void AtomVecChargeKokkos::init()
 {
+  AtomVecCharge::init();
+
   set_atom_masks();
 }
 

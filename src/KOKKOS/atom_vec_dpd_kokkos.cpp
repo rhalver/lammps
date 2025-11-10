@@ -39,6 +39,8 @@ AtomVecKokkos(lmp), AtomVecDPD(lmp)
 
 void AtomVecDPDKokkos::init()
 {
+  AtomVecDPD::init();
+
   set_atom_masks();
 }
 

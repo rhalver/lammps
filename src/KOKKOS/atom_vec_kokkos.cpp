@@ -1657,6 +1657,8 @@ struct AtomVecKokkos_PackBorderVel {
   const typename AT::t_tagint_1d _tag;
   const typename AT::t_int_1d _type;
   const typename AT::t_int_1d _mask;
+  const typename AT::t_tagint_1d _molecule;
+  const typename AT::t_kkfloat_1d _q;
   const typename AT::t_kkfloat_1d_4 _mu;
   const typename AT::t_kkfloat_1d_4 _sp;
   typename AT::t_kkfloat_1d _radius,_rmass;
@@ -1679,6 +1681,8 @@ struct AtomVecKokkos_PackBorderVel {
       _tag(atomKK->k_tag.view<DeviceType>()),
       _type(atomKK->k_type.view<DeviceType>()),
       _mask(atomKK->k_mask.view<DeviceType>()),
+      _molecule(atomKK->k_molecule.view<DeviceType>()),
+      _q(atomKK->k_q.view<DeviceType>()),
       _v(atomKK->k_v.view<DeviceType>()),
       _mu(atomKK->k_mu.view<DeviceType>()),
       _sp(atomKK->k_sp.view<DeviceType>()),
@@ -1727,6 +1731,12 @@ struct AtomVecKokkos_PackBorderVel {
       _buf(i,m++) = _v(j,1);
       _buf(i,m++) = _v(j,2);
     }
+
+    if (_datamask & MOLECULE_MASK)
+      _buf(i,m++) = d_ubuf(_molecule(j)).d;
+
+    if (_datamask & Q_MASK)
+      _buf(i,m++) = _q(j);
 
     if (_datamask & MU_MASK) {
       _buf(i,m++) = _mu(j,0);
@@ -1865,6 +1875,8 @@ struct AtomVecKokkos_UnpackBorderVel {
   typename AT::t_tagint_1d _tag;
   typename AT::t_int_1d _type;
   typename AT::t_int_1d _mask;
+  typename AT::t_tagint_1d _molecule;
+  typename AT::t_kkfloat_1d _q;
   typename AT::t_kkfloat_1d_3 _v;
   typename AT::t_kkfloat_1d_4 _mu;
   typename AT::t_kkfloat_1d_4 _sp;
@@ -1884,6 +1896,8 @@ struct AtomVecKokkos_UnpackBorderVel {
     _tag(atomKK->k_tag.view<DeviceType>()),
     _type(atomKK->k_type.view<DeviceType>()),
     _mask(atomKK->k_mask.view<DeviceType>()),
+    _molecule(atomKK->k_molecule.view<DeviceType>()),
+    _q(atomKK->k_q.view<DeviceType>()),
     _v(atomKK->k_v.view<DeviceType>()),
     _mu(atomKK->k_mu.view<DeviceType>()),
     _sp(atomKK->k_sp.view<DeviceType>()),
@@ -1912,11 +1926,15 @@ struct AtomVecKokkos_UnpackBorderVel {
     _tag(i+_first) = static_cast<tagint>(d_ubuf(_buf(i,m++)).i);
     _type(i+_first) = static_cast<int>(d_ubuf(_buf(i,m++)).i);
     _mask(i+_first) = static_cast<int>(d_ubuf(_buf(i,m++)).i);
-    _radius(i+_first) = _buf(i,m++);
-    _rmass(i+_first) = _buf(i,m++);
     _v(i+_first,0) = _buf(i,m++);
     _v(i+_first,1) = _buf(i,m++);
     _v(i+_first,2) = _buf(i,m++);
+
+    if (_datamask & MOLECULE_MASK)
+      _molecule(i+_first) = (tagint) d_ubuf(_buf(i,m++)).i;
+
+    if (_datamask & Q_MASK)
+      _q(i+_first) = _buf(i,m++);
 
     if (_datamask & MU_MASK) {
       _mu(i+_first,0) = _buf(i,m++);
