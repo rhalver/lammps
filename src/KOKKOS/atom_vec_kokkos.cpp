@@ -58,10 +58,10 @@ struct AtomVecKokkos_PackComm {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
 
-  typename AT::t_kkfloat_1d_3_lr _x;
-  typename AT::t_kkfloat_1d_4 _mu;
-  typename AT::t_kkfloat_1d_4 _sp;
-  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem;
+  typename AT::t_kkfloat_1d_3_lr_randomread _x;
+  typename AT::t_kkfloat_1d_4_randomread _mu;
+  typename AT::t_kkfloat_1d_4_randomread _sp;
+  typename AT::t_kkfloat_1d_randomread _dpdTheta,_uCond,_uMech,_uChem;
   typename AT::t_double_2d_lr_um _buf;
   typename AT::t_int_1d_const _list;
   double _xprd,_yprd,_zprd,_xy,_xz,_yz;
@@ -763,13 +763,13 @@ struct AtomVecKokkos_PackCommVel {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
 
-  typename AT::t_kkfloat_1d_3_lr _x;
-  typename AT::t_int_1d _mask;
-  typename AT::t_kkfloat_1d_3 _v;
-  typename AT::t_kkfloat_1d_4 _mu;
-  typename AT::t_kkfloat_1d_4 _sp;
-  typename AT::t_kkfloat_1d_3 _omega;
-  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem;
+  typename AT::t_kkfloat_1d_3_lr_randomread _x;
+  typename AT::t_int_1d_randomread _mask;
+  typename AT::t_kkfloat_1d_3_randomread _v;
+  typename AT::t_kkfloat_1d_4_randomread _mu;
+  typename AT::t_kkfloat_1d_4_randomread _sp;
+  typename AT::t_kkfloat_1d_3_randomread _omega;
+  typename AT::t_kkfloat_1d_randomread _dpdTheta,_uCond,_uMech,_uChem;
   typename AT::t_double_2d_lr_um _buf;
   typename AT::t_int_1d_const _list;
   double _xprd,_yprd,_zprd,_xy,_xz,_yz;
@@ -1138,8 +1138,8 @@ struct AtomVecKokkos_PackReverse {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
 
-  typename AT::t_kkacc_1d_3 _f,_fm,_fm_long;
-  typename AT::t_kkacc_1d_3 _torque;
+  typename AT::t_kkacc_1d_3_randomread _f,_fm,_fm_long;
+  typename AT::t_kkacc_1d_3_randomread _torque;
   typename AT::t_double_2d_lr _buf;
   int _first;
   uint64_t _datamask;
@@ -1406,16 +1406,16 @@ struct AtomVecKokkos_PackBorder {
 
   typename AT::t_double_2d_lr _buf;
   const typename AT::t_int_1d_const _list;
-  const typename AT::t_kkfloat_1d_3_lr _x;
-  const typename AT::t_tagint_1d _tag;
-  const typename AT::t_int_1d _type;
-  const typename AT::t_int_1d _mask;
-  const typename AT::t_tagint_1d _molecule;
-  const typename AT::t_kkfloat_1d _q;
-  const typename AT::t_kkfloat_1d_4 _mu;
-  const typename AT::t_kkfloat_1d_4 _sp;
-  typename AT::t_kkfloat_1d _radius,_rmass;
-  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
+  const typename AT::t_kkfloat_1d_3_lr_randomread _x;
+  const typename AT::t_tagint_1d_randomread _tag;
+  const typename AT::t_int_1d_randomread _type;
+  const typename AT::t_int_1d_randomread _mask;
+  const typename AT::t_tagint_1d_randomread _molecule;
+  const typename AT::t_kkfloat_1d_randomread _q;
+  const typename AT::t_kkfloat_1d_4_randomread _mu;
+  const typename AT::t_kkfloat_1d_4_randomread _sp;
+  typename AT::t_kkfloat_1d_randomread _radius,_rmass;
+  typename AT::t_kkfloat_1d_randomread _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
   double _dx,_dy,_dz;
   uint64_t _datamask;
 
@@ -1511,6 +1511,8 @@ int AtomVecKokkos::pack_border_kokkos(int n, DAT::tdual_int_1d k_sendlist,
                                                int pbc_flag, int *pbc, ExecutionSpace space)
 {
   atomKK->sync(space,datamask_border);
+
+  printf("NBORDER %i\n",nborder);
 
   double dx,dy,dz;
 
@@ -1720,18 +1722,18 @@ struct AtomVecKokkos_PackBorderVel {
 
   typename AT::t_double_2d_lr_um _buf;
   const typename AT::t_int_1d_const _list;
-  const typename AT::t_kkfloat_1d_3_lr _x;
-  typename AT::t_kkfloat_1d_3 _v;
-  const typename AT::t_tagint_1d _tag;
-  const typename AT::t_int_1d _type;
-  const typename AT::t_int_1d _mask;
-  const typename AT::t_tagint_1d _molecule;
-  const typename AT::t_kkfloat_1d _q;
-  const typename AT::t_kkfloat_1d_4 _mu;
-  const typename AT::t_kkfloat_1d_4 _sp;
-  typename AT::t_kkfloat_1d _radius,_rmass;
-  typename AT::t_kkfloat_1d_3 _omega;
-  typename AT::t_kkfloat_1d _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
+  const typename AT::t_kkfloat_1d_3_lr_randomread _x;
+  typename AT::t_kkfloat_1d_3_randomread _v;
+  const typename AT::t_tagint_1d_randomread _tag;
+  const typename AT::t_int_1d_randomread _type;
+  const typename AT::t_int_1d_randomread _mask;
+  const typename AT::t_tagint_1d_randomread _molecule;
+  const typename AT::t_kkfloat_1d_randomread _q;
+  const typename AT::t_kkfloat_1d_4_randomread _mu;
+  const typename AT::t_kkfloat_1d_4_randomread _sp;
+  typename AT::t_kkfloat_1d_randomread _radius,_rmass;
+  typename AT::t_kkfloat_1d_3_randomread _omega;
+  typename AT::t_kkfloat_1d_randomread _dpdTheta,_uCond,_uMech,_uChem,_uCG,_uCGnew;
   double _dx,_dy,_dz, _dvx, _dvy, _dvz;
   const int _deform_groupbit;
   const uint64_t _datamask;
@@ -2413,6 +2415,8 @@ int AtomVecKokkos::pack_exchange_kokkos(const int &nsend,DAT::tdual_double_2d_lr
 {
   atomKK->sync(space,datamask_exchange);
   set_size_exchange();
+
+  printf("SIZE_EXCHANGE %i\n",size_exchange);
 
   if (nsend > (int) (k_buf.view_host().extent(0)*
               k_buf.view_host().extent(1))/size_exchange) {
