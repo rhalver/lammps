@@ -35,7 +35,7 @@ AtomVecKokkos::AtomVecKokkos(LAMMPS *lmp) : AtomVec(lmp)
   buffer_size = 0;
   size_exchange = 0;
 
-  datamask_grow = datamask_comm = datamask_comm_vel = datamask_reverse = 
+  datamask_grow = datamask_comm = datamask_comm_vel = datamask_reverse =
     datamask_border = datamask_border_vel = datamask_exchange = EMPTY_MASK;
 
   k_count = DAT::tdual_int_1d("atom:k_count",1);
@@ -97,7 +97,7 @@ struct AtomVecKokkos_PackComm {
   void operator() (const int& i) const {
     const int j = _list(i);
     int m = 0;
-    if (PBC_FLAG == 0) {
+    if constexpr (PBC_FLAG == 0) {
       _buf(i,m++) = _x(j,0);
       _buf(i,m++) = _x(j,1);
       _buf(i,m++) = _x(j,2);
@@ -311,7 +311,7 @@ struct AtomVecKokkos_PackCommSelf {
   KOKKOS_INLINE_FUNCTION
   void operator() (const int& i) const {
     const int j = _list(i);
-    if (PBC_FLAG == 0) {
+    if constexpr (PBC_FLAG == 0) {
       _x(i+_nfirst,0) = _x(j,0);
       _x(i+_nfirst,1) = _x(j,1);
       _x(i+_nfirst,2) = _x(j,2);
@@ -719,7 +719,7 @@ struct AtomVecKokkos_UnpackComm {
 
       // DPD-REACT package
 
-      if (_datamask & DPDTHETA_MASK)
+      if (_datamask & DPDTHETA_MASK) {
         _dpdTheta(i+_first) = _buf(i,m++);
         _uCond(i+_first) = _buf(i,m++);
         _uMech(i+_first) = _buf(i,m++);
@@ -814,7 +814,7 @@ struct AtomVecKokkos_PackCommVel {
   void operator() (const int& i) const {
     int m = 0;
     const int j = _list(i);
-    if (PBC_FLAG == 0) {
+    if constexpr (PBC_FLAG == 0) {
       _buf(i,m++) = _x(j,0);
       _buf(i,m++) = _x(j,1);
       _buf(i,m++) = _x(j,2);
@@ -832,7 +832,7 @@ struct AtomVecKokkos_PackCommVel {
         _buf(i,m++) = _x(j,2) + _pbc[2]*_zprd;
       }
 
-      if (DEFORM_VREMAP == 0) {
+      if constexpr (DEFORM_VREMAP == 0) {
         _buf(i,m++) = _v(j,0);
         _buf(i,m++) = _v(j,1);
         _buf(i,m++) = _v(j,2);
@@ -1019,7 +1019,7 @@ int AtomVecKokkos::pack_comm_vel_kokkos(
 
 /* ---------------------------------------------------------------------- */
 
-template<class DeviceType>
+template<class DeviceType,int DEFAULT>
 struct AtomVecKokkos_UnpackCommVel {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -1064,38 +1064,41 @@ struct AtomVecKokkos_UnpackCommVel {
     _v(i+_first,1) = _buf(i,m++);
     _v(i+_first,2) = _buf(i,m++);
 
-    // DIPOLE package
+    if constexpr (!DEFAULT) {
 
-    if (_datamask & MU_MASK) {
-      _mu(i+_first,0) = _buf(i,m++);
-      _mu(i+_first,1) = _buf(i,m++);
-      _mu(i+_first,2) = _buf(i,m++);
-    }
+      // DIPOLE package
 
-    // SPIN package
+      if (_datamask & MU_MASK) {
+        _mu(i+_first,0) = _buf(i,m++);
+        _mu(i+_first,1) = _buf(i,m++);
+        _mu(i+_first,2) = _buf(i,m++);
+      }
 
-    if (_datamask & SP_MASK) {
-      _sp(i+_first,0) = _buf(i,m++);
-      _sp(i+_first,1) = _buf(i,m++);
-      _sp(i+_first,2) = _buf(i,m++);
-      _sp(i+_first,3) = _buf(i,m++);
-    }
+      // SPIN package
 
-    // SPHERE package
+      if (_datamask & SP_MASK) {
+        _sp(i+_first,0) = _buf(i,m++);
+        _sp(i+_first,1) = _buf(i,m++);
+        _sp(i+_first,2) = _buf(i,m++);
+        _sp(i+_first,3) = _buf(i,m++);
+      }
 
-    if (_datamask & OMEGA_MASK) {
-      _omega(i+_first,0) = _buf(i,m++);
-      _omega(i+_first,1) = _buf(i,m++);
-      _omega(i+_first,2) = _buf(i,m++);
-    }
+      // SPHERE package
 
-    // DPD-REACT package
+      if (_datamask & OMEGA_MASK) {
+        _omega(i+_first,0) = _buf(i,m++);
+        _omega(i+_first,1) = _buf(i,m++);
+        _omega(i+_first,2) = _buf(i,m++);
+      }
 
-    if (_datamask & DPDTHETA_MASK) {
-      _dpdTheta(i+_first) = _buf(i,m++);
-      _uCond(i+_first) = _buf(i,m++);
-      _uMech(i+_first) = _buf(i,m++);
-      _uChem(i+_first) = _buf(i,m++);
+      // DPD-REACT package
+
+      if (_datamask & DPDTHETA_MASK) {
+        _dpdTheta(i+_first) = _buf(i,m++);
+        _uCond(i+_first) = _buf(i,m++);
+        _uMech(i+_first) = _buf(i,m++);
+        _uChem(i+_first) = _buf(i,m++);
+      }
     }
   }
 };
@@ -1104,15 +1107,26 @@ struct AtomVecKokkos_UnpackCommVel {
 
 void AtomVecKokkos::unpack_comm_vel_kokkos(const int &n, const int &first,
     const DAT::tdual_double_2d_lr &buf) {
+
   if (lmp->kokkos->forward_comm_on_host) {
     atomKK->sync(HostKK,datamask_comm_vel);
-    struct AtomVecKokkos_UnpackCommVel<LMPHostType> f(atomKK,buf,first,datamask_comm_vel);
-    Kokkos::parallel_for(n,f);
+    if (!ncomm_vel) {
+      struct AtomVecKokkos_UnpackCommVel<LMPHostType,1> f(atomKK,buf,first,datamask_comm_vel);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_UnpackCommVel<LMPHostType,0> f(atomKK,buf,first,datamask_comm_vel);
+      Kokkos::parallel_for(n,f);
+    }
     atomKK->modified(HostKK,datamask_comm_vel);
   } else {
     atomKK->sync(Device,datamask_comm_vel);
-    struct AtomVecKokkos_UnpackCommVel<LMPDeviceType> f(atomKK,buf,first,datamask_comm_vel);
-    Kokkos::parallel_for(n,f);
+    if (!ncomm_vel) {
+      struct AtomVecKokkos_UnpackCommVel<LMPDeviceType,1> f(atomKK,buf,first,datamask_comm_vel);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_UnpackCommVel<LMPDeviceType,0> f(atomKK,buf,first,datamask_comm_vel);
+      Kokkos::parallel_for(n,f);
+    }
     atomKK->modified(Device,datamask_comm_vel);
   }
 }
@@ -1282,7 +1296,7 @@ int AtomVecKokkos::pack_reverse_self(const int &n, const DAT::tdual_int_1d &list
     } else {
       struct AtomVecKokkos_UnPackReverseSelf<LMPDeviceType,0> f(atomKK,nfirst,list,datamask_reverse);
       Kokkos::parallel_for(n,f);
-    } 
+    }
     atomKK->modified(Device,datamask_reverse);
   }
 
@@ -1385,7 +1399,7 @@ void AtomVecKokkos::unpack_reverse_kokkos(const int &n,
 
 /* ---------------------------------------------------------------------- */
 
-template<class DeviceType,int PBC_FLAG>
+template<class DeviceType,int PBC_FLAG,int DEFAULT>
 struct AtomVecKokkos_PackBorder {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -1434,7 +1448,7 @@ struct AtomVecKokkos_PackBorder {
   void operator() (const int& i) const {
     const int j = _list(i);
     int m = 0;
-    if (PBC_FLAG == 0) {
+    if constexpr (PBC_FLAG == 0) {
       _buf(i,m++) = _x(j,0);
       _buf(i,m++) = _x(j,1);
       _buf(i,m++) = _x(j,2);
@@ -1448,41 +1462,44 @@ struct AtomVecKokkos_PackBorder {
     _buf(i,m++) = d_ubuf(_type(j)).d;
     _buf(i,m++) = d_ubuf(_mask(j)).d;
 
-    if (_datamask & MOLECULE_MASK)
-      _buf(i,m++) = d_ubuf(_molecule(j)).d;
+    if constexpr (!DEFAULT) {
 
-    if (_datamask & Q_MASK)
-      _buf(i,m++) = _q(j);
+      if (_datamask & MOLECULE_MASK)
+        _buf(i,m++) = d_ubuf(_molecule(j)).d;
 
-    if (_datamask & MU_MASK) {
-      _buf(i,m++) = _mu(j,0);
-      _buf(i,m++) = _mu(j,1);
-      _buf(i,m++) = _mu(j,2);
-      _buf(i,m++) = _mu(j,3);
-    }
+      if (_datamask & Q_MASK)
+        _buf(i,m++) = _q(j);
 
-    if (_datamask & SP_MASK) {
-      _buf(i,m++) = _sp(j,0);
-      _buf(i,m++) = _sp(j,1);
-      _buf(i,m++) = _sp(j,2);
-      _buf(i,m++) = _sp(j,3);
-    }
+      if (_datamask & MU_MASK) {
+        _buf(i,m++) = _mu(j,0);
+        _buf(i,m++) = _mu(j,1);
+        _buf(i,m++) = _mu(j,2);
+        _buf(i,m++) = _mu(j,3);
+      }
 
-    if (_datamask & RADIUS_MASK)
-      _buf(i,m++) = _radius(j);
+      if (_datamask & SP_MASK) {
+        _buf(i,m++) = _sp(j,0);
+        _buf(i,m++) = _sp(j,1);
+        _buf(i,m++) = _sp(j,2);
+        _buf(i,m++) = _sp(j,3);
+      }
 
-    if (_datamask & RMASS_MASK)
-      _buf(i,m++) = _rmass(j);
+      if (_datamask & RADIUS_MASK)
+        _buf(i,m++) = _radius(j);
 
-    // DPD-REACT package
+      if (_datamask & RMASS_MASK)
+        _buf(i,m++) = _rmass(j);
 
-    if (_datamask & DPDTHETA_MASK) {
-      _buf(i,m++) = _dpdTheta(j);
-      _buf(i,m++) = _uCond(j);
-      _buf(i,m++) = _uMech(j);
-      _buf(i,m++) = _uChem(j);
-      _buf(i,m++) = _uCG(j);
-      _buf(i,m++) = _uCGnew(j);
+      // DPD-REACT package
+
+      if (_datamask & DPDTHETA_MASK) {
+        _buf(i,m++) = _dpdTheta(j);
+        _buf(i,m++) = _uCond(j);
+        _buf(i,m++) = _uMech(j);
+        _buf(i,m++) = _uChem(j);
+        _buf(i,m++) = _uCG(j);
+        _buf(i,m++) = _uCGnew(j);
+      }
     }
   }
 };
@@ -1508,29 +1525,56 @@ int AtomVecKokkos::pack_border_kokkos(int n, DAT::tdual_int_1d k_sendlist,
       dz = pbc[2];
     }
     if (space == HostKK) {
-      AtomVecKokkos_PackBorder<LMPHostType,1> f(
-        atomKK,buf.view_host(), k_sendlist.view_host(),
-        dx,dy,dz,datamask_border);
-      Kokkos::parallel_for(n,f);
+      if (!nborder) {
+        AtomVecKokkos_PackBorder<LMPHostType,1,1> f(
+          atomKK,buf.view_host(), k_sendlist.view_host(),
+          dx,dy,dz,datamask_border);
+        Kokkos::parallel_for(n,f);
+      } else {
+        AtomVecKokkos_PackBorder<LMPHostType,1,0> f(
+          atomKK,buf.view_host(), k_sendlist.view_host(),
+          dx,dy,dz,datamask_border);
+        Kokkos::parallel_for(n,f);
+      }
     } else {
-      AtomVecKokkos_PackBorder<LMPDeviceType,1> f(
-        atomKK,buf.view_device(), k_sendlist.view_device(),
-        dx,dy,dz,datamask_border);
-      Kokkos::parallel_for(n,f);
+      if (!nborder) {
+        AtomVecKokkos_PackBorder<LMPDeviceType,1,1> f(
+          atomKK,buf.view_device(), k_sendlist.view_device(),
+          dx,dy,dz,datamask_border);
+        Kokkos::parallel_for(n,f);
+      } else {
+        AtomVecKokkos_PackBorder<LMPDeviceType,1,0> f(
+          atomKK,buf.view_device(), k_sendlist.view_device(),
+          dx,dy,dz,datamask_border);
+        Kokkos::parallel_for(n,f);
+      }
     }
-
   } else {
     dx = dy = dz = 0;
     if (space == HostKK) {
-      AtomVecKokkos_PackBorder<LMPHostType,0> f(
-        atomKK,buf.view_host(), k_sendlist.view_host(),
-        dx,dy,dz,datamask_border);
-      Kokkos::parallel_for(n,f);
+      if (!nborder) {
+        AtomVecKokkos_PackBorder<LMPHostType,0,1> f(
+          atomKK,buf.view_host(), k_sendlist.view_host(),
+          dx,dy,dz,datamask_border);
+        Kokkos::parallel_for(n,f);
+      } else {
+        AtomVecKokkos_PackBorder<LMPHostType,0,0> f(
+          atomKK,buf.view_host(), k_sendlist.view_host(),
+          dx,dy,dz,datamask_border);
+        Kokkos::parallel_for(n,f);
+      }
     } else {
-      AtomVecKokkos_PackBorder<LMPDeviceType,0> f(
-        atomKK,buf.view_device(), k_sendlist.view_device(),
-        dx,dy,dz,datamask_border);
-      Kokkos::parallel_for(n,f);
+      if (!nborder) {
+        AtomVecKokkos_PackBorder<LMPDeviceType,0,1> f(
+          atomKK,buf.view_device(), k_sendlist.view_device(),
+          dx,dy,dz,datamask_border);
+        Kokkos::parallel_for(n,f);
+      } else {
+        AtomVecKokkos_PackBorder<LMPDeviceType,0,0> f(
+          atomKK,buf.view_device(), k_sendlist.view_device(),
+          dx,dy,dz,datamask_border);
+        Kokkos::parallel_for(n,f);
+      }
     }
   }
   return n*size_border;
@@ -1538,7 +1582,7 @@ int AtomVecKokkos::pack_border_kokkos(int n, DAT::tdual_int_1d k_sendlist,
 
 /* ---------------------------------------------------------------------- */
 
-template<class DeviceType>
+template<class DeviceType,int DEFAULT>
 struct AtomVecKokkos_UnpackBorder {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -1591,41 +1635,44 @@ struct AtomVecKokkos_UnpackBorder {
     _type(i+_first) = (int) d_ubuf(_buf(i,m++)).i;
     _mask(i+_first) = (int) d_ubuf(_buf(i,m++)).i;
 
-    if (_datamask & MOLECULE_MASK)
-      _molecule(i+_first) = (tagint) d_ubuf(_buf(i,m++)).i;
+    if constexpr (!DEFAULT) {
 
-    if (_datamask & Q_MASK)
-      _q(i+_first) = _buf(i,m++);
+      if (_datamask & MOLECULE_MASK)
+        _molecule(i+_first) = (tagint) d_ubuf(_buf(i,m++)).i;
 
-    if (_datamask & MU_MASK) {
-      _mu(i+_first,0) = _buf(i,m++);
-      _mu(i+_first,1) = _buf(i,m++);
-      _mu(i+_first,2) = _buf(i,m++);
-      _mu(i+_first,3) = _buf(i,m++);
-    }
+      if (_datamask & Q_MASK)
+        _q(i+_first) = _buf(i,m++);
 
-    if (_datamask & SP_MASK) {
-      _sp(i+_first,0) = _buf(i,m++);
-      _sp(i+_first,1) = _buf(i,m++);
-      _sp(i+_first,2) = _buf(i,m++);
-      _sp(i+_first,3) = _buf(i,m++);
-    }
+      if (_datamask & MU_MASK) {
+        _mu(i+_first,0) = _buf(i,m++);
+        _mu(i+_first,1) = _buf(i,m++);
+        _mu(i+_first,2) = _buf(i,m++);
+        _mu(i+_first,3) = _buf(i,m++);
+      }
 
-    if (_datamask & RADIUS_MASK)
-      _radius(i+_first) = _buf(i,m++);
+      if (_datamask & SP_MASK) {
+        _sp(i+_first,0) = _buf(i,m++);
+        _sp(i+_first,1) = _buf(i,m++);
+        _sp(i+_first,2) = _buf(i,m++);
+        _sp(i+_first,3) = _buf(i,m++);
+      }
 
-    if (_datamask & RMASS_MASK)
-      _rmass(i+_first) = _buf(i,m++);
+      if (_datamask & RADIUS_MASK)
+        _radius(i+_first) = _buf(i,m++);
 
-    // DPD-REACT package
+      if (_datamask & RMASS_MASK)
+        _rmass(i+_first) = _buf(i,m++);
 
-    if (_datamask & DPDTHETA_MASK) {
-      _dpdTheta(i+_first) = _buf(i,m++);
-      _uCond(i+_first) = _buf(i,m++);
-      _uMech(i+_first) = _buf(i,m++);
-      _uChem(i+_first) = _buf(i,m++);
-      _uCG(i+_first) = _buf(i,m++);
-      _uCGnew(i+_first) = _buf(i,m++);
+      // DPD-REACT package
+
+      if (_datamask & DPDTHETA_MASK) {
+        _dpdTheta(i+_first) = _buf(i,m++);
+        _uCond(i+_first) = _buf(i,m++);
+        _uMech(i+_first) = _buf(i,m++);
+        _uChem(i+_first) = _buf(i,m++);
+        _uCG(i+_first) = _buf(i,m++);
+        _uCGnew(i+_first) = _buf(i,m++);
+      }
     }
   }
 };
@@ -1640,13 +1687,25 @@ void AtomVecKokkos::unpack_border_kokkos(const int &n, const int &first,
   atomKK->sync(space,datamask_border);
 
   if (space == HostKK) {
-    struct AtomVecKokkos_UnpackBorder<LMPHostType>
-      f(atomKK,buf.view_host(),first,datamask_border);
-    Kokkos::parallel_for(n,f);
+    if (!nborder) {
+      struct AtomVecKokkos_UnpackBorder<LMPHostType,1>
+        f(atomKK,buf.view_host(),first,datamask_border);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_UnpackBorder<LMPHostType,0>
+        f(atomKK,buf.view_host(),first,datamask_border);
+      Kokkos::parallel_for(n,f);
+    }
   } else {
-    struct AtomVecKokkos_UnpackBorder<LMPDeviceType>
-      f(atomKK,buf.view_device(),first,datamask_border);
-    Kokkos::parallel_for(n,f);
+    if (!nborder) {
+      struct AtomVecKokkos_UnpackBorder<LMPDeviceType,1>
+        f(atomKK,buf.view_device(),first,datamask_border);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_UnpackBorder<LMPDeviceType,0>
+        f(atomKK,buf.view_device(),first,datamask_border);
+      Kokkos::parallel_for(n,f);
+    }
   }
 
   atomKK->modified(space,datamask_border);
@@ -1716,7 +1775,7 @@ struct AtomVecKokkos_PackBorderVel {
   void operator() (const int& i) const {
     int m = 0;
     const int j = _list(i);
-    if (PBC_FLAG == 0) {
+    if constexpr (PBC_FLAG == 0) {
       _buf(i,m++) = _x(j,0);
       _buf(i,m++) = _x(j,1);
       _buf(i,m++) = _x(j,2);
@@ -1729,7 +1788,7 @@ struct AtomVecKokkos_PackBorderVel {
     _buf(i,m++) = d_ubuf(_type(j)).d;
     _buf(i,m++) = d_ubuf(_mask(j)).d;
 
-    if (DEFORM_VREMAP) {
+    if constexpr (DEFORM_VREMAP) {
       if (_mask(i) & _deform_groupbit) {
         _buf(i,m++) = _v(j,0) + _dvx;
         _buf(i,m++) = _v(j,1) + _dvy;
@@ -1867,7 +1926,7 @@ int AtomVecKokkos::pack_border_vel_kokkos(
 
 /* ---------------------------------------------------------------------- */
 
-template<class DeviceType>
+template<class DeviceType,int DEFAULT>
 struct AtomVecKokkos_UnpackBorderVel {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -1932,47 +1991,50 @@ struct AtomVecKokkos_UnpackBorderVel {
     _v(i+_first,1) = _buf(i,m++);
     _v(i+_first,2) = _buf(i,m++);
 
-    if (_datamask & MOLECULE_MASK)
-      _molecule(i+_first) = (tagint) d_ubuf(_buf(i,m++)).i;
+    if constexpr (!DEFAULT) {
 
-    if (_datamask & Q_MASK)
-      _q(i+_first) = _buf(i,m++);
+      if (_datamask & MOLECULE_MASK)
+        _molecule(i+_first) = (tagint) d_ubuf(_buf(i,m++)).i;
 
-    if (_datamask & MU_MASK) {
-      _mu(i+_first,0) = _buf(i,m++);
-      _mu(i+_first,1) = _buf(i,m++);
-      _mu(i+_first,2) = _buf(i,m++);
-      _mu(i+_first,3) = _buf(i,m++);
-    }
+      if (_datamask & Q_MASK)
+        _q(i+_first) = _buf(i,m++);
 
-    if (_datamask & SP_MASK) {
-      _sp(i+_first,0) = _buf(i,m++);
-      _sp(i+_first,1) = _buf(i,m++);
-      _sp(i+_first,2) = _buf(i,m++);
-      _sp(i+_first,3) = _buf(i,m++);
-    }
+      if (_datamask & MU_MASK) {
+        _mu(i+_first,0) = _buf(i,m++);
+        _mu(i+_first,1) = _buf(i,m++);
+        _mu(i+_first,2) = _buf(i,m++);
+        _mu(i+_first,3) = _buf(i,m++);
+      }
 
-    if (_datamask & RADIUS_MASK)
-      _radius(i+_first) = _buf(i,m++);
+      if (_datamask & SP_MASK) {
+        _sp(i+_first,0) = _buf(i,m++);
+        _sp(i+_first,1) = _buf(i,m++);
+        _sp(i+_first,2) = _buf(i,m++);
+        _sp(i+_first,3) = _buf(i,m++);
+      }
 
-    if (_datamask & RMASS_MASK)
-      _rmass(i+_first) = _buf(i,m++);
+      if (_datamask & RADIUS_MASK)
+        _radius(i+_first) = _buf(i,m++);
 
-    if (_datamask & OMEGA_MASK) {
-      _omega(i+_first,0) = _buf(i,m++);
-      _omega(i+_first,1) = _buf(i,m++);
-      _omega(i+_first,2) = _buf(i,m++);
-    }
+      if (_datamask & RMASS_MASK)
+        _rmass(i+_first) = _buf(i,m++);
 
-    // DPD-REACT package
+      if (_datamask & OMEGA_MASK) {
+        _omega(i+_first,0) = _buf(i,m++);
+        _omega(i+_first,1) = _buf(i,m++);
+        _omega(i+_first,2) = _buf(i,m++);
+      }
 
-    if (_datamask & DPDTHETA_MASK) {
-      _dpdTheta(i+_first) = _buf(i,m++);
-      _uCond(i+_first) = _buf(i,m++);
-      _uMech(i+_first) = _buf(i,m++);
-      _uChem(i+_first) = _buf(i,m++);
-      _uCG(i+_first) = _buf(i,m++);
-      _uCGnew(i+_first) = _buf(i,m++);
+      // DPD-REACT package
+
+      if (_datamask & DPDTHETA_MASK) {
+        _dpdTheta(i+_first) = _buf(i,m++);
+        _uCond(i+_first) = _buf(i,m++);
+        _uMech(i+_first) = _buf(i,m++);
+        _uChem(i+_first) = _buf(i,m++);
+        _uCG(i+_first) = _buf(i,m++);
+        _uCGnew(i+_first) = _buf(i,m++);
+      }
     }
   }
 };
@@ -1988,17 +2050,33 @@ void AtomVecKokkos::unpack_border_vel_kokkos(
   atomKK->sync(space,datamask_border_vel);
 
   if (space == HostKK) {
-    struct AtomVecKokkos_UnpackBorderVel<LMPHostType> f(
-      atomKK,
-      buf.view_host(),
-      first,datamask_border_vel);
-    Kokkos::parallel_for(n,f);
+    if (!ncomm_vel) {
+      struct AtomVecKokkos_UnpackBorderVel<LMPHostType,1> f(
+        atomKK,
+        buf.view_host(),
+        first,datamask_border_vel);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_UnpackBorderVel<LMPHostType,0> f(
+        atomKK,
+        buf.view_host(),
+        first,datamask_border_vel);
+      Kokkos::parallel_for(n,f);
+    }
   } else {
-    struct AtomVecKokkos_UnpackBorderVel<LMPDeviceType> f(
-      atomKK,
-      buf.view_device(),
-      first,datamask_border_vel);
-    Kokkos::parallel_for(n,f);
+    if (!ncomm_vel) {
+      struct AtomVecKokkos_UnpackBorderVel<LMPDeviceType,1> f(
+        atomKK,
+        buf.view_device(),
+        first,datamask_border_vel);
+      Kokkos::parallel_for(n,f);
+    } else {
+      struct AtomVecKokkos_UnpackBorderVel<LMPDeviceType,0> f(
+        atomKK,
+        buf.view_device(),
+        first,datamask_border_vel);
+      Kokkos::parallel_for(n,f);
+    }
   }
 
   atomKK->modified(space,datamask_border_vel);
@@ -2006,7 +2084,7 @@ void AtomVecKokkos::unpack_border_vel_kokkos(
 
 /* ---------------------------------------------------------------------- */
 
-template<class DeviceType>
+template<class DeviceType,int DEFAULT>
 struct AtomVecKokkos_PackExchangeFunctor {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -2121,95 +2199,98 @@ struct AtomVecKokkos_PackExchangeFunctor {
     _buf(mysend,m++) = d_ubuf(_mask(i)).d;
     _buf(mysend,m++) = d_ubuf(_image(i)).d;
 
-    if (_datamask & Q_MASK)
-      _buf(mysend,m++) = _q(i);
+    if constexpr (!DEFAULT) {
 
-    if (_datamask & MOLECULE_MASK)
-      _buf(mysend,m++) = d_ubuf(_molecule(i)).d;
+      if (_datamask & Q_MASK)
+        _buf(mysend,m++) = _q(i);
 
-    if (_datamask & BOND_MASK) {
-      _buf(mysend,m++) = d_ubuf(_num_bond(i)).d;
-      for (int k = 0; k < _num_bond(i); k++) {
-        _buf(mysend,m++) = d_ubuf(_bond_type(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_bond_atom(i,k)).d;
+      if (_datamask & MOLECULE_MASK)
+        _buf(mysend,m++) = d_ubuf(_molecule(i)).d;
+
+      if (_datamask & BOND_MASK) {
+        _buf(mysend,m++) = d_ubuf(_num_bond(i)).d;
+        for (int k = 0; k < _num_bond(i); k++) {
+          _buf(mysend,m++) = d_ubuf(_bond_type(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_bond_atom(i,k)).d;
+        }
       }
-    }
 
-    if (_datamask & ANGLE_MASK) {
-      _buf(mysend,m++) = d_ubuf(_num_angle(i)).d;
-      for (int k = 0; k < _num_angle(i); k++) {
-        _buf(mysend,m++) = d_ubuf(_angle_type(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_angle_atom1(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_angle_atom2(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_angle_atom3(i,k)).d;
+      if (_datamask & ANGLE_MASK) {
+        _buf(mysend,m++) = d_ubuf(_num_angle(i)).d;
+        for (int k = 0; k < _num_angle(i); k++) {
+          _buf(mysend,m++) = d_ubuf(_angle_type(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_angle_atom1(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_angle_atom2(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_angle_atom3(i,k)).d;
+        }
       }
-    }
 
-    if (_datamask & DIHEDRAL_MASK) {
-      _buf(mysend,m++) = d_ubuf(_num_dihedral(i)).d;
-      for (int k = 0; k < _num_dihedral(i); k++) {
-        _buf(mysend,m++) = d_ubuf(_dihedral_type(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_dihedral_atom1(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_dihedral_atom2(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_dihedral_atom3(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_dihedral_atom4(i,k)).d;
+      if (_datamask & DIHEDRAL_MASK) {
+        _buf(mysend,m++) = d_ubuf(_num_dihedral(i)).d;
+        for (int k = 0; k < _num_dihedral(i); k++) {
+          _buf(mysend,m++) = d_ubuf(_dihedral_type(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_dihedral_atom1(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_dihedral_atom2(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_dihedral_atom3(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_dihedral_atom4(i,k)).d;
+        }
       }
-    }
 
-    if (_datamask & IMPROPER_MASK) {
-      _buf(mysend,m++) = d_ubuf(_num_improper(i)).d;
-      for (int k = 0; k < _num_improper(i); k++) {
-        _buf(mysend,m++) = d_ubuf(_improper_type(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_improper_atom1(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_improper_atom2(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_improper_atom3(i,k)).d;
-        _buf(mysend,m++) = d_ubuf(_improper_atom4(i,k)).d;
+      if (_datamask & IMPROPER_MASK) {
+        _buf(mysend,m++) = d_ubuf(_num_improper(i)).d;
+        for (int k = 0; k < _num_improper(i); k++) {
+          _buf(mysend,m++) = d_ubuf(_improper_type(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_improper_atom1(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_improper_atom2(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_improper_atom3(i,k)).d;
+          _buf(mysend,m++) = d_ubuf(_improper_atom4(i,k)).d;
+        }
       }
-    }
 
-    if (_datamask & SPECIAL_MASK) {
-      _buf(mysend,m++) = d_ubuf(_nspecial(i,0)).d;
-      _buf(mysend,m++) = d_ubuf(_nspecial(i,1)).d;
-      _buf(mysend,m++) = d_ubuf(_nspecial(i,2)).d;
-      for (int k = 0; k < _nspecial(i,2); k++)
-        _buf(mysend,m++) = d_ubuf(_special(i,k)).d;
-    }
+      if (_datamask & SPECIAL_MASK) {
+        _buf(mysend,m++) = d_ubuf(_nspecial(i,0)).d;
+        _buf(mysend,m++) = d_ubuf(_nspecial(i,1)).d;
+        _buf(mysend,m++) = d_ubuf(_nspecial(i,2)).d;
+        for (int k = 0; k < _nspecial(i,2); k++)
+          _buf(mysend,m++) = d_ubuf(_special(i,k)).d;
+      }
 
-    if (_datamask & MU_MASK) {
-      _buf(mysend,m++) = _mu(i,0);
-      _buf(mysend,m++) = _mu(i,1);
-      _buf(mysend,m++) = _mu(i,2);
-      _buf(mysend,m++) = _mu(i,3);
-    }
+      if (_datamask & MU_MASK) {
+        _buf(mysend,m++) = _mu(i,0);
+        _buf(mysend,m++) = _mu(i,1);
+        _buf(mysend,m++) = _mu(i,2);
+        _buf(mysend,m++) = _mu(i,3);
+      }
 
-    if (_datamask & SP_MASK) {
-      _buf(mysend,m++) = _sp(i,0);
-      _buf(mysend,m++) = _sp(i,1);
-      _buf(mysend,m++) = _sp(i,2);
-      _buf(mysend,m++) = _sp(i,3);
-    }
+      if (_datamask & SP_MASK) {
+        _buf(mysend,m++) = _sp(i,0);
+        _buf(mysend,m++) = _sp(i,1);
+        _buf(mysend,m++) = _sp(i,2);
+        _buf(mysend,m++) = _sp(i,3);
+      }
 
-    if (_datamask & RADIUS_MASK)
-      _buf(mysend,m++) = _radius(i);
+      if (_datamask & RADIUS_MASK)
+        _buf(mysend,m++) = _radius(i);
 
-    if (_datamask & RMASS_MASK) 
-      _buf(mysend,m++) = _rmass(i);
+      if (_datamask & RMASS_MASK)
+        _buf(mysend,m++) = _rmass(i);
 
-    if (_datamask & OMEGA_MASK) {
-      _buf(mysend,m++) = _omega(i,0);
-      _buf(mysend,m++) = _omega(i,1);
-      _buf(mysend,m++) = _omega(i,2);
-    }
+      if (_datamask & OMEGA_MASK) {
+        _buf(mysend,m++) = _omega(i,0);
+        _buf(mysend,m++) = _omega(i,1);
+        _buf(mysend,m++) = _omega(i,2);
+      }
 
-    // DPD-REACT package
+      // DPD-REACT package
 
-    if (_datamask & DPDTHETA_MASK) {
-      _buf(mysend,m++) = _dpdTheta(i);
-      _buf(mysend,m++) = _uCond(i);
-      _buf(mysend,m++) = _uMech(i);
-      _buf(mysend,m++) = _uChem(i);
-      _buf(mysend,m++) = _uCG(i);
-      _buf(mysend,m++) = _uCGnew(i);
+      if (_datamask & DPDTHETA_MASK) {
+        _buf(mysend,m++) = _dpdTheta(i);
+        _buf(mysend,m++) = _uCond(i);
+        _buf(mysend,m++) = _uMech(i);
+        _buf(mysend,m++) = _uChem(i);
+        _buf(mysend,m++) = _uCG(i);
+        _buf(mysend,m++) = _uCGnew(i);
+      }
     }
 
     const int j = _copylist(mysend);
@@ -2226,95 +2307,98 @@ struct AtomVecKokkos_PackExchangeFunctor {
       _mask(i) = _mask(j);
       _image(i) = _image(j);
 
-      if (_datamask & Q_MASK)
-        _q(i) = _q(j);
+      if constexpr (!DEFAULT) {
 
-      if (_datamask & MOLECULE_MASK)
-        _molecule(i) = _molecule(j);
+        if (_datamask & Q_MASK)
+          _q(i) = _q(j);
 
-      if (_datamask & BOND_MASK) {
-        _num_bond(i) = _num_bond(j);
-        for (int k = 0; k < _num_bond(j); k++) {
-          _bond_type(i,k) = _bond_type(j,k);
-          _bond_atom(i,k) = _bond_atom(j,k);
+        if (_datamask & MOLECULE_MASK)
+          _molecule(i) = _molecule(j);
+
+        if (_datamask & BOND_MASK) {
+          _num_bond(i) = _num_bond(j);
+          for (int k = 0; k < _num_bond(j); k++) {
+            _bond_type(i,k) = _bond_type(j,k);
+            _bond_atom(i,k) = _bond_atom(j,k);
+          }
         }
-      }
 
-      if (_datamask & ANGLE_MASK) {
-        _num_angle(i) = _num_angle(j);
-        for (int k = 0; k < _num_angle(j); k++) {
-          _angle_type(i,k) = _angle_type(j,k);
-          _angle_atom1(i,k) = _angle_atom1(j,k);
-          _angle_atom2(i,k) = _angle_atom2(j,k);
-          _angle_atom3(i,k) = _angle_atom3(j,k);
+        if (_datamask & ANGLE_MASK) {
+          _num_angle(i) = _num_angle(j);
+          for (int k = 0; k < _num_angle(j); k++) {
+            _angle_type(i,k) = _angle_type(j,k);
+            _angle_atom1(i,k) = _angle_atom1(j,k);
+            _angle_atom2(i,k) = _angle_atom2(j,k);
+            _angle_atom3(i,k) = _angle_atom3(j,k);
+          }
         }
-      }
 
-      if (_datamask & DIHEDRAL_MASK) {
-        _num_dihedral(i) = _num_dihedral(j);
-        for (int k = 0; k < _num_dihedral(j); k++) {
-          _dihedral_type(i,k) = _dihedral_type(j,k);
-          _dihedral_atom1(i,k) = _dihedral_atom1(j,k);
-          _dihedral_atom2(i,k) = _dihedral_atom2(j,k);
-          _dihedral_atom3(i,k) = _dihedral_atom3(j,k);
-          _dihedral_atom4(i,k) = _dihedral_atom4(j,k);
+        if (_datamask & DIHEDRAL_MASK) {
+          _num_dihedral(i) = _num_dihedral(j);
+          for (int k = 0; k < _num_dihedral(j); k++) {
+            _dihedral_type(i,k) = _dihedral_type(j,k);
+            _dihedral_atom1(i,k) = _dihedral_atom1(j,k);
+            _dihedral_atom2(i,k) = _dihedral_atom2(j,k);
+            _dihedral_atom3(i,k) = _dihedral_atom3(j,k);
+            _dihedral_atom4(i,k) = _dihedral_atom4(j,k);
+          }
         }
-      }
 
-      if (_datamask & IMPROPER_MASK) {
-        _num_improper(i) = _num_improper(j);
-        for (int k = 0; k < _num_improper(j); k++) {
-          _improper_type(i,k) = _improper_type(j,k);
-          _improper_atom1(i,k) = _improper_atom1(j,k);
-          _improper_atom2(i,k) = _improper_atom2(j,k);
-          _improper_atom3(i,k) = _improper_atom3(j,k);
-          _improper_atom4(i,k) = _improper_atom4(j,k);
+        if (_datamask & IMPROPER_MASK) {
+          _num_improper(i) = _num_improper(j);
+          for (int k = 0; k < _num_improper(j); k++) {
+            _improper_type(i,k) = _improper_type(j,k);
+            _improper_atom1(i,k) = _improper_atom1(j,k);
+            _improper_atom2(i,k) = _improper_atom2(j,k);
+            _improper_atom3(i,k) = _improper_atom3(j,k);
+            _improper_atom4(i,k) = _improper_atom4(j,k);
+          }
         }
-      }
 
-      if (_datamask & SPECIAL_MASK) {
-        _nspecial(i,0) = _nspecial(j,0);
-        _nspecial(i,1) = _nspecial(j,1);
-        _nspecial(i,2) = _nspecial(j,2);
-        for (int k = 0; k < _nspecial(j,2); k++)
-          _special(i,k) = _special(j,k);
-      }
+        if (_datamask & SPECIAL_MASK) {
+          _nspecial(i,0) = _nspecial(j,0);
+          _nspecial(i,1) = _nspecial(j,1);
+          _nspecial(i,2) = _nspecial(j,2);
+          for (int k = 0; k < _nspecial(j,2); k++)
+            _special(i,k) = _special(j,k);
+        }
 
-      if (_datamask & MU_MASK) {
-        _mu(i,0) = _mu(j,0);
-        _mu(i,1) = _mu(j,1);
-        _mu(i,2) = _mu(j,2);
-        _mu(i,3) = _mu(j,3);
-      }
+        if (_datamask & MU_MASK) {
+          _mu(i,0) = _mu(j,0);
+          _mu(i,1) = _mu(j,1);
+          _mu(i,2) = _mu(j,2);
+          _mu(i,3) = _mu(j,3);
+        }
 
-      if (_datamask & SP_MASK) {
-        _sp(i,0) = _sp(j,0);
-        _sp(i,1) = _sp(j,1);
-        _sp(i,2) = _sp(j,2);
-        _sp(i,3) = _sp(j,3);
-      }
+        if (_datamask & SP_MASK) {
+          _sp(i,0) = _sp(j,0);
+          _sp(i,1) = _sp(j,1);
+          _sp(i,2) = _sp(j,2);
+          _sp(i,3) = _sp(j,3);
+        }
 
-      if (_datamask & RADIUS_MASK)
-        _radius(i) = _radius(j);
+        if (_datamask & RADIUS_MASK)
+          _radius(i) = _radius(j);
 
-      if (_datamask & RMASS_MASK)
-        _rmass(i) = _rmass(j);
+        if (_datamask & RMASS_MASK)
+          _rmass(i) = _rmass(j);
 
-      if (_datamask & OMEGA_MASK) {
-        _omega(i,0) = _omega(j,0);
-        _omega(i,1) = _omega(j,1);
-        _omega(i,2) = _omega(j,2);
-      }
+        if (_datamask & OMEGA_MASK) {
+          _omega(i,0) = _omega(j,0);
+          _omega(i,1) = _omega(j,1);
+          _omega(i,2) = _omega(j,2);
+        }
 
-      // DPD-REACT package
+        // DPD-REACT package
 
-      if (_datamask & DPDTHETA_MASK) {
-         _dpdTheta(i) = _dpdTheta(j);
-        _uCond(i) = _uCond(j);
-        _uMech(i) = _uMech(j);
-        _uChem(i) = _uChem(j);
-        _uCG(i) = _uCG(j);
-        _uCGnew(i) = _uCGnew(j);
+        if (_datamask & DPDTHETA_MASK) {
+           _dpdTheta(i) = _dpdTheta(j);
+          _uCond(i) = _uCond(j);
+          _uMech(i) = _uMech(j);
+          _uChem(i) = _uChem(j);
+          _uCG(i) = _uCG(j);
+          _uCGnew(i) = _uCGnew(j);
+        }
       }
     }
   }
@@ -2337,22 +2421,33 @@ int AtomVecKokkos::pack_exchange_kokkos(const int &nsend,DAT::tdual_double_2d_lr
   }
 
   if (space == HostKK) {
-    AtomVecKokkos_PackExchangeFunctor<LMPHostType>
-      f(atomKK,k_buf,k_sendlist,k_copylist,datamask_exchange);
-    Kokkos::parallel_for(nsend,f);
-    return nsend*size_exchange;
+    if (size_exchange == 11) {
+      AtomVecKokkos_PackExchangeFunctor<LMPHostType,1>
+        f(atomKK,k_buf,k_sendlist,k_copylist,datamask_exchange);
+      Kokkos::parallel_for(nsend,f);
+    } else {
+      AtomVecKokkos_PackExchangeFunctor<LMPHostType,0>
+        f(atomKK,k_buf,k_sendlist,k_copylist,datamask_exchange);
+      Kokkos::parallel_for(nsend,f);
+    }
   } else {
-    AtomVecKokkos_PackExchangeFunctor<LMPDeviceType>
-      f(atomKK,k_buf,k_sendlist,k_copylist,datamask_exchange);
-    Kokkos::parallel_for(nsend,f);
-
-    return nsend*size_exchange;
+    if (size_exchange == 11) {
+      AtomVecKokkos_PackExchangeFunctor<LMPDeviceType,1>
+        f(atomKK,k_buf,k_sendlist,k_copylist,datamask_exchange);
+      Kokkos::parallel_for(nsend,f);
+    } else {
+      AtomVecKokkos_PackExchangeFunctor<LMPDeviceType,0>
+        f(atomKK,k_buf,k_sendlist,k_copylist,datamask_exchange);
+      Kokkos::parallel_for(nsend,f);
+    }
   }
+
+  return nsend*size_exchange;
 }
 
 /* ---------------------------------------------------------------------- */
 
-template<class DeviceType,int OUTPUT_INDICES>
+template<class DeviceType,int OUTPUT_INDICES,int DEFAULT>
 struct AtomVecKokkos_UnpackExchangeFunctor {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -2471,99 +2566,102 @@ struct AtomVecKokkos_UnpackExchangeFunctor {
       _mask(i) = (int) d_ubuf(_buf(myrecv,m++)).i;
       _image(i) = (imageint) d_ubuf(_buf(myrecv,m++)).i;
 
-      if (_datamask & Q_MASK)
-        _q(i) = _buf(myrecv,m++);
+      if constexpr (!DEFAULT) {
 
-      if (_datamask & MOLECULE_MASK)
-        _molecule(i) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+        if (_datamask & Q_MASK)
+          _q(i) = _buf(myrecv,m++);
 
-      if (_datamask & BOND_MASK) {
-        _num_bond(i) = (int) d_ubuf(_buf(myrecv,m++)).i;
-        for (int k = 0; k < _num_bond(i); k++) {
-          _bond_type(i,k) = (int) d_ubuf(_buf(myrecv,m++)).i;
-          _bond_atom(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+        if (_datamask & MOLECULE_MASK)
+          _molecule(i) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+
+        if (_datamask & BOND_MASK) {
+          _num_bond(i) = (int) d_ubuf(_buf(myrecv,m++)).i;
+          for (int k = 0; k < _num_bond(i); k++) {
+            _bond_type(i,k) = (int) d_ubuf(_buf(myrecv,m++)).i;
+            _bond_atom(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+          }
         }
-      }
 
-      if (_datamask & ANGLE_MASK) {
-        _num_angle(i) = (int) d_ubuf(_buf(myrecv,m++)).i;
-        for (int k = 0; k < _num_angle(i); k++) {
-          _angle_type(i,k) = (int) d_ubuf(_buf(myrecv,m++)).i;
-          _angle_atom1(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
-          _angle_atom2(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
-          _angle_atom3(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+        if (_datamask & ANGLE_MASK) {
+          _num_angle(i) = (int) d_ubuf(_buf(myrecv,m++)).i;
+          for (int k = 0; k < _num_angle(i); k++) {
+            _angle_type(i,k) = (int) d_ubuf(_buf(myrecv,m++)).i;
+            _angle_atom1(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+            _angle_atom2(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+            _angle_atom3(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+          }
         }
-      }
 
-      if (_datamask & DIHEDRAL_MASK) {
-        _num_dihedral(i) = (int) d_ubuf(_buf(myrecv,m++)).i;
-        for (int k = 0; k < _num_dihedral(i); k++) {
-          _dihedral_type(i,k) = (int) d_ubuf(_buf(myrecv,m++)).i;
-          _dihedral_atom1(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
-          _dihedral_atom2(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
-          _dihedral_atom3(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
-          _dihedral_atom4(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+        if (_datamask & DIHEDRAL_MASK) {
+          _num_dihedral(i) = (int) d_ubuf(_buf(myrecv,m++)).i;
+          for (int k = 0; k < _num_dihedral(i); k++) {
+            _dihedral_type(i,k) = (int) d_ubuf(_buf(myrecv,m++)).i;
+            _dihedral_atom1(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+            _dihedral_atom2(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+            _dihedral_atom3(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+            _dihedral_atom4(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+          }
         }
-      }
 
-      if (_datamask & IMPROPER_MASK) {
-        _num_improper(i) = (int) d_ubuf(_buf(myrecv,m++)).i;
-        for (int k = 0; k < _num_improper(i); k++) {
-          _improper_type(i,k) = (int) d_ubuf(_buf(myrecv,m++)).i;
-          _improper_atom1(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
-          _improper_atom2(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
-          _improper_atom3(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
-          _improper_atom4(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+        if (_datamask & IMPROPER_MASK) {
+          _num_improper(i) = (int) d_ubuf(_buf(myrecv,m++)).i;
+          for (int k = 0; k < _num_improper(i); k++) {
+            _improper_type(i,k) = (int) d_ubuf(_buf(myrecv,m++)).i;
+            _improper_atom1(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+            _improper_atom2(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+            _improper_atom3(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+            _improper_atom4(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+          }
         }
-      }
 
-      if (_datamask & SPECIAL_MASK) {
-        _nspecial(i,0) = (int) d_ubuf(_buf(myrecv,m++)).i;
-        _nspecial(i,1) = (int) d_ubuf(_buf(myrecv,m++)).i;
-        _nspecial(i,2) = (int) d_ubuf(_buf(myrecv,m++)).i;
-        for (int k = 0; k < _nspecial(i,2); k++)
-          _special(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
-      }
+        if (_datamask & SPECIAL_MASK) {
+          _nspecial(i,0) = (int) d_ubuf(_buf(myrecv,m++)).i;
+          _nspecial(i,1) = (int) d_ubuf(_buf(myrecv,m++)).i;
+          _nspecial(i,2) = (int) d_ubuf(_buf(myrecv,m++)).i;
+          for (int k = 0; k < _nspecial(i,2); k++)
+            _special(i,k) = (tagint) d_ubuf(_buf(myrecv,m++)).i;
+        }
 
-      if (_datamask & MU_MASK) {
-        _mu(i,0) = _buf(myrecv,m++);
-        _mu(i,1) = _buf(myrecv,m++);
-        _mu(i,2) = _buf(myrecv,m++);
-        _mu(i,3) = _buf(myrecv,m++);
-      }
+        if (_datamask & MU_MASK) {
+          _mu(i,0) = _buf(myrecv,m++);
+          _mu(i,1) = _buf(myrecv,m++);
+          _mu(i,2) = _buf(myrecv,m++);
+          _mu(i,3) = _buf(myrecv,m++);
+        }
 
-      if (_datamask & SP_MASK) {
-        _sp(i,0) = _buf(myrecv,m++);
-        _sp(i,1) = _buf(myrecv,m++);
-        _sp(i,2) = _buf(myrecv,m++);
-        _sp(i,3) = _buf(myrecv,m++);
-      }
+        if (_datamask & SP_MASK) {
+          _sp(i,0) = _buf(myrecv,m++);
+          _sp(i,1) = _buf(myrecv,m++);
+          _sp(i,2) = _buf(myrecv,m++);
+          _sp(i,3) = _buf(myrecv,m++);
+        }
 
-      if (_datamask & RADIUS_MASK)
-        _radius(i) = _buf(myrecv,m++);
+        if (_datamask & RADIUS_MASK)
+          _radius(i) = _buf(myrecv,m++);
 
-      if (_datamask & RMASS_MASK) 
-        _rmass(i) = _buf(myrecv,m++);
+        if (_datamask & RMASS_MASK)
+          _rmass(i) = _buf(myrecv,m++);
 
-      if (_datamask & OMEGA_MASK) {
-        _omega(i,0) = _buf(myrecv,m++);
-        _omega(i,1) = _buf(myrecv,m++);
-        _omega(i,2) = _buf(myrecv,m++);
-      }
+        if (_datamask & OMEGA_MASK) {
+          _omega(i,0) = _buf(myrecv,m++);
+          _omega(i,1) = _buf(myrecv,m++);
+          _omega(i,2) = _buf(myrecv,m++);
+        }
 
-      // DPD-REACT package
+        // DPD-REACT package
 
-      if (_datamask & DPDTHETA_MASK) {
-        _dpdTheta(i) = _buf(myrecv,m++);
-        _uCond(i) = _buf(myrecv,m++);
-        _uMech(i) = _buf(myrecv,m++);
-        _uChem(i) = _buf(myrecv,m++);
-        _uCG(i) = _buf(myrecv,m++);
-        _uCGnew(i) = _buf(myrecv,m++);
+        if (_datamask & DPDTHETA_MASK) {
+          _dpdTheta(i) = _buf(myrecv,m++);
+          _uCond(i) = _buf(myrecv,m++);
+          _uMech(i) = _buf(myrecv,m++);
+          _uChem(i) = _buf(myrecv,m++);
+          _uCG(i) = _buf(myrecv,m++);
+          _uCGnew(i) = _buf(myrecv,m++);
+        }
       }
     }
 
-    if (OUTPUT_INDICES)
+    if constexpr (OUTPUT_INDICES)
       _indices(myrecv) = i;
   }
 };
@@ -2578,37 +2676,58 @@ int AtomVecKokkos::unpack_exchange_kokkos(DAT::tdual_double_2d_lr &k_buf, int nr
   atomKK->sync(space,datamask_exchange);
 
   if (space == HostKK) {
+    k_count.view_host()(0) = nlocal;
+
     if (k_indices.view_host().data()) {
-      k_count.view_host()(0) = nlocal;
-      AtomVecKokkos_UnpackExchangeFunctor<LMPHostType,1>
-        f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
-      Kokkos::parallel_for(nrecv/size_exchange,f);
+      if (size_exchange == 11) {
+        AtomVecKokkos_UnpackExchangeFunctor<LMPHostType,1,1>
+          f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
+        Kokkos::parallel_for(nrecv/size_exchange,f);
+      } else {
+        AtomVecKokkos_UnpackExchangeFunctor<LMPHostType,1,0>
+          f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
+        Kokkos::parallel_for(nrecv/size_exchange,f);
+      }
     } else {
-      k_count.view_host()(0) = nlocal;
-      AtomVecKokkos_UnpackExchangeFunctor<LMPHostType,0>
-        f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
-      Kokkos::parallel_for(nrecv/size_exchange,f);
+      if (size_exchange == 11) {
+        AtomVecKokkos_UnpackExchangeFunctor<LMPHostType,0,1>
+          f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
+        Kokkos::parallel_for(nrecv/size_exchange,f);
+      } else {
+        AtomVecKokkos_UnpackExchangeFunctor<LMPHostType,0,0>
+          f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
+        Kokkos::parallel_for(nrecv/size_exchange,f);
+      }
     }
   } else {
+    k_count.view_host()(0) = nlocal;
+    k_count.modify_host();
+    k_count.sync_device();
+
     if (k_indices.view_host().data()) {
-      k_count.view_host()(0) = nlocal;
-      k_count.modify_host();
-      k_count.sync_device();
-      AtomVecKokkos_UnpackExchangeFunctor<LMPDeviceType,1>
-        f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
-      Kokkos::parallel_for(nrecv/size_exchange,f);
-      k_count.modify_device();
-      k_count.sync_host();
+      if (size_exchange == 11) {
+        AtomVecKokkos_UnpackExchangeFunctor<LMPDeviceType,1,1>
+          f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
+        Kokkos::parallel_for(nrecv/size_exchange,f);
+      } else {
+        AtomVecKokkos_UnpackExchangeFunctor<LMPDeviceType,1,0>
+          f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
+        Kokkos::parallel_for(nrecv/size_exchange,f);
+      }
     } else {
-      k_count.view_host()(0) = nlocal;
-      k_count.modify_host();
-      k_count.sync_device();
-      AtomVecKokkos_UnpackExchangeFunctor<LMPDeviceType,0>
-        f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
-      Kokkos::parallel_for(nrecv/size_exchange,f);
-      k_count.modify_device();
-      k_count.sync_host();
+      if (size_exchange == 11) {
+        AtomVecKokkos_UnpackExchangeFunctor<LMPDeviceType,0,1>
+          f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
+        Kokkos::parallel_for(nrecv/size_exchange,f);
+      } else {
+        AtomVecKokkos_UnpackExchangeFunctor<LMPDeviceType,0,0>
+          f(atomKK,k_buf,k_count,k_indices,dim,lo,hi,datamask_exchange);
+        Kokkos::parallel_for(nrecv/size_exchange,f);
+      }
     }
+
+    k_count.modify_device();
+    k_count.sync_host();
   }
 
   atomKK->modified(space,datamask_exchange);
