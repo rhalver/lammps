@@ -114,11 +114,16 @@ struct AtomVecKokkos_PackComm {
     }
 
     if constexpr (!DEFAULT) {
+
+      // DIPOLE package
+
       if (_datamask & MU_MASK) {
         _buf(i,m++) = _mu(j,0);
         _buf(i,m++) = _mu(j,1);
         _buf(i,m++) = _mu(j,2);
       }
+
+      // SPIN package
 
       if (_datamask & SP_MASK) {
         _buf(i,m++) = _sp(j,0);
@@ -127,17 +132,14 @@ struct AtomVecKokkos_PackComm {
         _buf(i,m++) = _sp(j,3);
       }
 
-      if (_datamask & DPDTHETA_MASK)
+      // DPD-REACT package
+
+      if (_datamask & DPDTHETA_MASK) {
         _buf(i,m++) = _dpdTheta(j);
-
-      if (_datamask & UCOND_MASK)
         _buf(i,m++) = _uCond(j);
-
-      if (_datamask & UMECH_MASK)
         _buf(i,m++) = _uMech(j);
-
-      if (_datamask & UCHEM_MASK)
         _buf(i,m++) = _uChem(j);
+      }
     }
   }
 };
@@ -326,11 +328,16 @@ struct AtomVecKokkos_PackCommSelf {
     }
 
     if constexpr (!DEFAULT) {
+
+      // DIPOLE package
+
       if (_datamask & MU_MASK) {
         _mu(i+_nfirst,0) = _mu(j,0);
         _mu(i+_nfirst,1) = _mu(j,1);
         _mu(i+_nfirst,2) = _mu(j,2);
       }
+
+      // SPIN package
 
       if (_datamask & SP_MASK) {
         _sp(i+_nfirst,0) = _sp(j,0);
@@ -339,17 +346,14 @@ struct AtomVecKokkos_PackCommSelf {
         _sp(i+_nfirst,3) = _sp(j,3);
       }
 
-      if (_datamask & DPDTHETA_MASK)
+      // DPD-REACT package
+
+      if (_datamask & DPDTHETA_MASK) {
         _dpdTheta(i+_nfirst) = _dpdTheta(j);
-
-      if (_datamask & UCOND_MASK)
         _uCond(i+_nfirst) = _uCond(j);
-
-      if (_datamask & UMECH_MASK)
         _uMech(i+_nfirst) = _uMech(j);
-
-      if (_datamask & UCHEM_MASK)
         _uChem(i+_nfirst) = _uChem(j);
+      }
     }
   }
 };
@@ -558,11 +562,16 @@ struct AtomVecKokkos_PackCommSelfFused {
     }
 
     if constexpr (!DEFAULT) {
+
+      // DIPOLE package
+
       if (_datamask & MU_MASK) {
         _mu(i+_nfirst,0) = _mu(j,0);
         _mu(i+_nfirst,1) = _mu(j,1);
         _mu(i+_nfirst,2) = _mu(j,2);
       }
+
+      // SPIN package
 
       if (_datamask & SP_MASK) {
         _sp(i+_nfirst,0) = _sp(j,0);
@@ -571,17 +580,14 @@ struct AtomVecKokkos_PackCommSelfFused {
         _sp(i+_nfirst,3) = _sp(j,3);
       }
 
-      if (_datamask & DPDTHETA_MASK)
+      // DPD-REACT package
+
+      if (_datamask & DPDTHETA_MASK) {
         _dpdTheta(i+_nfirst) = _dpdTheta(j);
-
-      if (_datamask & UCOND_MASK)
         _uCond(i+_nfirst) = _uCond(j);
-
-      if (_datamask & UMECH_MASK)
         _uMech(i+_nfirst) = _uMech(j);
-
-      if (_datamask & UCHEM_MASK)
         _uChem(i+_nfirst) = _uChem(j);
+      }
     }
   }
 };
@@ -693,11 +699,16 @@ struct AtomVecKokkos_UnpackComm {
     _x(i+_first,2) = _buf(i,m++);
 
     if constexpr (!DEFAULT) {
+
+      // DIPOLE package
+
       if (_datamask & MU_MASK) {
         _mu(i+_first,0) = _buf(i,m++);
         _mu(i+_first,1) = _buf(i,m++);
         _mu(i+_first,2) = _buf(i,m++);
       }
+
+      // SPIN package
 
       if (_datamask & SP_MASK) {
         _sp(i+_first,0) = _buf(i,m++);
@@ -706,17 +717,14 @@ struct AtomVecKokkos_UnpackComm {
         _sp(i+_first,3) = _buf(i,m++);
       }
 
+      // DPD-REACT package
+
       if (_datamask & DPDTHETA_MASK)
         _dpdTheta(i+_first) = _buf(i,m++);
-
-      if (_datamask & UCOND_MASK)
         _uCond(i+_first) = _buf(i,m++);
-
-      if (_datamask & UMECH_MASK)
         _uMech(i+_first) = _buf(i,m++);
-
-      if (_datamask & UCHEM_MASK)
         _uChem(i+_first) = _buf(i,m++);
+      }
     }
   }
 };
@@ -841,11 +849,15 @@ struct AtomVecKokkos_PackCommVel {
       }
     }
 
+    // DIPOLE package
+
     if (_datamask & MU_MASK) {
       _buf(i,m++) = _mu(j,0);
       _buf(i,m++) = _mu(j,1);
       _buf(i,m++) = _mu(j,2);
     }
+
+    // SPIN package
 
     if (_datamask & SP_MASK) {
       _buf(i,m++) = _sp(j,0);
@@ -854,23 +866,22 @@ struct AtomVecKokkos_PackCommVel {
       _buf(i,m++) = _sp(j,3);
     }
 
+    // SPHERE package
+
     if (_datamask & OMEGA_MASK) {
       _buf(i,m++) = _omega(j,0);
       _buf(i,m++) = _omega(j,1);
       _buf(i,m++) = _omega(j,2);
     }
 
-    if (_datamask & DPDTHETA_MASK)
+      // DPD-REACT package
+
+    if (_datamask & DPDTHETA_MASK) {
       _buf(i,m++) = _dpdTheta(j);
-
-    if (_datamask & UCOND_MASK)
       _buf(i,m++) = _uCond(j);
-
-    if (_datamask & UMECH_MASK)
       _buf(i,m++) = _uMech(j);
-
-    if (_datamask & UCHEM_MASK)
       _buf(i,m++) = _uChem(j);
+    }
   }
 };
 
@@ -1053,11 +1064,15 @@ struct AtomVecKokkos_UnpackCommVel {
     _v(i+_first,1) = _buf(i,m++);
     _v(i+_first,2) = _buf(i,m++);
 
+    // DIPOLE package
+
     if (_datamask & MU_MASK) {
       _mu(i+_first,0) = _buf(i,m++);
       _mu(i+_first,1) = _buf(i,m++);
       _mu(i+_first,2) = _buf(i,m++);
     }
+
+    // SPIN package
 
     if (_datamask & SP_MASK) {
       _sp(i+_first,0) = _buf(i,m++);
@@ -1066,23 +1081,22 @@ struct AtomVecKokkos_UnpackCommVel {
       _sp(i+_first,3) = _buf(i,m++);
     }
 
+    // SPHERE package
+
     if (_datamask & OMEGA_MASK) {
       _omega(i+_first,0) = _buf(i,m++);
       _omega(i+_first,1) = _buf(i,m++);
       _omega(i+_first,2) = _buf(i,m++);
     }
 
-    if (_datamask & DPDTHETA_MASK)
+    // DPD-REACT package
+
+    if (_datamask & DPDTHETA_MASK) {
       _dpdTheta(i+_first) = _buf(i,m++);
-
-    if (_datamask & UCOND_MASK)
       _uCond(i+_first) = _buf(i,m++);
-
-    if (_datamask & UMECH_MASK)
       _uMech(i+_first) = _buf(i,m++);
-
-    if (_datamask & UCHEM_MASK)
       _uChem(i+_first) = _buf(i,m++);
+    }
   }
 };
 
@@ -1138,19 +1152,22 @@ struct AtomVecKokkos_PackReverse {
     _buf(i,m++) = _f(i+_first,2);
 
     if constexpr (!DEFAULT) {
+
+      // DIPLE package
+
       if (_datamask & TORQUE_MASK) {
         _buf(i,m++) = _torque(i+_first,0);
         _buf(i,m++) = _torque(i+_first,1);
         _buf(i,m++) = _torque(i+_first,2);
       }
 
+      // SPIN package
+
       if (_datamask & FM_MASK) {
         _buf(i,m++) = _fm(i+_first,0);
         _buf(i,m++) = _fm(i+_first,1);
         _buf(i,m++) = _fm(i+_first,2);
-      }
 
-      if (_datamask & FML_MASK) {
         _buf(i,m++) = _fm_long(i+_first,0);
         _buf(i,m++) = _fm_long(i+_first,1);
         _buf(i,m++) = _fm_long(i+_first,2);
@@ -1219,19 +1236,22 @@ struct AtomVecKokkos_UnPackReverseSelf {
     _f(j,2) += _f(i+_nfirst,2);
 
     if constexpr (!DEFAULT) {
+
+      // DIPOLE package
+
       if (_datamask & TORQUE_MASK) {
         _torque(j,0) += _torque(i+_nfirst,0);
         _torque(j,1) += _torque(i+_nfirst,1);
         _torque(j,2) += _torque(i+_nfirst,2);
       }
 
+      // SPIN package
+
       if (_datamask & FM_MASK) {
         _fm(j,0) += _fm(i+_nfirst,0);
         _fm(j,1) += _fm(i+_nfirst,1);
         _fm(j,2) += _fm(i+_nfirst,2);
-      }
 
-      if (_datamask & FML_MASK) {
         _fm_long(j,0) += _fm_long(i+_nfirst,0);
         _fm_long(j,1) += _fm_long(i+_nfirst,1);
         _fm_long(j,2) += _fm_long(i+_nfirst,2);
@@ -1307,19 +1327,22 @@ struct AtomVecKokkos_UnPackReverse {
     _f(j,2) += _buf(i,m++);
 
     if constexpr (!DEFAULT) {
+
+      // DIPOLE package
+
       if (_datamask & TORQUE_MASK) {
         _torque(j,0) += _buf(i,m++);
         _torque(j,1) += _buf(i,m++);
         _torque(j,2) += _buf(i,m++);
       }
 
+      // SPIN package
+
       if (_datamask & FM_MASK) {
         _fm(j,0) += _buf(i,m++);
         _fm(j,1) += _buf(i,m++);
         _fm(j,2) += _buf(i,m++);
-      }
 
-      if (_datamask & FML_MASK) {
         _fm_long(j,0) += _buf(i,m++);
         _fm_long(j,1) += _buf(i,m++);
         _fm_long(j,2) += _buf(i,m++);
@@ -1451,23 +1474,16 @@ struct AtomVecKokkos_PackBorder {
     if (_datamask & RMASS_MASK)
       _buf(i,m++) = _rmass(j);
 
-    if (_datamask & DPDTHETA_MASK)
+    // DPD-REACT package
+
+    if (_datamask & DPDTHETA_MASK) {
       _buf(i,m++) = _dpdTheta(j);
-
-    if (_datamask & UCOND_MASK)
       _buf(i,m++) = _uCond(j);
-
-    if (_datamask & UMECH_MASK)
       _buf(i,m++) = _uMech(j);
-
-    if (_datamask & UCHEM_MASK)
       _buf(i,m++) = _uChem(j);
-
-    if (_datamask & UCG_MASK)
       _buf(i,m++) = _uCG(j);
-
-    if (_datamask & UCGNEW_MASK)
       _buf(i,m++) = _uCGnew(j);
+    }
   }
 };
 
@@ -1601,23 +1617,16 @@ struct AtomVecKokkos_UnpackBorder {
     if (_datamask & RMASS_MASK)
       _rmass(i+_first) = _buf(i,m++);
 
-    if (_datamask & DPDTHETA_MASK)
+    // DPD-REACT package
+
+    if (_datamask & DPDTHETA_MASK) {
       _dpdTheta(i+_first) = _buf(i,m++);
-
-    if (_datamask & UCOND_MASK)
       _uCond(i+_first) = _buf(i,m++);
-
-    if (_datamask & UMECH_MASK)
       _uMech(i+_first) = _buf(i,m++);
-
-    if (_datamask & UCHEM_MASK)
       _uChem(i+_first) = _buf(i,m++);
-
-    if (_datamask & UCG_MASK)
       _uCG(i+_first) = _buf(i,m++);
-
-    if (_datamask & UCGNEW_MASK)
       _uCGnew(i+_first) = _buf(i,m++);
+    }
   }
 };
 
@@ -1764,23 +1773,16 @@ struct AtomVecKokkos_PackBorderVel {
       _buf(i,m++) = _omega(j,2);
     }
 
-    if (_datamask & DPDTHETA_MASK)
+    // DPD-REACT package
+
+    if (_datamask & DPDTHETA_MASK) {
       _buf(i,m++) = _dpdTheta(j);
-
-    if (_datamask & UCOND_MASK)
       _buf(i,m++) = _uCond(j);
-
-    if (_datamask & UMECH_MASK)
       _buf(i,m++) = _uMech(j);
-
-    if (_datamask & UCHEM_MASK)
       _buf(i,m++) = _uChem(j);
-
-    if (_datamask & UCG_MASK)
       _buf(i,m++) = _uCG(j);
-
-    if (_datamask & UCGNEW_MASK)
       _buf(i,m++) = _uCGnew(j);
+    }
   }
 };
 
@@ -1962,23 +1964,16 @@ struct AtomVecKokkos_UnpackBorderVel {
       _omega(i+_first,2) = _buf(i,m++);
     }
 
-    if (_datamask & DPDTHETA_MASK)
+    // DPD-REACT package
+
+    if (_datamask & DPDTHETA_MASK) {
       _dpdTheta(i+_first) = _buf(i,m++);
-
-    if (_datamask & UCOND_MASK)
       _uCond(i+_first) = _buf(i,m++);
-
-    if (_datamask & UMECH_MASK)
       _uMech(i+_first) = _buf(i,m++);
-
-    if (_datamask & UCHEM_MASK)
       _uChem(i+_first) = _buf(i,m++);
-
-    if (_datamask & UCG_MASK)
       _uCG(i+_first) = _buf(i,m++);
-
-    if (_datamask & UCGNEW_MASK)
       _uCGnew(i+_first) = _buf(i,m++);
+    }
   }
 };
 
@@ -2206,23 +2201,16 @@ struct AtomVecKokkos_PackExchangeFunctor {
       _buf(mysend,m++) = _omega(i,2);
     }
 
-    if (_datamask & DPDTHETA_MASK)
+    // DPD-REACT package
+
+    if (_datamask & DPDTHETA_MASK) {
       _buf(mysend,m++) = _dpdTheta(i);
-
-    if (_datamask & UCOND_MASK)
       _buf(mysend,m++) = _uCond(i);
-
-    if (_datamask & UMECH_MASK)
       _buf(mysend,m++) = _uMech(i);
-
-    if (_datamask & UCHEM_MASK)
       _buf(mysend,m++) = _uChem(i);
-
-    if (_datamask & UCG_MASK)
       _buf(mysend,m++) = _uCG(i);
-
-    if (_datamask & UCGNEW_MASK)
       _buf(mysend,m++) = _uCGnew(i);
+    }
 
     const int j = _copylist(mysend);
 
@@ -2318,23 +2306,16 @@ struct AtomVecKokkos_PackExchangeFunctor {
         _omega(i,2) = _omega(j,2);
       }
 
-    if (_datamask & DPDTHETA_MASK)
-       _dpdTheta(i) = _dpdTheta(j);
+      // DPD-REACT package
 
-    if (_datamask & UCOND_MASK)
-      _uCond(i) = _uCond(j);
-
-    if (_datamask & UMECH_MASK)
-      _uMech(i) = _uMech(j);
-
-    if (_datamask & UCHEM_MASK)
-      _uChem(i) = _uChem(j);
-
-    if (_datamask & UCG_MASK)
-      _uCG(i) = _uCG(j);
-
-    if (_datamask & UCGNEW_MASK)
-      _uCGnew(i) = _uCGnew(j);
+      if (_datamask & DPDTHETA_MASK) {
+         _dpdTheta(i) = _dpdTheta(j);
+        _uCond(i) = _uCond(j);
+        _uMech(i) = _uMech(j);
+        _uChem(i) = _uChem(j);
+        _uCG(i) = _uCG(j);
+        _uCGnew(i) = _uCGnew(j);
+      }
     }
   }
 };
@@ -2570,23 +2551,16 @@ struct AtomVecKokkos_UnpackExchangeFunctor {
         _omega(i,2) = _buf(myrecv,m++);
       }
 
-      if (_datamask & DPDTHETA_MASK)
+      // DPD-REACT package
+
+      if (_datamask & DPDTHETA_MASK) {
         _dpdTheta(i) = _buf(myrecv,m++);
-
-      if (_datamask & UCOND_MASK)
         _uCond(i) = _buf(myrecv,m++);
-
-      if (_datamask & UMECH_MASK)
         _uMech(i) = _buf(myrecv,m++);
-
-      if (_datamask & UCHEM_MASK)
         _uChem(i) = _buf(myrecv,m++);
-
-      if (_datamask & UCG_MASK)
         _uCG(i) = _buf(myrecv,m++);
-
-      if (_datamask & UCGNEW_MASK)
         _uCGnew(i) = _buf(myrecv,m++);
+      }
     }
 
     if (OUTPUT_INDICES)
