@@ -1512,8 +1512,6 @@ int AtomVecKokkos::pack_border_kokkos(int n, DAT::tdual_int_1d k_sendlist,
 {
   atomKK->sync(space,datamask_border);
 
-  printf("NBORDER %i\n",nborder);
-
   double dx,dy,dz;
 
   if (pbc_flag != 0) {
@@ -2415,8 +2413,6 @@ int AtomVecKokkos::pack_exchange_kokkos(const int &nsend,DAT::tdual_double_2d_lr
 {
   atomKK->sync(space,datamask_exchange);
   set_size_exchange();
-
-  printf("SIZE_EXCHANGE %i\n",size_exchange);
 
   if (nsend > (int) (k_buf.view_host().extent(0)*
               k_buf.view_host().extent(1))/size_exchange) {
