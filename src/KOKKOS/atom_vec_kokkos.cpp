@@ -2442,6 +2442,8 @@ int AtomVecKokkos::pack_exchange_kokkos(const int &nsend,DAT::tdual_double_2d_lr
     }
   }
 
+  atomKK->modified(space,datamask_exchange);
+
   return nsend*size_exchange;
 }
 
