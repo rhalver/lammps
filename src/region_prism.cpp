@@ -195,10 +195,10 @@ RegPrism::RegPrism(LAMMPS *lmp, int narg, char **arg) : Region(lmp, narg, arg),
   // extent of prism
 
   if (interior) {
+    bboxflag = 1;
     if (dynamic || varshape) {
       RegPrism::bbox_update();
     } else {
-      bboxflag = 1;
       extent_xlo = MIN(xlo, xlo + xy);
       extent_xlo = MIN(extent_xlo, extent_xlo + xz);
       extent_ylo = MIN(ylo, ylo + yz);
@@ -652,7 +652,6 @@ void RegPrism::bbox_update()
         zmax = std::max(zmax, pos[2]);
       }
 
-      bboxflag = 1;
       extent_xlo = xmin;
       extent_xhi = xmax;
       extent_ylo = ymin;

@@ -158,10 +158,10 @@ RegBlock::RegBlock(LAMMPS *lmp, int narg, char **arg) :
   // set extent of block
 
   if (interior) {
+    bboxflag = 1;
     if (dynamic || varshape) {
       RegBlock::bbox_update();
     } else {
-      bboxflag = 1;
       extent_xlo = xlo;
       extent_xhi = xhi;
       extent_ylo = ylo;
@@ -548,7 +548,6 @@ void RegBlock::bbox_update()
         zmax = std::max(zmax, pos[2]);
       }
 
-      bboxflag = 1;
       extent_xlo = xmin;
       extent_xhi = xmax;
       extent_ylo = ymin;

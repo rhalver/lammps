@@ -269,10 +269,10 @@ RegCone::RegCone(LAMMPS *lmp, int narg, char **arg) :
   maxradius = std::max(radiuslo, radiushi);
 
   if (interior) {
+    bboxflag = 1;
     if (dynamic || varshape) {
       RegCone::bbox_update();
     } else {
-      bboxflag = 1;
       if (axis == 'x') {
         extent_xlo = lo;
         extent_xhi = hi;
@@ -900,7 +900,6 @@ void RegCone::bbox_update()
       zmax = std::max(zmax, pos[2]);
     }
 
-    bboxflag = 1;
     extent_xlo = xmin;
     extent_xhi = xmax;
     extent_ylo = ymin;

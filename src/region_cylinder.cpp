@@ -204,10 +204,10 @@ RegCylinder::RegCylinder(LAMMPS *lmp, int narg, char **arg) :
   // for variable radius, uses initial radius
 
   if (interior) {
+    bboxflag = 1;
     if (dynamic || varshape) {
       RegCylinder::bbox_update();
     } else {
-      bboxflag = 1;
       if (axis == 'x') {
         extent_xlo = lo;
         extent_xhi = hi;
@@ -883,7 +883,6 @@ void RegCylinder::bbox_update()
       zmax = std::max(zmax, pos[2]);
     }
 
-    bboxflag = 1;
     extent_xlo = xmin;
     extent_xhi = xmax;
     extent_ylo = ymin;
