@@ -187,9 +187,9 @@ with maximum stretch, you can do it as follows:
 
 .. code-block:: LAMMPS
 
-   compute 1 all property/local batom1 batom2
-   compute 2 all bond/local dist
-   compute 3 all reduce max c_1[1] c_1[2] c_2 replace 1 3 replace 2 3 inputs local
+   compute batoms all property/local batom1 batom2
+   compute blength all bond/local dist
+   compute 3 all reduce max c_batoms[1] c_batoms[2] c_blength replace 1 3 replace 2 3 inputs local
    thermo_style custom step temp c_3[1] c_3[2] c_3[3]
 
 The first two input values in the compute reduce command are vectors
@@ -253,8 +253,8 @@ the default 'c_2[1]'.  If the *replace* keyword is used, *vec1* of the
 *replace* keyword is listed after the colon, followed by '<-', followed by
 the reduction operation, followed by *vec2* of the *replace* keyword in
 parentheses.  E.g., for the second in-text example above, the first printed
-thermo column name would be 'c_3:c_1[1]<-max(c_2)' rather than the default
-'c_3[1]'.
+thermo column name would be 'c_3:c_batoms[1]<-max(c_blength)' rather than
+the default 'c_3[1]'.
 
 All the scalar or vector values calculated by this compute are
 "intensive", except when the *sum*, *sumabs*, or *sumsq* modes are used on
