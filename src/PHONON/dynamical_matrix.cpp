@@ -265,8 +265,8 @@ void DynamicalMatrix::calculateMatrix()
   bigint natoms = atom->natoms;
   int *type = atom->type;
   bigint *gm = groupmap;
-  double imass; // dynamical matrix element
   double *m = atom->mass;
+  if (atom->rmass) m = atom->rmass;
   double **f = atom->f;
 
   auto *dynmat = new double*[3];
@@ -320,10 +320,8 @@ void DynamicalMatrix::calculateMatrix()
         local_jdx = atom->map(j);
         if (local_idx >= 0 && local_jdx >= 0 && local_jdx < nlocal
           && (gm[j-1] >= 0 || folded)){
-          if (atom->rmass_flag == 1)
-            imass = sqrt(m[local_idx] * m[local_jdx]);
-          else
-            imass = sqrt(m[type[local_idx]] * m[type[local_jdx]]);
+          const double imass = atom->rmass ? sqrt(m[local_idx] * m[local_jdx]) :
+            sqrt(m[type[local_idx]] * m[type[local_jdx]]);
           if (folded){
             for (int beta=0; beta<3; beta++){
               dynmat[alpha][(j-1)*3+beta] -= -f[local_jdx][beta];
