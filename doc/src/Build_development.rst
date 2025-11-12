@@ -149,27 +149,19 @@ version of that library will be downloaded and compiled along with
 LAMMPS and the test programs) and will download and compile a specific
 version of the `GoogleTest <https://github.com/google/googletest/>`_ C++
 test framework that is used to implement the tests.  Those unit tests
-may be combined with memory access and leak checking with valgrind
-(see below for how to enable it).  In that case, running so-called
-death tests will create a lot of false positives and thus they can be
-disabled by configuring compilation with the additional setting
-``-D SKIP_DEATH_TESTS=on``.
-
-.. admonition:: Software version and LAMMPS configuration requirements
-   :class: note
-
-   The compiler and library version requirements for the testing
-   framework are more strict than for the main part of LAMMPS.  For
-   example the default GNU C++ and Fortran compilers of RHEL/CentOS 7.x
-   (version 4.8.x) are not sufficient.  The CMake configuration will try
-   to detect incompatible versions and either skip incompatible tests or
-   stop with an error.  Also the number of available tests will depend on
-   installed LAMMPS packages, development environment, operating system,
-   and configuration settings.
+may be combined with memory access and leak checking with valgrind (see
+below for how to enable it).  In that case, running so-called death
+tests will create a lot of false positives and thus they can be disabled
+by configuring compilation with the additional setting ``-D
+SKIP_DEATH_TESTS=on``.
 
 After compilation is complete, the unit testing is started in the build
 folder using the ``ctest`` command, which is part of the CMake software.
-The output of this command will be looking something like this:
+The number of available tests will depend on the LAMMPS versions,
+installed LAMMPS packages, configuration settings, development
+environment, and operating system.
+
+The output of the plain ``ctest`` command looks something like the following:
 
 .. code-block:: console
 
@@ -216,14 +208,16 @@ The ``ctest`` command has many options, the most important ones are:
      - verbose output: display output of individual test runs
    * - ``-j <num>``
      - parallel run: run <num> tests in parallel
+   * - ``--test-dir <path>``
+     - provide path to the CMake build folder.  By default ``ctest`` uses ``.``
    * - ``-R <regex>``
-     - run subset of tests matching the regular expression <regex>
+     - run subset of tests matching the regular expression ``<regex>``
    * - ``-E <regex>``
-     - exclude subset of tests matching the regular expression <regex>
+     - exclude subset of tests matching the regular expression ``<regex>``
    * - ``-L <regex>``
-     - run subset of tests with a label matching the regular expression <regex>
+     - run subset of tests with a label matching the regular expression ``<regex>``
    * - ``-LE <regex>``
-     - exclude subset of tests with a label matching the regular expression <regex>
+     - exclude subset of tests with a label matching the regular expression ``<regex>``
    * - ``-N``
      - dry-run: display list of tests without running them
    * - ``-T memcheck``
@@ -240,8 +234,8 @@ will be skipped if prerequisite features are not available in LAMMPS.
 
    The unit test framework was added in spring 2020 and is under active
    development.  The coverage is not complete and will be expanded over
-   time.  Preference is given to parts of the code base that are easy to
-   test or commonly used.
+   time.  Preference was given to test parts of the code base that are
+   easy to test or commonly used.
 
 Tests as shown by the ``ctest`` program are commands defined in the
 ``CMakeLists.txt`` files in the ``unittest`` directory tree.  A few
@@ -258,16 +252,16 @@ These special test programs are structured to perform multiple
 individual tests internally and each of those contains several checks
 (aka assertions) for internal data being changed as expected.
 
-Tests for force computing or modifying styles (e.g. styles for non-bonded
-and bonded interactions and selected fixes) are run by using a more generic
-test program that reads its input from files in YAML format. The YAML file
-provides the information on how to customized the test program to test
-a specific style and - if needed - with specific settings.
-To add a test for another, similar style (e.g. a new pair style) it is
-usually sufficient to add a suitable YAML file.  :doc:`Detailed
-instructions for adding tests <Developer_unittest>` are provided in the
-Programmer Guide part of the manual.  A description of what happens
-during the tests is given below.
+Tests for force computing or modifying styles (e.g. styles for
+non-bonded and bonded interactions and selected fixes) are run by using
+a more generic test program that reads its input from files in YAML
+format.  The YAML file provides the information on how to customized the
+test program to test a specific style and - if needed - with specific
+settings.  To add a test for another, similar style (e.g. a new pair
+style) it is usually sufficient to add a suitable YAML file.
+:doc:`Detailed instructions for adding tests <Developer_unittest>` are
+provided in the Programmer Guide part of the manual.  A description of
+what happens during these tests is given below.
 
 Unit tests for force styles
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -294,11 +288,11 @@ accelerated styles.  If a prerequisite style or package is missing, the
 individual tests are skipped.  All force style tests will be executed on
 a single MPI process, so using the CMake option ``-D BUILD_MPI=off`` can
 significantly speed up testing, since this will skip the MPI
-initialization for each test run.  
+initialization for each test run.
 
-Below is an example command and output for running tests that contain 
-the string ``MolPairStyle:lj_cut`` (argument to the ``-R`` option 
-flag) and printing with verbose output (the ``-V`` flag):
+Below is an example command and output for running a single test named
+``MolPairStyle:lj_cut`` (argument to the ``-R`` option which selects
+tests by regular expression) and printing detailed output (the ``-V`` flag):
 
 .. code-block:: console
 
@@ -360,11 +354,11 @@ flag) and printing with verbose output (the ``-V`` flag):
    Total Test time (real) =   0.76 sec
 
 In this particular case, 8 out of 9 sets of tests were conducted, the
-tests for the ``lj/cut/gpu`` pair style was skipped, since the LAMMPS
-library linked to the test executable did not include the GPU package.  
-To learn what individual tests are performed, you (currently) need to 
-read the source code.  You can use code coverage recording (see next 
-section) to confirm how well the tests cover the code paths in the 
+tests for the ``lj/cut/gpu`` pair style were skipped, since the LAMMPS
+library linked to the test executable did not include the GPU package.
+To learn what individual tests are performed, you (currently) need to
+read the source code.  You can use code coverage recording (see next
+section) to confirm how well the tests cover the code paths in the
 individual source files.
 
 The force style test programs have a common set of options:
@@ -383,13 +377,16 @@ The force style test programs have a common set of options:
    * - ``-v``
      - verbose output: also print the executed LAMMPS commands
 
-The ``ctest`` tool has no mechanism to directly pass flags to the individual
-test programs, but a workaround has been implemented where these flags can be
-set in an environment variable ``TEST_ARGS``. Example:
+Since the ``ctest`` tool has no mechanism to directly pass flags to the
+individual test programs, a workaround has been implemented where these
+flags can be set in an environment variable ``TEST_ARGS``. Example:
 
 .. code-block:: bash
 
    env TEST_ARGS=-s ctest -V -R BondStyle
+
+This adds output with statistics for the computed error of the various
+tests relative to the reference (e.g. the per-atom force components).
 
 To add a test for a style that is not yet covered, it is usually best
 to copy a YAML file for a similar style to a new file, edit the details
@@ -398,13 +395,17 @@ run test command with either the ``-g`` and the replace the initial
 test file with the regenerated one or the ``-u`` option.  The ``-u`` option
 will destroy the original file, if the generation run does not complete,
 so using ``-g`` is recommended unless the YAML file is fully tested
-and working.
+and working.  To have the new test file recognized by ``ctest``, you
+need to re-run cmake.  You can verify that the new test is available
+by checking the output of ``ctest -N`.
 
 Some of the force style tests are rather slow to run and some are very
 sensitive to small differences like CPU architecture, compiler
-toolchain, compiler optimization. Those tests are flagged with a "slow"
+toolchain, compiler optimization.  Those tests are flagged with a "slow"
 and/or "unstable" label, and thus those tests can be selectively
-excluded with the ``-LE`` flag or selected with the ``-L`` flag.
+excluded with the ``-LE`` flag to ``ctest`` (see description of the most
+commonly used ``ctest`` flags) or specifically selected using the ``-L``
+flag.
 
 .. admonition:: Recommendations and notes for YAML files
    :class: note
@@ -481,7 +482,7 @@ YAML format test inputs.
 Use custom linker for faster link times when ENABLE_TESTING is active
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When compiling LAMMPS with enabled tests, most test executables will
+When compiling LAMMPS with testing enabled, most test executables will
 need to be linked against the LAMMPS library.  Since this can be a very
 large library with many C++ objects when many packages are enabled, link
 times can become very long on machines that use the GNU BFD linker (e.g.
@@ -495,6 +496,12 @@ the ``CMAKE_CUSTOM_LINKER`` CMake variable.  Allowed values are
 option will use the system default linker otherwise, the linker is
 chosen explicitly.  This option is only available for the GNU or Clang
 C++ compilers.
+
+A small additional improvement can be obtained by building LAMMPS as a
+shared library with ``-D BUILD_SHARED_LIBS=on``.  But this is a small
+improvement due to reducing file I/O.  Using an alternate linker has an
+algorithmic improvement through using symbol resolution algorithms with
+lower algorithmic complexity.
 
 Tests for other components and utility functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -545,7 +552,9 @@ to do this to install it via pip:
 
 After post-processing with ``gen_coverage_html`` the results are in
 a folder ``coverage_html`` and can be viewed with a web browser.
-The images below illustrate how the data is presented.
+The images below illustrate how the data is presented.  The coverage
+data for testing the current ``develop`` branch is generated nightly
+and currently available at: https://download.lammps.org/coverage/
 
 .. only:: not latex
 
