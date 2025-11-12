@@ -3,6 +3,8 @@
 package command
 ===============
 
+.. contents::
+
 Syntax
 """"""
 
@@ -196,7 +198,8 @@ See the :doc:`Accelerator packages <Speed_packages>` page for more details
 about using the various accelerator packages for speeding up LAMMPS
 simulations.
 
-----------
+GPU package settings
+^^^^^^^^^^^^^^^^^^^^
 
 The *gpu* style invokes settings associated with the use of the
 :ref:`GPU package <PKG-GPU>`.
@@ -366,7 +369,8 @@ For OpenCL, the routines are compiled at runtime for the specified GPU
 or accelerator architecture. The *ocl\_args* keyword can be used to
 specify additional flags for the runtime build.
 
-----------
+INTEL package settings
+^^^^^^^^^^^^^^^^^^^^^^
 
 The *intel* style invokes settings associated with the use of the INTEL
 package.  The keywords *balance*, *ghost*, *tpc*, and *tptask* are
@@ -469,7 +473,8 @@ to prevent MPI tasks and OpenMP threads from being on separate NUMA
 domains and to prevent offload threads from interfering with other
 processes/threads used for LAMMPS.
 
-----------
+KOKKOS package settings
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The *kokkos* style invokes settings associated with the use of the
 KOKKOS package.
@@ -660,7 +665,8 @@ The *bond/block/size* keyword sets the number of GPU threads per block
 used for launching the bond force kernel on the GPU.  The default value
 of this parameter is determined based on the GPU architecture at runtime.
 
-----------
+OPENMP package settings
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The *omp* style invokes settings associated with the use of the
 OPENMP package.
