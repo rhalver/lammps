@@ -623,6 +623,11 @@ int DeviceT::init_nbor(Neighbor *nbor, const int nlocal,
     gpu_nbor=2;
   #endif
 
+  #ifdef USE_OPENCL
+  if (_ocl_config_name == "AMD_GPU" && gpu->shared_memory(_first_device) && gpu_nbor > 0)
+    return -17;
+  #endif
+
   if (!nbor->init(&_neighbor_shared,ef_nlocal,host_nlocal,max_nbors,maxspecial,
                   *gpu,gpu_nbor,gpu_host,pre_cut,_block_cell_2d,
                   _block_cell_id, _block_nbor_build, threads_per_atom,

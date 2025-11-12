@@ -50,6 +50,10 @@ inline void check_flag(int error_flag, LAMMPS_NS::Error *error, MPI_Comm &world)
 {
   int all_success;
   MPI_Allreduce(&error_flag, &all_success, 1, MPI_INT, MPI_MIN, world);
+
+  // error messages are consistent with the returned values
+  // from init_device() in lib/gpu/lal_device.h
+
   if (all_success != 0) {
     if (all_success == -1)
       error->all(FLERR, "The package gpu command is required for gpu styles");
@@ -85,6 +89,10 @@ inline void check_flag(int error_flag, LAMMPS_NS::Error *error, MPI_Comm &world)
       error->all(FLERR,
                  "GPU library was compiled for double or mixed precision "
                  "floating point but GPU device supports single precision only.");
+    else if (all_success == -17)
+      error->all(FLERR,
+                 "Cannot use device neighbor list builds "
+                 "with AMD shared memory GPUs with OpenCL API.");
     else
       error->all(FLERR, "Unknown error in GPU library");
   }
