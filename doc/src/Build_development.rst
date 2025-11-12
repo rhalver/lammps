@@ -307,7 +307,7 @@ output:
 
    199: Test command: /home/akohlmey/compile/lammps/build-test/test_pair_style "/home/akohlmey/compile/lammps/unittest/force-styles/tests/mol-pair-lj_cut.yaml"
    199: Working Directory: /home/akohlmey/compile/lammps/build-test/unittest/force-styles
-   199: Environment variables: 
+   199: Environment variables:
    199:  PYTHONPATH=/home/akohlmey/compile/lammps/unittest/force-styles/tests:/home/akohlmey/compile/lammps/python:
    199:  PYTHONUNBUFFERED=1
    199:  PYTHONDONTWRITEBYTECODE=1
@@ -327,8 +327,8 @@ output:
    199: [       OK ] PairStyle.kokkos_omp (6 ms)
    199: [ RUN      ] PairStyle.gpu
    199: /home/akohlmey/compile/lammps/unittest/force-styles/test_pair_style.cpp:793: Skipped
-   199: 
-   199: 
+   199:
+   199:
    199: [  SKIPPED ] PairStyle.gpu (0 ms)
    199: [ RUN      ] PairStyle.intel
    199: [       OK ] PairStyle.intel (2 ms)
@@ -341,7 +341,7 @@ output:
    199: [ RUN      ] PairStyle.extract_omp
    199: [       OK ] PairStyle.extract_omp (1 ms)
    199: [----------] 9 tests from PairStyle (37 ms total)
-   199: 
+   199:
    199: [----------] Global test environment tear-down
    199: [==========] 9 tests from 1 test suite ran. (37 ms total)
    199: [  PASSED  ] 8 tests.
