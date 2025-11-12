@@ -1184,6 +1184,21 @@ bool lmp_has_compatible_gpu_device()
   return compatible_gpu;
 }
 
+// check if a GPU requires neighbor lists on the host.
+bool lmp_gpu_requires_host_neighbor()
+{
+  UCL_Device gpu;
+
+#if USE_OPENCL
+  if (gpu.num_platforms() > 0) {
+    auto name = gpu.platform_name();
+    if (name.find("AMD") && gpu.shared_memory(0)) return true;
+  }
+#endif
+
+  return false;
+}
+
 std::string lmp_gpu_device_info()
 {
   std::ostringstream out;
@@ -1255,9 +1270,4 @@ bool lmp_gpu_config(const std::string &category, const std::string &setting)
     } else return false;
   }
   return false;
-}
-
-bool lmp_gpu_requires_host_neighbor()
-{
-  return global_device.requires_host_neighbor();
 }
