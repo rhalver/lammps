@@ -118,12 +118,12 @@ FixGPU::FixGPU(LAMMPS *lmp, int narg, char **arg) :
 {
   if (lmp->citeme) lmp->citeme->add(cite_gpu_package);
 
-  if (narg < 4) error->all(FLERR,"Illegal package gpu command");
+  if (narg < 4) utils::missing_cmd_args(FLERR,"package gpu", error);
 
   // If ngpu is 0, autoset ngpu to the number of devices per node matching
   // best device
   int ngpu = utils::inumeric(FLERR, arg[3], false, lmp);
-  if (ngpu < 0) error->all(FLERR,"Illegal number of GPUs ({}) in package gpu command", ngpu);
+  if (ngpu < 0) error->all(FLERR, 1, "Illegal number of GPUs ({}) in package gpu command", ngpu);
 
   // Negative value indicate GPU package should find the best device ID
   int first_gpu_id = -1;
@@ -142,9 +142,10 @@ FixGPU::FixGPU(LAMMPS *lmp, int narg, char **arg) :
   char *device_type_flags = nullptr;
 
   int iarg = 4;
+  int ioffs = -2;
   while (iarg < narg) {
     if (strcmp(arg[iarg],"neigh") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu neigh", error);
       const std::string modearg = arg[iarg+1];
       if (modearg == "hybrid")
         _gpu_mode = GPU_HYB_NEIGH;
@@ -154,65 +155,67 @@ FixGPU::FixGPU(LAMMPS *lmp, int narg, char **arg) :
         _gpu_mode = GPU_FORCE;
       iarg += 2;
     } else if (strcmp(arg[iarg],"newton") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu newton", error);
       newtonflag = utils::logical(FLERR,arg[iarg+1],false,lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg],"binsize") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu binsize", error);
       binsize = utils::numeric(FLERR,arg[iarg+1],false,lmp);
-      if (binsize <= 0.0) error->all(FLERR,"Illegal fix GPU command");
+      if (binsize <= 0.0)
+        error->all(FLERR,iarg+1+ioffs,"Illegal package gpu binsize value {}", binsize);
       iarg += 2;
     } else if (strcmp(arg[iarg],"split") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu split", error);
       _particle_split = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (_particle_split == 0.0 || _particle_split > 1.0)
-        error->all(FLERR,"Illegal package GPU command");
+        error->all(FLERR,iarg+1+ioffs,"Illegal package gpu split value {}", _particle_split);
       iarg += 2;
     } else if (strcmp(arg[iarg],"gpuID") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu gpuID", error);
       first_gpu_id = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg],"tpa") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu tpa", error);
       threads_per_atom = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg],"omp") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu omp", error);
       nthreads = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
-      if (nthreads < 0) error->all(FLERR,"Illegal fix GPU command");
+      if (nthreads < 0)
+        error->all(FLERR,iarg+1+ioffs,"Illegal package gpu omp value {}", nthreads);
       iarg += 2;
     } else if (strcmp(arg[iarg],"platform") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu platform", error);
       ocl_platform = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg],"device_type") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu device_type", error);
       device_type_flags = arg[iarg+1];
       iarg += 2;
     } else if (strcmp(arg[iarg],"blocksize") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu blocksize", error);
       block_pair = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg],"pair/only") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu pair/only", error);
       lmp->pair_only_flag = utils::logical(FLERR,arg[iarg+1],false,lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg],"ocl_args") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"package gpu ocl_args", error);
       opencl_args = arg[iarg+1];
       iarg += 2;
-    } else error->all(FLERR,"Illegal package gpu command");
+    } else error->all(FLERR,iarg+ioffs,"Unknown package gpu keyword {}", arg[iarg]);
   }
 
-  #if (LAL_USE_OMP == 0)
+#if (LAL_USE_OMP == 0)
   if (nthreads > 1)
-    error->all(FLERR,"No OpenMP support compiled into the GPU package");
-  #else
+    error->all(FLERR, Error::NOPOINTER, "No OpenMP support compiled into the GPU package");
+#else
   if (nthreads > 0) {
     omp_set_num_threads(nthreads);
     comm->nthreads = nthreads;
   }
-  #endif
+#endif
 
   // change default setting for neighbor lists if GPU requires host neighbor lists
   if (_gpu_mode == GPU_DEFAULT) {
