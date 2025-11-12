@@ -276,13 +276,13 @@ void FixGPU::init()
   // GPU package cannot be used with atom_style template
 
   if (atom->molecular == Atom::TEMPLATE)
-    error->all(FLERR,"GPU package does not (yet) work with "
-               "atom_style template");
+    error->all(FLERR, Error::NOLASTLINE,
+               "GPU package does not (yet) work with atom_style template");
 
   // give a warning if no pair style is defined
 
   if (!force->pair && (comm->me == 0))
-    error->warning(FLERR,"Using package gpu without any pair style defined");
+    error->warning(FLERR, "Using package gpu without any pair style defined");
 
   // make sure fdotr virial is not accumulated multiple times
   // also disallow GPU neighbor lists for hybrid styles
@@ -293,7 +293,8 @@ void FixGPU::init()
       if (!utils::strmatch(hybrid->keywords[i],"/gpu$"))
         force->pair->no_virial_fdotr_compute = 1;
     if (_gpu_mode != GPU_FORCE)
-      error->all(FLERR, "Must not use GPU neighbor lists with hybrid pair style");
+      error->all(FLERR, Error::NOLASTLINE,
+                 "Must not use GPU neighbor lists with hybrid pair style");
   }
 
   // rRESPA support
@@ -321,7 +322,8 @@ void FixGPU::setup(int vflag)
 
   if (_gpu_mode == GPU_NEIGH || _gpu_mode == GPU_HYB_NEIGH)
     if (neighbor->exclude_setting() != 0)
-      error->all(FLERR, "Cannot use neigh_modify exclude with GPU neighbor builds");
+      error->all(FLERR,  Error::NOLASTLINE,
+                 "Cannot use neigh_modify exclude with GPU neighbor builds");
 
   if (utils::strmatch(update->integrate_style,"^verlet")) {
     if (overlap_topo) neighbor->set_overlap_topo(1);
@@ -354,7 +356,8 @@ void FixGPU::post_force(int /* vflag */)
   double my_eng = lmp_gpu_forces(atom->f, atom->torque, force->pair->eatom, force->pair->vatom,
                                  lvirial, force->pair->eng_coul, err_flag);
   if (err_flag==1)
-    error->one(FLERR,"Neighbor list problem on the GPU. Try increasing the value of 'neigh_modify one' "
+    error->one(FLERR, Error::NOLASTLINE,
+               "Neighbor list problem on the GPU. Try increasing the value of 'neigh_modify one' "
                "or the GPU neighbor list 'binsize'.");
 
   force->pair->eng_vdwl += my_eng;
