@@ -39,6 +39,7 @@ using namespace FixConst;
 
 enum{GPU_FORCE, GPU_NEIGH, GPU_HYB_NEIGH};
 
+// functions provided by the GPU library
 extern int lmp_init_device(MPI_Comm world, MPI_Comm replica, const int ngpu,
                            const int first_gpu_id, const int gpu_mode,
                            const double particle_split, const int t_per_atom,
@@ -50,6 +51,7 @@ extern double lmp_gpu_forces(double **f, double **tor, double *eatom, double **v
                              double *virial, double &ecoul, int &err_flag);
 extern double lmp_gpu_update_bin_size(const double subx, const double suby, const double subz,
                                       const int nlocal, const double cut);
+extern bool lmp_gpu_requires_host_neighbor();
 
 static const char cite_gpu_package[] =
   "GPU package (short-range, long-range and three-body potentials): doi:10.1016/j.cpc.2010.12.021, doi:10.1016/j.cpc.2011.10.012, doi:10.1016/j.cpc.2013.08.002, doi:10.1016/j.commatsci.2014.10.068, doi:10.1016/j.cpc.2016.10.020, doi:10.3233/APC200086\n\n"

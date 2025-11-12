@@ -282,6 +282,15 @@ class Device {
   inline double ptx_arch() const { return _ptx_arch; }
   inline void set_simd_size(int simd_sz) { _simd_size = simd_sz; }
 
+  /// Return true if host neighbor list is required (e.g. AMD shared memory GPUs with OpenCL builds)
+  inline bool requires_host_neighbor() {
+    #ifdef USE_OPENCL
+    if (_ocl_config_name == "AMD_GPU" && gpu->shared_memory(_first_device))
+      return true;
+    #endif
+    return false;
+  }
+
   // -------------------------- DEVICE DATA -------------------------
 
   /// Geryon Device

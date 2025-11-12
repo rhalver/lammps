@@ -1250,3 +1250,8 @@ bool lmp_gpu_config(const std::string &category, const std::string &setting)
   }
   return false;
 }
+
+bool lmp_gpu_requires_host_neighbor()
+{
+  return global_device.requires_host_neighbor();
+}
