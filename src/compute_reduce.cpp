@@ -701,7 +701,7 @@ std::string ComputeReduce::get_thermo_colname(int m) {
     if (val1.argindex) val1string += fmt::format("[{}]", val1.argindex);
     std::string val2string = fmt::format("c_{}", val2.id);
     if (val2.argindex) val2string += fmt::format("[{}]", val2.argindex);
-    return fmt::format("c_{}:{}<-{}({}})", id, val1string, modestr, val2string);
+    return fmt::format("c_{}:{}<-{}({})", id, val1string, modestr, val2string);
   } else {
     if (m == -1) m = 0; // scalar
     auto &val = values[m];
