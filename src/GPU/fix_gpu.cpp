@@ -37,7 +37,8 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
-enum{GPU_FORCE, GPU_NEIGH, GPU_HYB_NEIGH};
+// must match definition in lib/gpu/lal_device.h
+enum{GPU_FORCE, GPU_NEIGH, GPU_HYB_NEIGH, GPU_DEFAULT};
 
 // functions provided by the GPU library
 extern int lmp_init_device(MPI_Comm world, MPI_Comm replica, const int ngpu,
@@ -129,7 +130,7 @@ FixGPU::FixGPU(LAMMPS *lmp, int narg, char **arg) :
 
   // options
 
-  _gpu_mode = GPU_NEIGH;
+  _gpu_mode = GPU_DEFAULT;
   _particle_split = 1.0;
   int nthreads = 0;
   int newtonflag = force->newton_pair;
@@ -145,12 +146,12 @@ FixGPU::FixGPU(LAMMPS *lmp, int narg, char **arg) :
     if (strcmp(arg[iarg],"neigh") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
       const std::string modearg = arg[iarg+1];
-      if ((modearg == "yes") || (modearg == "on") || (modearg == "true"))
+      if (modearg == "hybrid")
+        _gpu_mode = GPU_HYB_NEIGH;
+      else if (utils::logical(FLERR, modearg, false, lmp))
         _gpu_mode = GPU_NEIGH;
-      else if ((modearg == "no") || (modearg == "off") || (modearg == "false"))
+      else
         _gpu_mode = GPU_FORCE;
-      else if (modearg == "hybrid") _gpu_mode = GPU_HYB_NEIGH;
-      else error->all(FLERR,"Illegal package gpu command");
       iarg += 2;
     } else if (strcmp(arg[iarg],"newton") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal package gpu command");
@@ -212,6 +213,17 @@ FixGPU::FixGPU(LAMMPS *lmp, int narg, char **arg) :
     comm->nthreads = nthreads;
   }
   #endif
+
+  // change default setting for neighbor lists if GPU requires host neighbor lists
+  if (_gpu_mode == GPU_DEFAULT) {
+    if (lmp_gpu_requires_host_neighbor()) {
+      if (comm->me == 0)
+        error->warning(FLERR, "GPU does not support neighbor lists on device, switching to host");
+      _gpu_mode = GPU_FORCE;
+    } else {
+      _gpu_mode = GPU_NEIGH;
+    }
+  }
 
   // set newton pair flag
 
