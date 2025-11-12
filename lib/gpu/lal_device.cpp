@@ -877,6 +877,7 @@ void DeviceT::output_times(UCL_Timer &time_pair, Answer<numtyp,acctyp> &ans,
   single[7]=ans.cpu_idle_time();
   single[8]=nbor.bin_time();
 
+  // we cannot use MPI calls after MPI is already finalized which may happen on errors.
   MPI_Finalized(&post_final);
   if (post_final) return;
 
@@ -962,6 +963,7 @@ void DeviceT::output_kspace_times(UCL_Timer &time_in,
                                   const double cpu_time,
                                   const double idle_time, FILE *screen) {
   double single[9], times[9];
+  int post_final = 0;
 
   single[0]=time_out.total_seconds();
   single[1]=time_in.total_seconds()+atom.transfer_time()+atom.cast_time();
@@ -972,6 +974,10 @@ void DeviceT::output_kspace_times(UCL_Timer &time_in,
   single[6]=cpu_time;
   single[7]=idle_time;
   single[8]=ans.cast_time();
+
+  // we cannot use MPI calls after MPI is already finalized which may happen on errors.
+  MPI_Finalized(&post_final);
+  if (post_final) return;
 
   MPI_Reduce(single,times,9,MPI_DOUBLE,MPI_SUM,0,_comm_replica);
 
