@@ -294,8 +294,11 @@ accelerated styles.  If a prerequisite style or package is missing, the
 individual tests are skipped.  All force style tests will be executed on
 a single MPI process, so using the CMake option ``-D BUILD_MPI=off`` can
 significantly speed up testing, since this will skip the MPI
-initialization for each test run.  Below is an example command and
-output:
+initialization for each test run.  
+
+Below is an example command and output for running tests that contain 
+the string ``MolPairStyle:lj_cut`` (argument to the ``-R`` option 
+flag) and printing with verbose output (the ``-V`` flag):
 
 .. code-block:: console
 
@@ -358,10 +361,11 @@ output:
 
 In this particular case, 8 out of 9 sets of tests were conducted, the
 tests for the ``lj/cut/gpu`` pair style was skipped, since the LAMMPS
-library linked to the test executable did not include it.  To learn what
-individual tests are performed, you (currently) need to read the source
-code.  You can use code coverage recording (see next section) to confirm
-how well the tests cover the code paths in the individual source files.
+library linked to the test executable did not include the GPU package.  
+To learn what individual tests are performed, you (currently) need to 
+read the source code.  You can use code coverage recording (see next 
+section) to confirm how well the tests cover the code paths in the 
+individual source files.
 
 The force style test programs have a common set of options:
 
