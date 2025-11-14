@@ -67,7 +67,7 @@ class UCL_Program {
   /** \note Must call init() after each clear **/
   inline void clear() {
     if (_init_done) {
-      #if CL_VERSION_2_0
+      #ifdef CL_VERSION_2_0
       cl_context ctx_from_queue = nullptr;
       cl_int err = clGetCommandQueueInfo(_cq,
                                   CL_QUEUE_CONTEXT,
