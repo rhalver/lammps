@@ -270,7 +270,7 @@ if(BUILD_LAMMPS_GUI)
       endif() ]]
     )
 
-    if (USE_INTERNAL_LINALG)
+    if(USE_INTERNAL_LINALG AND (NOT DOWNLOAD_POTENTIALS))
       add_custom_target(tgz
         COMMAND ${LAMMPS_DIR}/cmake/packaging/build_linux_tgz.sh ${LAMMPS_RELEASE}
         DEPENDS lmp tools lammps-gui_build ${WHAM_EXE}
@@ -279,7 +279,11 @@ if(BUILD_LAMMPS_GUI)
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       )
     else()
-      message(FATAL_ERROR "Must use -D USE_INTERNAL_LINALG=ON for building Linux tgz package")
+      if(DOWNLOAD_POTENTIALS)
+        message(FATAL_ERROR "Must use -D DOWNLOAD_POTENTIALS=OFF for building Linux tgz package")
+      else()
+        message(FATAL_ERROR "Must use -D USE_INTERNAL_LINALG=ON for building Linux tgz package")
+      endif()
     endif()
   endif()
 endif()
