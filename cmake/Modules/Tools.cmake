@@ -280,9 +280,11 @@ if(BUILD_LAMMPS_GUI)
       )
     else()
       if(DOWNLOAD_POTENTIALS)
-        message(FATAL_ERROR "Must use -D DOWNLOAD_POTENTIALS=OFF for building Linux tgz package")
+        add_custom_target(tgz
+              COMMAND ${CMAKE_COMMAND} -E echo "Must use -D DOWLOAD_POTENTIALS=OFF for building Linux tgz package")
       else()
-        message(FATAL_ERROR "Must use -D USE_INTERNAL_LINALG=ON for building Linux tgz package")
+        add_custom_target(tgz
+              COMMAND ${CMAKE_COMMAND} -E echo "Must use -D USE_INTERNAL_LINALG=ON for building Linux tgz package")
       endif()
     endif()
   endif()
