@@ -35,6 +35,7 @@ Contributing Author: Jacob Gissinger (jgissing@stevens.edu)
 #include "molecule.h"
 #include "neigh_list.h"
 #include "neighbor.h"
+#include "output.h"
 #include "pair.h"
 #include "random_mars.h"
 #include "reset_atoms_mol.h"
@@ -97,6 +98,9 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
   fix2 = nullptr;
   fix3 = nullptr;
   reset_mol_ids = nullptr;
+  fpout = nullptr;
+  json_init = 0;
+  outflag = 0;
 
   if (narg < 8) utils::missing_cmd_args(FLERR,"fix bond/react", error);
 
@@ -228,6 +232,26 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg],"shuffle_seed") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"fix bond/react seed", error);
       shuffle_seed = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      iarg += 2;
+    } else if (strcmp(arg[iarg], "file") == 0) {
+      if (iarg + 2 > narg)
+        utils::missing_cmd_args(FLERR, std::string("Fix bond/react ") + arg[iarg], error);
+      outflag = 1;
+      if (comm->me == 0) {
+        fpout = fopen(arg[iarg + 1], "w");
+        if (fpout == nullptr)
+          error->one(FLERR, "Cannot open fix bond/react output file {}: {}", arg[iarg + 1],
+                     utils::getsyserror());
+        // header for 'delete' keyword JSON output
+        fprintf(fpout, "{\n");
+        fprintf(fpout, "    \"application\": \"LAMMPS\",\n");
+        fprintf(fpout, "    \"format\": \"dump\",\n");
+        fprintf(fpout, "    \"style\": \"molecules\",\n");
+        fprintf(fpout, "    \"title\": \"fix bond/react\",\n");
+        fprintf(fpout, "    \"revision\": 1,\n");
+        fprintf(fpout, "    \"timesteps\": [\n");
+        fflush(fpout);
+      }
       iarg += 2;
     } else if (strcmp(arg[iarg],"react") == 0) {
       break;
@@ -612,6 +636,11 @@ FixBondReact::~FixBondReact()
 
   delete[] set;
 
+  if (comm->me == 0) {
+    if (outflag == 1) fprintf(fpout, "        }\n    ]\n}");
+    if (fpout) fclose(fpout);
+  }
+
   if (group) {
     group->assign(master_group + " delete");
     if (stabilization_flag == 1) group->assign(exclude_group + " delete");
@@ -634,6 +663,9 @@ let's add an internal nve/limit fix for relaxation of reaction sites
 also let's add our per-atom property fix here!
 this per-atom property will state the timestep an atom was 'limited'
 it will have the name 'i_limit_tags' and will be intitialized to 0 (not in group)
+'i_react_tags' holds reaction ID for reacting atoms
+'i_rxn_instance' is unique tag for each ongoing reaction. use first initiator atom ID!
+'i_statted_tags' is 1 for non-reacting atoms
 ------------------------------------------------------------------------- */
 
 void FixBondReact::post_constructor()
@@ -641,7 +673,7 @@ void FixBondReact::post_constructor()
   // let's add the limit_tags per-atom property fix
   id_fix2 = "bond_react_props_internal";
   if (!modify->get_fix_by_id(id_fix2))
-    fix2 = modify->add_fix(id_fix2 + " all property/atom i_limit_tags i_react_tags ghost yes");
+    fix2 = modify->add_fix(id_fix2 + " all property/atom i_limit_tags i_react_tags i_rxn_instance ghost yes");
 
   // create master_group if not already existing
   // NOTE: limit_tags and react_tags automaticaly intitialized to zero (unless read from restart)
@@ -2723,6 +2755,9 @@ void FixBondReact::unlimit_bond()
   int index3 = atom->find_custom("react_tags",flag,cols);
   int *i_react_tags = atom->ivector[index3];
 
+  int index4 = atom->find_custom("rxn_instance",flag,cols);
+  int *i_rxn_instance = atom->ivector[index4];
+
   int unlimitflag = 0;
   for (int i = 0; i < atom->nlocal; i++) {
     // unlimit atoms for next step! this resolves # of procs disparity, mostly
@@ -2732,6 +2767,7 @@ void FixBondReact::unlimit_bond()
       i_limit_tags[i] = 0;
       if (stabilization_flag == 1) i_statted_tags[i] = 1;
       i_react_tags[i] = 0;
+      i_rxn_instance[i] = 0;
     }
   }
 
@@ -2925,6 +2961,9 @@ void FixBondReact::update_everything()
 
   int index3 = atom->find_custom("react_tags",flag,cols);
   int *i_react_tags = atom->ivector[index3];
+
+  int index4 = atom->find_custom("rxn_instance",flag,cols);
+  int *i_rxn_instance = atom->ivector[index4];
 
   // pass through twice
   // redefining 'update_num_mega' and 'update_mega_glove' each time
@@ -3137,6 +3176,7 @@ void FixBondReact::update_everything()
           i_limit_tags[ilocal] = update->ntimestep + 1;
           if (stabilization_flag == 1) i_statted_tags[ilocal] = 0;
           i_react_tags[ilocal] = rxn.ID;
+          i_rxn_instance[ilocal] = update_mega_glove[rxn.ibonding+1][i];
 
           if (rxn.atoms[j].landlocked == 1)
             type[ilocal] = rxn.product->type[j];
@@ -3558,6 +3598,45 @@ void FixBondReact::update_everything()
       }
     }
 
+  }
+
+  //need to take out of update_everything to print for all stabilization steps
+  //also should probably give choice to print just on step that reaction starts
+  if (outflag == 1) {
+    std::string indent;
+    int json_level = 2, tab = 4;
+    if (comm->me == 0) {
+      indent.resize(json_level*tab, ' ');
+      if (json_init > 0) {
+        fprintf(fpout, "%s},\n%s{\n", indent.c_str(), indent.c_str());
+      } else {
+        fprintf(fpout, "%s{\n", indent.c_str());
+        json_init = 1;
+      }
+      indent.resize(++json_level*tab, ' ');
+      utils::print(fpout, "{}\"timestep\": {},\n", indent, update->ntimestep);
+      utils::print(fpout, "{}\"molecules\": [\n", indent);
+      indent.resize(++json_level*tab, ' ');
+    }
+
+    // add Metadata struct to print out react-ID, using 'reaction' JSON key
+    Output::JSON_Metadata rxn_metadata;
+    rxn_metadata.metaflag = true;
+    rxn_metadata.key = "reaction";
+    std::vector<std::string> rxn_names;
+    rxn_names.reserve(rxns.size());
+    for (auto const& rxn : rxns)
+      rxn_names.push_back(rxn.name);
+    rxn_metadata.values = rxn_names;
+    rxn_metadata.ivec = i_react_tags;
+
+    output->write_molecule_json(fpout, json_level, json_init, i_rxn_instance, rxn_metadata);
+    if (json_init == 1) json_init++;
+    if (comm->me == 0) {
+      indent.resize(--json_level*tab, ' ');
+      fprintf(fpout, "%s]\n", indent.c_str());
+      fflush(fpout);
+    }
   }
 
   memory->destroy(update_mega_glove);
