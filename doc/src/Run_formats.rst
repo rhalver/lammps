@@ -409,6 +409,8 @@ are in the ``lmprestart.h`` header file.
 LAMMPS restart files are not expected to be portable between platforms
 or LAMMPS versions, but changes to the file format are rare.
 
+.. _json-dump-files:
+
 JSON Dump Files
 ^^^^^^^^^^^^^^^
 
