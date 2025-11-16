@@ -73,10 +73,11 @@ class Output : protected Pointers {
   MPI_Datatype createParticleStructType();
 
   struct JSON_Metadata {
-    bool metaflag = false;                            // indicates if there is metadata
+    bool metaflag;                                    // indicates if there is metadata
     std::string key;                                  // JSON key
     std::vector<std::string> values;                  // JSON value
     int *ivec;                                        // per-atom vector, indices for 'values'
+    JSON_Metadata() : metaflag(false) {}
   };
 
   Output(class LAMMPS *);
@@ -86,7 +87,7 @@ class Output : protected Pointers {
   void write(bigint);                                 // output for current timestep
   void write_dump(bigint);                            // force output of dump snapshots
   void write_restart(bigint);                         // force output of a restart file
-  void write_molecule_json(FILE *, int, int, int *, JSON_Metadata);  // output molecule JSON objects to file
+  void write_molecule_json(FILE *, int, int, int *, JSON_Metadata = JSON_Metadata{}); // JSON dump molecules
   void reset_timestep(bigint);                        // reset output which depends on timestep
   void reset_dt();                                    // reset output which depends on timestep size
 
