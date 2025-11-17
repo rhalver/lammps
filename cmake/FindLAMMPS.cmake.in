@@ -1,0 +1,17 @@
+# created by cmake version @CMAKE_VERSION@ for LAMMPS version @PROJECT_VERSION@
+
+include("${CMAKE_CURRENT_LIST_DIR}/LAMMPSConfigVersion.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/LAMMPSConfig.cmake")
+
+get_target_property(LAMMPS_CONFIG LAMMPS::lammps IMPORTED_CONFIGURATIONS)
+get_target_property(LAMMPS_LIBRARY LAMMPS::lammps IMPORTED_LOCATION_${LAMMPS_CONFIG})
+get_target_property(LAMMPS_INCLUDE_DIR LAMMPS::lammps INTERFACE_INCLUDE_DIRECTORIES)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(LAMMPS
+  REQUIRED_VARS LAMMPS_LIBRARY LAMMPS_INCLUDE_DIR
+  VERSION_VAR PACKAGE_VERSION
+  HANDLE_VERSION_RANGE
+)
+
+
