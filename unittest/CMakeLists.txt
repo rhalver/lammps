@@ -66,6 +66,21 @@ set_tests_properties(InvalidFlag PROPERTIES
         ENVIRONMENT "TSAN_OPTIONS=ignore_noninstrumented_modules=1;HWLOC_HIDE_ERRORS=2"
          PASS_REGULAR_EXPRESSION "ERROR: Invalid command-line argument.*")
 
+# create an executable using the CMake configuration
+add_custom_target(use_cmake_files
+  ${CMAKE_COMMAND} -E rm -rf ${CMAKE_BINARY_DIR}/use-cmake-files
+  COMMAND ${CMAKE_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/use-cmake-files
+                           -B ${CMAKE_BINARY_DIR}/use-cmake-files
+                           -D LAMMPS_DIR=${CMAKE_BINARY_DIR}
+  COMMAND ${CMAKE_COMMAND} --build  ${CMAKE_BINARY_DIR}/use-cmake-files
+  DEPENDS lammps lmp
+  BYPRODUCTS ${CMAKE_BINARY_DIR}/use-cmake-files/testlmp
+  COMMENT "LAMMPS test generated CMake configuration with compilation"
+)
+
+add_test(NAME FindLAMMPS
+   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target use_cmake_files)
+
 # convenience function for adding tests requiring to be run in parallel with MPI
 if(BUILD_MPI)
   function(add_mpi_test)
