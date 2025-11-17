@@ -29,11 +29,12 @@ FixStyle(bond/react,FixBondReact);
 #include <array>
 #include <deque>
 #include <map>
+#include <memory>
 #include <set>
 
 namespace LAMMPS_NS {
 
-struct json_metadata;                                   // forward declaration. full declaration in json_metadata.h
+struct json_metadata;                                      // forward declaration. full declaration in json_metadata.h
 
 class FixBondReact : public Fix {
  public:
