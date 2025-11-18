@@ -30,12 +30,12 @@ Examples
 .. code-block:: LAMMPS
 
    pair_style  hybrid/overlay saip/metal 16.0 1
-   pair_coeff  * * saip/metal CHAu.SAIP Au C H
+   pair_coeff  * * saip/metal CHAu.ILP Au C H
 
    pair_style  hybrid/overlay eam rebo saip/metal 16.0
    pair_coeff  1 1 eam  Au_u3.eam  Au NULL NULL
    pair_coeff  * * rebo CH.rebo    NULL  C H
-   pair_coeff  * * saip/metal      CHAu.SAIP  Au C H
+   pair_coeff  * * saip/metal      CHAu.ILP  Au C H
 
    pair_style  hybrid/overlay eam sw/mod saip/metal/tmd 16.0
    pair_coeff  1 1 eam  Au_u3.eam    Au NULL NULL
@@ -92,7 +92,7 @@ calculating the normals.
    the case of very small gold contacts, for example, nano-clusters,
    where edge effects may become relevant.
 
-The parameter file (e.g. CHAu.SAIP), is intended for use with *metal*
+The parameter file (e.g. CHAu.ILP), is intended for use with *metal*
 :doc:`units <units>`, with energies in meV. Two additional parameters,
 *S*, and *rcut* are included in the parameter file. *S* is designed to
 facilitate scaling of energies. *rcut* is designed to build the neighbor
@@ -151,7 +151,7 @@ if LAMMPS was built with that package.  See the :doc:`Build package
 This pair style requires the newton setting to be *on* for pair
 interactions.
 
-The CHAu.SAIP and TMDAu.SAIP potential file provided with LAMMPS (see the potentials
+The CHAu.ILP and TMDAu.SAIP potential file provided with LAMMPS (see the potentials
 directory) are parameterized for *metal* units.  You can use this
 potential with any LAMMPS units, but you would need to create your own
 custom CHAu.ILP potential file with coefficients listed in the appropriate
