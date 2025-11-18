@@ -11,7 +11,7 @@
 ------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   This is an optimized version of aip/water/2dm based on the contribution of:
+   This is an optimized version of ilp/tmd based on the contribution of:
      author: Wengen Ouyang (Wuhan University)
      e-mail: w.g.ouyang at gmail dot com
 
@@ -28,34 +28,41 @@
      DOI: 10.1145/3458817.3476137
 
    Potential is described by:
-     [Feng and Ouyang et al, J. Phys. Chem. C 127, 8704-8713 (2023).]
+     [Ouyang et al, J. Chem. Theory Comput. 17, 7237 (2021).]
 */
-#include "pair_aip_water_2dm_opt.h"
-
+#include "pair_saip_metal_tmd_opt.h"
 #include "atom.h"
+#include "interlayer_taper.h"
 #include "memory.h"
 
 #include <cstring>
 
 using namespace LAMMPS_NS;
+using namespace InterLayer;
 
-PairAIPWATER2DMOpt::PairAIPWATER2DMOpt(LAMMPS *lmp) :
-  PairILPGrapheneHBN(lmp), PairILPTMD(lmp), PairAIPWATER2DM(lmp), PairILPGrapheneHBNOpt(lmp)
+PairSAIPMETALTMDOpt::PairSAIPMETALTMDOpt(LAMMPS *lmp) :
+    PairILPTMDOpt(lmp), PairILPTMD(lmp), PairILPGrapheneHBN(lmp), PairILPGrapheneHBNOpt(lmp), PairSAIPMETALTMD(lmp)
 {
-  variant = AIP_WATER_2DM;
 }
 
-void PairAIPWATER2DMOpt::coeff(int narg, char **args)
+void PairSAIPMETALTMDOpt::coeff(int narg, char **args)
 {
-  PairILPGrapheneHBNOpt::coeff(narg, args);
+  PairILPTMDOpt::coeff(narg, args);
+  puts("opt coeff");
   for (int i = 1; i <= atom->ntypes; i++) {
     int itype = map[i];
     if (strcmp(elements[itype], "Mo") == 0 || strcmp(elements[itype], "W") == 0 ||
         strcmp(elements[itype], "S") == 0 || strcmp(elements[itype], "Se") == 0 ||
         strcmp(elements[itype], "Te") == 0) {
       special_type[i] = TMD_METAL;
-    } else if (strcmp(elements[itype], "Hw") == 0 || strcmp(elements[itype], "Ow") == 0) {
-      special_type[i] = WATER;
+    }
+  }
+  for (int i = 1; i <= atom->ntypes; i++) {
+    int itype = map[i];
+    if (strcmp(elements[itype], "Au") == 0 || strcmp(elements[itype], "Cu") == 0 ||
+        strcmp(elements[itype], "Ag") == 0 || strcmp(elements[itype], "Ru") == 0 || 
+        strcmp(elements[itype], "Pt") == 0 || strcmp(elements[itype], "Ni") == 0) {
+      special_type[i] = SAIP_METAL;
     }
   }
 }
