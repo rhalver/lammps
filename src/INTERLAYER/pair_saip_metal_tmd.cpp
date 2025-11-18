@@ -35,7 +35,7 @@ using namespace InterLayer;
 
 static const char cite_saip_tmd[] =
     "saip/metal/tmd potential doi.org/10.1002/advs.202415884\n"
-    "@Article{Ouyang2021\n"
+    "@Article{Yao2025\n"
     " author = {Y. Yao, Y. Song, B. Wu, S. Scherb, S. Huang, A. Hinaut, T. Glatzel, E. Meyer, Z. Liu, and W. Ouyang},\n"
     " title = {Unraveling the Interfacial Properties of Twisted Single-Crystal Au(111)/MoS2 Heterostructures: A Pathway to Robust Superlubricity},\n"
     " journal = {Adv. Sci.},\n"
