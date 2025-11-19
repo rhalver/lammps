@@ -76,7 +76,7 @@ class FixAddForceKokkos : public FixAddForce {
   typename AT::t_kkfloat_1d_3_lr_randomread x;
   typename AT::t_kkacc_1d_3 f;
   typename AT::t_imageint_1d_randomread image;
-  typename AT::t_int_1d_randomread mask;  
+  typename AT::t_int_1d_randomread mask;
 
   Few<double,3> prd;
   Few<double,6> h;
