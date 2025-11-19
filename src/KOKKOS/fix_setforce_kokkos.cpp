@@ -184,4 +184,3 @@ template class FixSetForceKokkos<LMPDeviceType>;
 template class FixSetForceKokkos<LMPHostType>;
 #endif
 }
-
