@@ -19,23 +19,23 @@
 
 using namespace LAMMPS_NS;
 
-static constexpr char cite_separator[] =
+namespace {
+constexpr char cite_separator[] =
     "CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE\n\n";
 
-static constexpr char cite_nagline[] =
-    "Your simulation uses code contributions which should be cited:\n";
+constexpr char cite_nagline[] = "Your simulation uses code contributions which should be cited:\n";
 
-static constexpr char cite_file[] = "The {} {} lists these citations in BibTeX format.\n\n";
+constexpr char cite_file[] = "The {} {} lists these citations in BibTeX format.\n\n";
 
 // define hash function
-static std::hash<std::string> get_hash;
+std::hash<std::string> get_hash;
+}    // namespace
 
 /* ---------------------------------------------------------------------- */
 
 CiteMe::CiteMe(LAMMPS *lmp, int _screen, int _logfile, const char *_file) : Pointers(lmp)
 {
   fp = nullptr;
-  cs = new citeset();
 
   screen_flag = _screen;
   scrbuffer.clear();
@@ -62,8 +62,6 @@ CiteMe::CiteMe(LAMMPS *lmp, int _screen, int _logfile, const char *_file) : Poin
 CiteMe::~CiteMe()
 {
   flush();
-  delete cs;
-
   if (fp) fclose(fp);
 }
 
@@ -76,8 +74,8 @@ void CiteMe::add(const std::string &reference)
   if (comm->me != 0) return;
 
   std::size_t crc = get_hash(reference);
-  if (cs->find(crc) != cs->end()) return;
-  cs->insert(crc);
+  if (cs.find(crc) != cs.end()) return;
+  cs.insert(crc);
 
   if (fp) {
     fputs(reference.c_str(), fp);

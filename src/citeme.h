@@ -28,14 +28,13 @@ class CiteMe : protected Pointers {
   enum { VERBOSE, TERSE };
 
  private:
-  FILE *fp;                 // explicit citation file pointer or NULL
-  std::string citefile;     // name of the explicit citation file.
-  int screen_flag;          // determine whether verbose or terse output
-  int logfile_flag;         // determine whether verbose or terse output
-  std::string scrbuffer;    // output buffer for screen
-  std::string logbuffer;    // output buffer for logfile
-  using citeset = std::set<std::size_t>;
-  citeset *cs;    // registered set of publications
+  FILE *fp;                    // explicit citation file pointer or NULL
+  std::string citefile;        // name of the explicit citation file.
+  int screen_flag;             // determine whether verbose or terse output
+  int logfile_flag;            // determine whether verbose or terse output
+  std::string scrbuffer;       // output buffer for screen
+  std::string logbuffer;       // output buffer for logfile
+  std::set<std::size_t> cs;    // registered set of publications
 };
 }    // namespace LAMMPS_NS
 
