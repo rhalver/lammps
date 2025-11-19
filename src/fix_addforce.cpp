@@ -30,8 +30,6 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
-enum { NONE, CONSTANT, EQUAL, ATOM };
-
 /* ---------------------------------------------------------------------- */
 
 FixAddForce::FixAddForce(LAMMPS *lmp, int narg, char **arg) :
