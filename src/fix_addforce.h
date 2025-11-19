@@ -41,7 +41,7 @@ class FixAddForce : public Fix {
 
   enum { NONE, CONSTANT, EQUAL, ATOM };
 
- private:
+ protected:
   double xvalue, yvalue, zvalue;
   int varflag;
   char *xstr, *ystr, *zstr, *estr;
