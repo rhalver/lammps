@@ -15,10 +15,10 @@
    e-mail: w.g.ouyang at gmail dot com
 
    This is a full version of the potential described in
-   [Ouyang et al., J. Chem. Theory Comput. 17, 7215-7223 (2021)]
+   [Yao et al., Adv. Sci. 12, 2415884 (2025)]
 ------------------------------------------------------------------------- */
 
-#include "pair_saip_metal.h"
+#include "pair_saip_metal_tmd.h"
 
 #include "atom.h"
 #include "citeme.h"
@@ -33,35 +33,35 @@
 using namespace LAMMPS_NS;
 using namespace InterLayer;
 
-static const char cite_saip[] =
-    "saip/metal potential: https://doi.org/10.1021/acs.jctc.1c00622\n\n"
-    "@Article{Ouyang2021\n"
-    " author = {W. Ouyang and O. Hod and R. Guerra},\n"
-    " title = {Registry-Dependent Potential for Interfaces of Gold with Graphitic Systems},\n"
-    " journal = {J.~Chem.\\ Theory Comput.},\n"
-    " volume =  17,\n"
-    " pages =   {7215--7223}\n"
-    " year =    2021,\n"
+static const char cite_saip_tmd[] =
+    "saip/metal/tmd potential doi.org/10.1002/advs.202415884\n"
+    "@Article{Yao2025\n"
+    " author = {Y. Yao, Y. Song, B. Wu, S. Scherb, S. Huang, A. Hinaut, T. Glatzel, E. Meyer, Z. Liu, and W. Ouyang},\n"
+    " title = {Unraveling the Interfacial Properties of Twisted Single-Crystal Au(111)/MoS2 Heterostructures: A Pathway to Robust Superlubricity},\n"
+    " journal = {Adv. Sci.},\n"
+    " volume =  12,\n"
+    " pages =   {2415884}\n"
+    " year =    2025,\n"
     "}\n\n";
 
 /* ---------------------------------------------------------------------- */
 
-PairSAIPMETAL::PairSAIPMETAL(LAMMPS *lmp) : PairILPGrapheneHBN(lmp)
+PairSAIPMETALTMD::PairSAIPMETALTMD(LAMMPS *lmp) : PairILPGrapheneHBN(lmp), PairILPTMD(lmp)
 {
-  variant = SAIP_METAL;
+  variant = SAIP_METAL_TMD;
   single_enable = 0;
-  if (lmp->citeme) lmp->citeme->add(cite_saip);
+  if (lmp->citeme) lmp->citeme->add(cite_saip_tmd);
 }
 
 /* ----------------------------------------------------------------------
    global settings
 ------------------------------------------------------------------------- */
 
-void PairSAIPMETAL::settings(int narg, char **arg)
+void PairSAIPMETALTMD::settings(int narg, char **arg)
 {
   if (narg < 1 || narg > 2) error->all(FLERR, "Illegal pair_style command");
   if (!utils::strmatch(force->pair_style, "^hybrid/overlay"))
-    error->all(FLERR, "Pair style saip/metal must be used as sub-style with hybrid/overlay");
+    error->all(FLERR, "Pair style saip/metal/tmd must be used as sub-style with hybrid/overlay");
 
   cut_global = utils::numeric(FLERR, arg[0], false, lmp);
   if (narg == 2) tap_flag = utils::inumeric(FLERR, arg[1], false, lmp);
@@ -71,7 +71,7 @@ void PairSAIPMETAL::settings(int narg, char **arg)
    Repulsive forces and energy
 ------------------------------------------------------------------------- */
 
-void PairSAIPMETAL::calc_FRep(int eflag, int /* vflag */)
+void PairSAIPMETALTMD::calc_FRep(int eflag, int /* vflag */)
 {
   int i, j, ii, jj, inum, jnum, itype, jtype, k, kk;
   double prodnorm1, fkcx, fkcy, fkcz, filp;
@@ -136,9 +136,11 @@ void PairSAIPMETAL::calc_FRep(int eflag, int /* vflag */)
           Tap = 1.0;
           dTap = 0.0;
         }
+
         // for atoms in bulk materials
-        if (strcmp(elements[map[itype]], "C") != 0 && strcmp(elements[map[itype]], "H") != 0 &&
-            strcmp(elements[map[itype]], "B") != 0 && strcmp(elements[map[itype]], "N") != 0) {
+        if (strcmp(elements[map[itype]], "Au") == 0 || strcmp(elements[map[itype]], "Cu") == 0 ||
+            strcmp(elements[map[itype]], "Ag") == 0 || strcmp(elements[map[itype]], "Ru") == 0 ||
+            strcmp(elements[map[itype]], "Pt") == 0 || strcmp(elements[map[itype]], "Ni") == 0) {
           // Set ni along rij
           exp0 = exp(-p.lambda * (r - p.z0));
           frho1 = 1.0 * p.C;
@@ -157,11 +159,15 @@ void PairSAIPMETAL::calc_FRep(int eflag, int /* vflag */)
           f[j][0] -= fkcx;
           f[j][1] -= fkcy;
           f[j][2] -= fkcz;
-
+          // if (std::min(i,j) == 0 && std::max(i,j) == 2267) {
+          //   printf("erep1: %d %d %s %s %g %g %g %g\n", std::min(i, j), std::max(i, j), elements[map[itype]], elements[map[jtype]], Tap, Vilp, Erep, exp0);
+          // }
           if (eflag) pvector[1] += evdwl = Tap * Vilp;
           if (evflag) ev_tally(i, j, nlocal, newton_pair, evdwl, 0.0, filp, delx, dely, delz);
+
         } else {    // for atoms in 2D materials
           // Calculate the transverse distance
+          // note that rho_ij does not equal to rho_ji except when normals are all along z
           prodnorm1 = normal[i][0] * delx + normal[i][1] * dely + normal[i][2] * delz;
           rhosq1 = rsq - prodnorm1 * prodnorm1;    // rho_ij
           rdsq1 = rhosq1 * p.delta2inv;            // (rho_ij/delta)^2
@@ -180,11 +186,11 @@ void PairSAIPMETAL::calc_FRep(int eflag, int /* vflag */)
           fsum = fpair + fpair1;
           // derivatives of the product of rij and ni, the result is a vector
           dprodnorm1[0] =
-              dnormdri[0][0][i] * delx + dnormdri[1][0][i] * dely + dnormdri[2][0][i] * delz;
+              dnormdri[i][0][0] * delx + dnormdri[i][1][0] * dely + dnormdri[i][2][0] * delz;
           dprodnorm1[1] =
-              dnormdri[0][1][i] * delx + dnormdri[1][1][i] * dely + dnormdri[2][1][i] * delz;
+              dnormdri[i][0][1] * delx + dnormdri[i][1][1] * dely + dnormdri[i][2][1] * delz;
           dprodnorm1[2] =
-              dnormdri[0][2][i] * delx + dnormdri[1][2][i] * dely + dnormdri[2][2][i] * delz;
+              dnormdri[i][0][2] * delx + dnormdri[i][1][2] * dely + dnormdri[i][2][2] * delz;
           fp1[0] = prodnorm1 * normal[i][0] * fpair1;
           fp1[1] = prodnorm1 * normal[i][1] * fpair1;
           fp1[2] = prodnorm1 * normal[i][2] * fpair1;
@@ -209,12 +215,12 @@ void PairSAIPMETAL::calc_FRep(int eflag, int /* vflag */)
             k = ILP_neighs_i[kk];
             if (k == i) continue;
             // derivatives of the product of rij and ni respect to rk, k=0,1,2, where atom k is the neighbors of atom i
-            dprodnorm1[0] = dnormal[0][0][kk][i] * delx + dnormal[1][0][kk][i] * dely +
-                dnormal[2][0][kk][i] * delz;
-            dprodnorm1[1] = dnormal[0][1][kk][i] * delx + dnormal[1][1][kk][i] * dely +
-                dnormal[2][1][kk][i] * delz;
-            dprodnorm1[2] = dnormal[0][2][kk][i] * delx + dnormal[1][2][kk][i] * dely +
-                dnormal[2][2][kk][i] * delz;
+            dprodnorm1[0] = dnormal[i][0][kk][0] * delx + dnormal[i][1][kk][0] * dely +
+                dnormal[i][2][kk][0] * delz;
+            dprodnorm1[1] = dnormal[i][0][kk][1] * delx + dnormal[i][1][kk][1] * dely +
+                dnormal[i][2][kk][1] * delz;
+            dprodnorm1[2] = dnormal[i][0][kk][2] * delx + dnormal[i][1][kk][2] * dely +
+                dnormal[i][2][kk][2] * delz;
             fk[0] = (-prodnorm1 * dprodnorm1[0] * fpair1) * Tap;
             fk[1] = (-prodnorm1 * dprodnorm1[1] * fpair1) * Tap;
             fk[2] = (-prodnorm1 * dprodnorm1[2] * fpair1) * Tap;
@@ -228,7 +234,9 @@ void PairSAIPMETAL::calc_FRep(int eflag, int /* vflag */)
               ev_tally_xyz(k, i, nlocal, newton_pair, 0.0, 0.0, fk[0], fk[1], fk[2], delki[0],
                            delki[1], delki[2]);
           }
-
+          // if (std::min(i,j) == 0 && std::max(i,j) == 2267) {
+          //   printf("erep2: %d %d %g\n", std::min(i, j), std::max(i, j), Tap*Vilp);
+          // }
           if (eflag) pvector[1] += evdwl = Tap * Vilp;
           if (evflag)
             ev_tally_xyz(i, j, nlocal, newton_pair, evdwl, 0.0, fkcx, fkcy, fkcz, delx, dely, delz);
@@ -236,4 +244,5 @@ void PairSAIPMETAL::calc_FRep(int eflag, int /* vflag */)
       }      // end of rsq < cutoff
     }        // loop over jj
   }          // loop over ii
+  // exit(0);
 }
