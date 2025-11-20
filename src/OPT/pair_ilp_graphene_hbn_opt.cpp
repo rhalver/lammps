@@ -49,7 +49,7 @@ using namespace LAMMPS_NS;
 using namespace InterLayer;
 
 static const char cite_ilp_cur[] =
-    "ilp/graphene/hbn/opt potential doi:10.1145/3458817.3476137\n"
+    "ilp/graphene/hbn/opt potential: https://doi.org/10.1145/3458817.3476137\n\n"
     "@inproceedings{gao2021lmff\n"
     " author = {Gao, Ping and Duan, Xiaohui and Others},\n"
     " title = {LMFF: Efficient and Scalable Layered Materials Force Field on Heterogeneous "

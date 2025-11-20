@@ -30,15 +30,15 @@ This is a simple two-step process:
 
 **Step 1: Define the citation string**
 
-At the top of your implementation file (typically a ``.cpp`` file), define a
-static string containing the citation in BibTeX format. The string should
-start with a single line description including a DOI (Digital Object Identifier),
+At the top of your implementation file (typically a ``.cpp`` file),
+define a static string containing the citation in BibTeX format. The
+string should start with a single line description including a DOI URL,
 followed by a complete BibTeX entry. Example:
 
 .. code-block:: c++
 
    static const char cite_my_feature[] =
-     "my_feature command: doi:10.1234/example.doi\n\n"
+     "my_feature command: https://doi.org/10.1234/example.doi\n\n"
      "@Article{AuthorYear,\n"
      " author = {First Author and Second Author},\n"
      " title = {Title of the Paper},\n"
@@ -73,7 +73,7 @@ The example from above will produce by default the following output:
 
    Your simulation uses code contributions which should be cited:
 
-   - my_feature command: doi:10.1234/example.doi
+   - my_feature command: https://doi.org/10.1234/example.doi
 
    The file log.cite lists these citations in BibTeX format.
 
