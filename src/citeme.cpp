@@ -11,15 +11,6 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-/** \file citeme.cpp
- *  \brief Implementation of citation management for LAMMPS contributed features
- *
- * This file implements the CiteMe class which manages citation reminders
- * for contributed LAMMPS features. It handles deduplication of citations,
- * formatting for different output modes (verbose/terse), and writing to
- * screen, log file, and optional BibTeX file.
- */
-
 #include "citeme.h"
 #include "comm.h"
 #include "universe.h"

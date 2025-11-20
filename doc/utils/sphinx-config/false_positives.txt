@@ -764,6 +764,8 @@ Decius
 decompositions
 decorrelation
 decrementing
+deduplicates
+deduplication
 deeppink
 deepskyblue
 defgrad
