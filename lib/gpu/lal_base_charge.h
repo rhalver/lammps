@@ -132,7 +132,7 @@ class BaseCharge {
   void build_nbor_list(const int inum, const int host_inum,
                        const int nall, double **host_x, int *host_type,
                        double *sublo, double *subhi, tagint *tag, int **nspecial,
-                       tagint **special, double* prd, int* periodicity,
+                       tagint **special, double *prd, int *periodicity,
                        bool &success);
 
   /// Pair loop with host neighboring
