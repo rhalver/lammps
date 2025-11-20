@@ -41,7 +41,7 @@ class CiteMe : protected Pointers {
   /** Register a publication for citation output
 
 \verbatim embed:rst
-      
+
 Adds a citation to the set of publications to be cited.  Each citation
 should contain a BibTeX entry and is output only once, even if add()
 is called multiple times with the same citation.  The citation string
@@ -59,7 +59,7 @@ that implements a published method or algorithm.
   /** Flush accumulated citation buffers to screen and log file
 
 \verbatim embed:rst
-      
+
 Outputs all pending citations to the screen and log file with appropriate
 formatting.  Called automatically by the destructor when LAMMPS terminates
 or is reset by the :doc:`clear <clear>` command and at the end of a
