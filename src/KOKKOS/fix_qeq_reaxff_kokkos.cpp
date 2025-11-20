@@ -540,7 +540,7 @@ void FixQEqReaxFFKokkos<DeviceType>::compute_h_team(
   // calculated by the current team will be stored in d_val
   bigint team_firstnbr_idx = 0;
   Kokkos::single(Kokkos::PerTeam(team),
-                 [=](bigint &val) {
+                 [&](bigint &val) {
                    int totalnbrs = s_firstnbr[lastatom - firstatom - 1] +
                                    s_numnbrs[lastatom - firstatom - 1];
                    val = Kokkos::atomic_fetch_add(&d_mfill_offset(), totalnbrs);
