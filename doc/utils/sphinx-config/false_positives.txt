@@ -1141,6 +1141,7 @@ ew
 ewald
 Ewald
 ewaldflag
+exascale
 excitations
 excv
 exe
@@ -1516,6 +1517,7 @@ Hershchel
 Hertizian
 hertzian
 Hertzsch
+heterointerfaces
 heterostructures
 hexahedrons
 hexatic
@@ -1793,6 +1795,7 @@ jN
 Joanes
 Joannopoulos
 Jochim
+Johansson
 Jonsson
 Jorgensen
 jp
@@ -3202,6 +3205,7 @@ quadrupolar
 quadrupole
 quadrupoles
 Quant
+quantumness
 quartic
 quat
 quaternion
@@ -4332,6 +4336,7 @@ Yamada
 yaml
 Yan
 Yanxon
+Yao
 Yaser
 Yazdani
 Ybar
