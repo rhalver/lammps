@@ -1365,16 +1365,17 @@ void FixQEqReaxFFKokkos<DeviceType>::sort_kokkos(Kokkos::BinSort<KeyViewType, Bi
 template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void FixQEqReaxFFKokkos<DeviceType>::operator()(TagQEqPackExchange, const int &mysend) const {
+
   const int i = d_exchange_sendlist(mysend);
-
-  for (int m = 0; m < nprev; m++) d_buf(mysend*nprev*2 + m) = static_cast<double>(d_s_hist(i,m));
-  for (int m = 0; m < nprev; m++) d_buf(mysend*nprev*2 + nprev+m) = static_cast<double>(d_t_hist(i,m));
-
   const int j = d_copylist(mysend);
 
-  if (j > -1) {
-    for (int m = 0; m < nprev; m++) d_s_hist(i,m) = d_s_hist(j,m);
-    for (int m = 0; m < nprev; m++) d_t_hist(i,m) = d_t_hist(j,m);
+  for (int m = 0; m < nprev; m++) {
+    d_buf(mysend*nprev*2 + m) = static_cast<double>(d_s_hist(i,m));
+    d_buf(mysend*nprev*2 + nprev+m) = static_cast<double>(d_t_hist(i,m));
+    if (j > -1) {
+      d_s_hist(i,m) = d_s_hist(j,m);
+      d_t_hist(i,m) = d_t_hist(j,m);
+    }
   }
 }
 

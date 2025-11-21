@@ -1843,11 +1843,13 @@ void FixACKS2ReaxFFKokkos<DeviceType>::operator() (TagACKS2CalculateQ, const int
 
   // last two rows
   if (last_rows_flag && i == 0) {
-    for (int i = 0; i < 2; ++i) {
-      for (int k = nprev-1; k > 0; --k)
-        d_s_hist_last(i,k) = d_s_hist_last(i,k-1);
-      d_s_hist_last(i,0) = d_s[2*NN+i];
+    /* backup s_hist_last */
+    for (int k = nprev-1; k > 0; --k) {
+      d_s_hist_last(0,k) = d_s_hist_last(0,k-1);
+      d_s_hist_last(1,k) = d_s_hist_last(1,k-1);
     }
+    d_s_hist_last(0,0) = d_s[2*NN];
+    d_s_hist_last(1,0) = d_s[2*NN+1];
   }
 }
 
