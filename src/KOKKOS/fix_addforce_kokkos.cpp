@@ -36,6 +36,10 @@ FixAddForceKokkos<DeviceType>::FixAddForceKokkos(LAMMPS *lmp, int narg, char **a
   FixAddForce(lmp, narg, arg)
 {
   kokkosable = 1;
+
+  // no virial support yet. remove this after adding it.
+  virial_global_flag = virial_peratom_flag = 0;
+
   atomKK = (AtomKokkos *) atom;
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
   datamask_read = EMPTY_MASK;
