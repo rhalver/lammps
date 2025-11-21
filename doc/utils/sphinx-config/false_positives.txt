@@ -829,6 +829,7 @@ diagonalizers
 diagonalizing
 Diallo
 diblock
+dichalcogenide
 dichalcogenides
 Dickel
 diel
