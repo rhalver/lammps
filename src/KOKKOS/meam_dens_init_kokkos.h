@@ -25,8 +25,8 @@ template<int NEIGHFLAG>
 KOKKOS_INLINE_FUNCTION
 void MEAMKokkos<DeviceType>::operator()(TagMEAMDensInit<NEIGHFLAG>, const int &i) const {
   int ii, offsetval;
+  offsetval = d_offset[ii];
   ii = d_ilist_half[i];
-  offsetval = d_offset[i];
   // compute screening function and derivatives
   this->template getscreen<NEIGHFLAG>(ii, offsetval, x, d_numneigh_half,
             d_numneigh_full, ntype, type, d_map);
