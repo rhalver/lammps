@@ -52,8 +52,8 @@ jobs:
       working-directory: src
       run: |
         ccache -z
-        make -j2 serial
-        make -j2 mpi
+        make -j2 CC="ccache g++" serial
+        make -j2 CC="ccache mpicxx" mpi
         ccache -s
 
     - name: Running serial LAMMPS
