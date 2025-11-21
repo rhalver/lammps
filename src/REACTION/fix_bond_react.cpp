@@ -448,9 +448,8 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     rxn_metadata->key = "reaction";
     std::vector<std::string> rxn_names;
     rxn_names.reserve(rxns.size());
-    for (auto const& rxn : rxns)
-      rxn_names.push_back(rxn.name);
-    rxn_metadata->values = rxn_names;
+    for (auto const& rxn : rxns) rxn_names.push_back(rxn.name);
+    rxn_metadata->values = std::move(rxn_names);
   }
 
   for (auto &rlm : rate_limits) {
