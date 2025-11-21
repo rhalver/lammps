@@ -239,6 +239,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
         utils::missing_cmd_args(FLERR, std::string("Fix bond/react ") + arg[iarg], error);
       outflag = true;
       if (comm->me == 0) {
+        if (fpout) fclose(fpout);
         fpout = fopen(arg[iarg + 1], "w");
         if (fpout == nullptr)
           error->one(FLERR, "Cannot open fix bond/react output file {}: {}", arg[iarg + 1],
@@ -649,9 +650,9 @@ FixBondReact::~FixBondReact()
 
   delete[] set;
 
-  if (comm->me == 0) {
-    if (outflag) fprintf(fpout, "        }\n    ]\n}");
-    if (fpout) fclose(fpout);
+  if (fpout) {
+    fprintf(fpout, "        }\n    ]\n}");
+    fclose(fpout);
   }
 
   if (group) {
