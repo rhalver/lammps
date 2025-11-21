@@ -40,8 +40,8 @@
 using namespace LAMMPS_NS;
 using namespace InterLayer;
 
-PairSAIPMETALTMDOpt::PairSAIPMETALTMDOpt(LAMMPS *lmp) :
-    PairILPTMDOpt(lmp), PairILPTMD(lmp), PairILPGrapheneHBN(lmp), PairILPGrapheneHBNOpt(lmp), PairSAIPMETALTMD(lmp)
+PairSAIPMETALTMDOpt::PairSAIPMETALTMDOpt(LAMMPS *lmp) : PairSAIPMETALTMD(lmp),
+    PairILPTMDOpt(lmp), PairILPTMD(lmp), PairILPGrapheneHBN(lmp), PairILPGrapheneHBNOpt(lmp)
 {
 }
 

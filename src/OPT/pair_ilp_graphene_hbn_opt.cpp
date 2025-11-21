@@ -341,10 +341,6 @@ void PairILPGrapheneHBNOpt::eval()
     double norm[3], dnormdxi[3][3], dnormdxk[MAX_NNEIGH][3][3];
 
     calc_atom_normal<MAX_NNEIGH>(i, itype, ILP_neigh, ILP_nneigh, norm, dnormdxi, dnormdxk);
-    // if (norm[0] < 0)
-    //   printf("%d %s %g %g %g\n", i, elements[itype_map], norm[0], norm[1], norm[2]);
-    // else
-    //   printf("%d %s %g %g %g\n", i, elements[itype_map], -norm[0], -norm[1], -norm[2]);
     for (jj = 0; jj < jnum_inter; jj++) {
       j = jlist_inter[jj];
       jtype = type[j];
@@ -756,8 +752,5 @@ void PairILPGrapheneHBNOpt::coeff(int narg, char **args)
 {
   PairILPGrapheneHBN::coeff(narg, args);
   memory->create(special_type, atom->ntypes + 1, "PairILPGrapheneHBN:special_type");
-  for (int i = 1; i <= atom->ntypes; i++) {
-    int itype = map[i];
-    special_type[i] = false;
-  }
+  for (int i = 1; i <= atom->ntypes; i++) special_type[i] = false;
 }
