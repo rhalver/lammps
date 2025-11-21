@@ -51,7 +51,7 @@ jobs:
       shell: bash
       working-directory: src
       run: |
-        ccache -z
+        ccache -z -M 3
         make -j2 CC="ccache g++" serial
         make -j2 CC="ccache mpicxx" mpi
         ccache -s
