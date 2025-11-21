@@ -92,7 +92,7 @@ Citations added with :cpp:func:`CiteMe::add() <LAMMPS_NS::CiteMe::add>` are:
 1. Written immediately to the BibTeX file (if enabled)
 2. Buffered for screen and log file output
 3. Flushed to screen and log file at appropriate times (typically at the
-   end of the run or when LAMMPS has reached the end of the input file.
+   end of the run or when LAMMPS has reached the end of the input file).
 
 For the complete API documentation see the class reference below:
 

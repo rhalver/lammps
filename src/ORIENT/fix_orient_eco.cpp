@@ -38,7 +38,7 @@ using namespace FixConst;
 using namespace MathConst;
 
 static const char cite_fix_orient_eco[] =
-  "fix orient/eco command:: https://doi.org/10.1016/j.commatsci.2020.109774}\n\n"
+  "fix orient/eco command: https://doi.org/10.1016/j.commatsci.2020.109774\n\n"
   "@Article{Schratt20,\n"
   " author = {A. A. Schratt and V. Mohles},\n"
   " title = {Efficient Calculation of the {ECO} Driving Force for Atomistic Simulations of Grain Boundary Motion},\n"
