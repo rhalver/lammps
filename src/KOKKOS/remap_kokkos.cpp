@@ -35,13 +35,13 @@ RemapKokkos<DeviceType>::RemapKokkos(LAMMPS *lmp, MPI_Comm comm,
              int out_klo, int out_khi,
              int nqty, int permute, int memory,
              int precision, int usecollective,
-             int usegpu_aware) : Pointers(lmp)
+             int useisend, int usegpu_aware) : Pointers(lmp)
 {
   plan = remap_3d_create_plan_kokkos(comm,
                               in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
                               out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,
                               nqty,permute,memory,precision,usecollective,
-                              usegpu_aware);
+                              useisend, usegpu_aware);
   if (plan == nullptr) error->one(FLERR,"Could not create 3d remap plan");
 }
 
@@ -142,14 +142,26 @@ void RemapKokkos<DeviceType>::remap_3d_kokkos(typename FFT_AT::t_FFT_SCALAR_1d d
 
     for (isend = 0; isend < plan->nsend; isend++) {
       int in_offset = plan->send_offset[isend];
-      plan->pack(d_in,in_offset,
-                 plan->d_sendbuf,0,&plan->packplan[isend]);
+      if (plan->useisend) {
+        plan->pack(d_in,in_offset,
+                  plan->d_sendbuf,plan->send_bufloc[isend],
+                  &plan->packplan[isend]);
+      } else {
+        plan->pack(d_in,in_offset,
+                  plan->d_sendbuf,0,
+                  &plan->packplan[isend]);
+      }
 
       if (!plan->usegpu_aware)
         Kokkos::deep_copy(plan->h_sendbuf,plan->d_sendbuf);
 
-      MPI_Send(v_sendbuf,plan->send_size[isend],MPI_FFT_SCALAR,
-               plan->send_proc[isend],0,plan->comm);
+      if (plan->useisend) {
+        MPI_Isend(v_sendbuf + plan->send_bufloc[isend],plan->send_size[isend],MPI_FFT_SCALAR,
+                plan->send_proc[isend],0,plan->comm,&plan->isend_reqs[isend]);
+      } else {
+        MPI_Send(v_sendbuf,plan->send_size[isend],MPI_FFT_SCALAR,
+                plan->send_proc[isend],0,plan->comm);
+      }
     }
 
     // copy in -> scratch -> out for self data
@@ -182,6 +194,11 @@ void RemapKokkos<DeviceType>::remap_3d_kokkos(typename FFT_AT::t_FFT_SCALAR_1d d
 
       plan->unpack(d_scratch,scratch_offset,
                    d_out,out_offset,&plan->unpackplan[irecv]);
+    }
+
+    if (plan->useisend) {
+      // finally, wait for all Isends to be done
+      MPI_Waitall(plan->nsend,plan->isend_reqs,MPI_STATUS_IGNORE);
     }
   } else {
     if (plan->commringlen > 0) {
@@ -266,6 +283,7 @@ void RemapKokkos<DeviceType>::remap_3d_kokkos(typename FFT_AT::t_FFT_SCALAR_1d d
                           1 = single precision (4 bytes per datum)
                           2 = double precision (8 bytes per datum)
    usecollective        whether to use collective MPI or point-to-point
+   useisend             when using point-to-point MPI, use non-blocking MPI_Isend
    usegpu_aware         whether to use GPU-Aware MPI or not
 ------------------------------------------------------------------------- */
 
@@ -277,7 +295,7 @@ struct remap_plan_3d_kokkos<DeviceType>* RemapKokkos<DeviceType>::remap_3d_creat
   int out_ilo, int out_ihi, int out_jlo, int out_jhi,
   int out_klo, int out_khi,
   int nqty, int permute, int memory, int /*precision*/,
-  int usecollective, int usegpu_aware)
+  int usecollective, int useisend, int usegpu_aware)
 {
 
   struct remap_plan_3d_kokkos<DeviceType> *plan;
@@ -295,6 +313,7 @@ struct remap_plan_3d_kokkos<DeviceType>* RemapKokkos<DeviceType>::remap_3d_creat
   plan = new struct remap_plan_3d_kokkos<DeviceType>;
   if (plan == nullptr) return nullptr;
   plan->usecollective = usecollective;
+  plan->useisend = useisend;
   plan->usegpu_aware = usegpu_aware;
 
   // store parameters in local data structs
@@ -359,6 +378,11 @@ struct remap_plan_3d_kokkos<DeviceType>* RemapKokkos<DeviceType>::remap_3d_creat
       plan->packplan = (struct pack_plan_3d *)
         malloc(nsend*sizeof(struct pack_plan_3d));
 
+      if (plan->useisend)
+        plan->isend_reqs = (MPI_Request *) malloc(nsend*sizeof(MPI_Request));
+        plan->send_bufloc = (int *) malloc(nsend*sizeof(int));
+        if (plan->send_bufloc == nullptr) return nullptr;
+
       if (plan->send_offset == nullptr || plan->send_size == nullptr ||
           plan->send_proc == nullptr || plan->packplan == nullptr) return nullptr;
     }
@@ -400,6 +424,7 @@ struct remap_plan_3d_kokkos<DeviceType>* RemapKokkos<DeviceType>::remap_3d_creat
 
     nsend = 0;
     iproc = me;
+    ibuf = 0;
     for (i = 0; i < nprocs; i++) {
       iproc++;
       if (iproc == nprocs) iproc = 0;
@@ -415,6 +440,8 @@ struct remap_plan_3d_kokkos<DeviceType>* RemapKokkos<DeviceType>::remap_3d_creat
         plan->packplan[nsend].nstride_plane = nqty*in.jsize*in.isize;
         plan->packplan[nsend].nqty = nqty;
         plan->send_size[nsend] = nqty*overlap.isize*overlap.jsize*overlap.ksize;
+        plan->send_bufloc[nsend] = ibuf;
+        ibuf += plan->send_size[nsend];
         nsend++;
       }
     }
@@ -497,8 +524,13 @@ struct remap_plan_3d_kokkos<DeviceType>* RemapKokkos<DeviceType>::remap_3d_creat
     // find biggest send message (not including self) and malloc space for it
 
     size = 0;
-    for (nsend = 0; nsend < plan->nsend; nsend++)
-      size = MAX(size,plan->send_size[nsend]);
+    if (plan->useisend) {
+      for (nsend = 0; nsend < plan->nsend; nsend++)
+        size += plan->send_size[nsend];
+    } else {
+      for (nsend = 0; nsend < plan->nsend; nsend++)
+        size = MAX(size,plan->send_size[nsend]);
+    }
 
     if (size) {
       plan->d_sendbuf = typename FFT_AT::t_FFT_SCALAR_1d("remap3d:sendbuf",size);
@@ -520,7 +552,6 @@ struct remap_plan_3d_kokkos<DeviceType>* RemapKokkos<DeviceType>::remap_3d_creat
 
     MPI_Comm_dup(comm,&plan->comm);
   } else {
-
     // Improved approach - use an AllReduce to aggregate which ranks need to be included
     // To do this, we build the local proc's send/receive list, then do an AllReduce
     // to create the send/recv count for the Alltoallv
@@ -845,7 +876,6 @@ void RemapKokkos<DeviceType>::remap_3d_destroy_plan_kokkos(struct remap_plan_3d_
       free(plan->unpackplan);
     }
   } else {
-
     // free arrays used in pt2pt communication
 
     if (plan->nsend || plan->self) {
@@ -853,6 +883,10 @@ void RemapKokkos<DeviceType>::remap_3d_destroy_plan_kokkos(struct remap_plan_3d_
       free(plan->send_size);
       free(plan->send_proc);
       free(plan->packplan);
+      if (plan->useisend) {
+        free(plan->isend_reqs);
+        free(plan->send_bufloc);
+      }
     }
 
     if (plan->nrecv || plan->self) {
