@@ -96,7 +96,7 @@ Replication is creating a 3x3x3 = 27 times larger system...
   triclinic box = (0 0 0) to (16.371 16.371 16.371) with tilt (0 0 0)
   1 by 2 by 2 MPI processor grid
   216 atoms
-  replicate CPU = 0.000 seconds
+  replicate CPU = 0.001 seconds
 velocity	all create ${temp} 87287
 velocity	all create 1477.0 87287
 
@@ -150,20 +150,20 @@ Per MPI rank memory allocation (min/avg/max) = 3.053 | 3.053 | 3.053 Mbytes
    Step          Temp          PotEng         Press         Density    
          0   1477          -936.42473     -4264.7155      2.2938491    
      15000   1428.309      -893.40243     -506.20349      2.2938491    
-Loop time of 0.707738 on 4 procs for 15000 steps with 216 atoms
+Loop time of 1.48158 on 4 procs for 15000 steps with 216 atoms
 
-Performance: 1402.688 ns/day, 0.017 hours/ns, 21194.279 timesteps/s, 4.578 Matom-step/s
-98.0% CPU use with 4 MPI tasks x 1 OpenMP threads
+Performance: 670.050 ns/day, 0.036 hours/ns, 10124.299 timesteps/s, 2.187 Matom-step/s
+99.9% CPU use with 4 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 0.49754    | 0.50329    | 0.51104    |   0.8 | 71.11
-Neigh   | 0.008913   | 0.0089384  | 0.0089877  |   0.0 |  1.26
-Comm    | 0.14544    | 0.15326    | 0.15907    |   1.5 | 21.65
-Output  | 1.5852e-05 | 1.7076e-05 | 2.0197e-05 |   0.0 |  0.00
-Modify  | 0.023517   | 0.023672   | 0.023817   |   0.1 |  3.34
-Other   |            | 0.01856    |            |       |  2.62
+Pair    | 1.1525     | 1.1711     | 1.1911     |   1.4 | 79.05
+Neigh   | 0.016604   | 0.016676   | 0.016803   |   0.1 |  1.13
+Comm    | 0.23315    | 0.25276    | 0.27126    |   2.9 | 17.06
+Output  | 1.1962e-05 | 1.4316e-05 | 2.1248e-05 |   0.0 |  0.00
+Modify  | 0.02028    | 0.020979   | 0.021328   |   0.3 |  1.42
+Other   |            | 0.02001    |            |       |  1.35
 
 Nlocal:             54 ave          56 max          52 min
 Histogram: 1 0 0 0 0 2 0 0 0 1
@@ -212,9 +212,18 @@ fix 5 all langevin 1477.0 1477.0 0.01 123457
 include output.in
 # Setup output
 
+# For a detailed explanation of the different terms that
+# contribute to the elastic constants, see
+
+
 # Stress fluctuation term F
+# NOTE: Only force virial contribution to stress is used,
+#       thermal velocity contributions are accounted for
+#       in the kinetic term below
+
 
 compute     virial all pressure NULL virial
+
 variable v1 equal c_virial[1]
 variable v2 equal c_virial[2]
 variable v3 equal c_virial[3]
@@ -263,10 +272,10 @@ fix avv all ave/time ${nevery} ${nrepeat} ${nfreq} v_v1 v_v2 v_v3 v_v4 v_v5 v_v6
 fix avv all ave/time 10 ${nrepeat} ${nfreq} v_v1 v_v2 v_v3 v_v4 v_v5 v_v6 ave running
 fix avv all ave/time 10 150 ${nfreq} v_v1 v_v2 v_v3 v_v4 v_v5 v_v6 ave running
 fix avv all ave/time 10 150 1500 v_v1 v_v2 v_v3 v_v4 v_v5 v_v6 ave running
-fix avvvq all ave/time ${nevery} ${nrepeat} ${nfreq} v_v11 v_v22 v_v33 v_v44 v_v55 v_v66 v_v12 v_v13 v_v14 v_v15 v_v16 v_v23 v_v24 v_v25 v_v26 v_v34 v_v35 v_v36 v_v45 v_v46 v_v56 ave running
-fix avvvq all ave/time 10 ${nrepeat} ${nfreq} v_v11 v_v22 v_v33 v_v44 v_v55 v_v66 v_v12 v_v13 v_v14 v_v15 v_v16 v_v23 v_v24 v_v25 v_v26 v_v34 v_v35 v_v36 v_v45 v_v46 v_v56 ave running
-fix avvvq all ave/time 10 150 ${nfreq} v_v11 v_v22 v_v33 v_v44 v_v55 v_v66 v_v12 v_v13 v_v14 v_v15 v_v16 v_v23 v_v24 v_v25 v_v26 v_v34 v_v35 v_v36 v_v45 v_v46 v_v56 ave running
-fix avvvq all ave/time 10 150 1500 v_v11 v_v22 v_v33 v_v44 v_v55 v_v66 v_v12 v_v13 v_v14 v_v15 v_v16 v_v23 v_v24 v_v25 v_v26 v_v34 v_v35 v_v36 v_v45 v_v46 v_v56 ave running
+fix avvsq all ave/time ${nevery} ${nrepeat} ${nfreq} v_v11 v_v22 v_v33 v_v44 v_v55 v_v66 v_v12 v_v13 v_v14 v_v15 v_v16 v_v23 v_v24 v_v25 v_v26 v_v34 v_v35 v_v36 v_v45 v_v46 v_v56 ave running
+fix avvsq all ave/time 10 ${nrepeat} ${nfreq} v_v11 v_v22 v_v33 v_v44 v_v55 v_v66 v_v12 v_v13 v_v14 v_v15 v_v16 v_v23 v_v24 v_v25 v_v26 v_v34 v_v35 v_v36 v_v45 v_v46 v_v56 ave running
+fix avvsq all ave/time 10 150 ${nfreq} v_v11 v_v22 v_v33 v_v44 v_v55 v_v66 v_v12 v_v13 v_v14 v_v15 v_v16 v_v23 v_v24 v_v25 v_v26 v_v34 v_v35 v_v36 v_v45 v_v46 v_v56 ave running
+fix avvsq all ave/time 10 150 1500 v_v11 v_v22 v_v33 v_v44 v_v55 v_v66 v_v12 v_v13 v_v14 v_v15 v_v16 v_v23 v_v24 v_v25 v_v26 v_v34 v_v35 v_v36 v_v45 v_v46 v_v56 ave running
 
 # bar to GPa
 variable pconv equal 1.0e5/1.0e9
@@ -284,53 +293,53 @@ variable ffac equal ${pconv}*${vkt}
 variable ffac equal 0.0001*${vkt}
 variable ffac equal 0.0001*0.0215159929384811
 
-variable F11 equal -(f_avvvq[1]-f_avv[1]*f_avv[1])*${ffac}
-variable F11 equal -(f_avvvq[1]-f_avv[1]*f_avv[1])*2.15159929384811e-06
-variable F22 equal -(f_avvvq[2]-f_avv[2]*f_avv[2])*${ffac}
-variable F22 equal -(f_avvvq[2]-f_avv[2]*f_avv[2])*2.15159929384811e-06
-variable F33 equal -(f_avvvq[3]-f_avv[3]*f_avv[3])*${ffac}
-variable F33 equal -(f_avvvq[3]-f_avv[3]*f_avv[3])*2.15159929384811e-06
-variable F44 equal -(f_avvvq[4]-f_avv[4]*f_avv[4])*${ffac}
-variable F44 equal -(f_avvvq[4]-f_avv[4]*f_avv[4])*2.15159929384811e-06
-variable F55 equal -(f_avvvq[5]-f_avv[5]*f_avv[5])*${ffac}
-variable F55 equal -(f_avvvq[5]-f_avv[5]*f_avv[5])*2.15159929384811e-06
-variable F66 equal -(f_avvvq[6]-f_avv[6]*f_avv[6])*${ffac}
-variable F66 equal -(f_avvvq[6]-f_avv[6]*f_avv[6])*2.15159929384811e-06
+variable F11 equal -(f_avvsq[1]-f_avv[1]*f_avv[1])*${ffac}
+variable F11 equal -(f_avvsq[1]-f_avv[1]*f_avv[1])*2.15159929384811e-06
+variable F22 equal -(f_avvsq[2]-f_avv[2]*f_avv[2])*${ffac}
+variable F22 equal -(f_avvsq[2]-f_avv[2]*f_avv[2])*2.15159929384811e-06
+variable F33 equal -(f_avvsq[3]-f_avv[3]*f_avv[3])*${ffac}
+variable F33 equal -(f_avvsq[3]-f_avv[3]*f_avv[3])*2.15159929384811e-06
+variable F44 equal -(f_avvsq[4]-f_avv[4]*f_avv[4])*${ffac}
+variable F44 equal -(f_avvsq[4]-f_avv[4]*f_avv[4])*2.15159929384811e-06
+variable F55 equal -(f_avvsq[5]-f_avv[5]*f_avv[5])*${ffac}
+variable F55 equal -(f_avvsq[5]-f_avv[5]*f_avv[5])*2.15159929384811e-06
+variable F66 equal -(f_avvsq[6]-f_avv[6]*f_avv[6])*${ffac}
+variable F66 equal -(f_avvsq[6]-f_avv[6]*f_avv[6])*2.15159929384811e-06
 
-variable F12 equal -(f_avvvq[7]-f_avv[1]*f_avv[2])*${ffac}
-variable F12 equal -(f_avvvq[7]-f_avv[1]*f_avv[2])*2.15159929384811e-06
-variable F13 equal -(f_avvvq[8]-f_avv[1]*f_avv[3])*${ffac}
-variable F13 equal -(f_avvvq[8]-f_avv[1]*f_avv[3])*2.15159929384811e-06
-variable F14 equal -(f_avvvq[9]-f_avv[1]*f_avv[4])*${ffac}
-variable F14 equal -(f_avvvq[9]-f_avv[1]*f_avv[4])*2.15159929384811e-06
-variable F15 equal -(f_avvvq[10]-f_avv[1]*f_avv[5])*${ffac}
-variable F15 equal -(f_avvvq[10]-f_avv[1]*f_avv[5])*2.15159929384811e-06
-variable F16 equal -(f_avvvq[11]-f_avv[1]*f_avv[6])*${ffac}
-variable F16 equal -(f_avvvq[11]-f_avv[1]*f_avv[6])*2.15159929384811e-06
+variable F12 equal -(f_avvsq[7]-f_avv[1]*f_avv[2])*${ffac}
+variable F12 equal -(f_avvsq[7]-f_avv[1]*f_avv[2])*2.15159929384811e-06
+variable F13 equal -(f_avvsq[8]-f_avv[1]*f_avv[3])*${ffac}
+variable F13 equal -(f_avvsq[8]-f_avv[1]*f_avv[3])*2.15159929384811e-06
+variable F14 equal -(f_avvsq[9]-f_avv[1]*f_avv[4])*${ffac}
+variable F14 equal -(f_avvsq[9]-f_avv[1]*f_avv[4])*2.15159929384811e-06
+variable F15 equal -(f_avvsq[10]-f_avv[1]*f_avv[5])*${ffac}
+variable F15 equal -(f_avvsq[10]-f_avv[1]*f_avv[5])*2.15159929384811e-06
+variable F16 equal -(f_avvsq[11]-f_avv[1]*f_avv[6])*${ffac}
+variable F16 equal -(f_avvsq[11]-f_avv[1]*f_avv[6])*2.15159929384811e-06
 
-variable F23 equal -(f_avvvq[12]-f_avv[2]*f_avv[3])*${ffac}
-variable F23 equal -(f_avvvq[12]-f_avv[2]*f_avv[3])*2.15159929384811e-06
-variable F24 equal -(f_avvvq[13]-f_avv[2]*f_avv[4])*${ffac}
-variable F24 equal -(f_avvvq[13]-f_avv[2]*f_avv[4])*2.15159929384811e-06
-variable F25 equal -(f_avvvq[14]-f_avv[2]*f_avv[5])*${ffac}
-variable F25 equal -(f_avvvq[14]-f_avv[2]*f_avv[5])*2.15159929384811e-06
-variable F26 equal -(f_avvvq[15]-f_avv[2]*f_avv[6])*${ffac}
-variable F26 equal -(f_avvvq[15]-f_avv[2]*f_avv[6])*2.15159929384811e-06
+variable F23 equal -(f_avvsq[12]-f_avv[2]*f_avv[3])*${ffac}
+variable F23 equal -(f_avvsq[12]-f_avv[2]*f_avv[3])*2.15159929384811e-06
+variable F24 equal -(f_avvsq[13]-f_avv[2]*f_avv[4])*${ffac}
+variable F24 equal -(f_avvsq[13]-f_avv[2]*f_avv[4])*2.15159929384811e-06
+variable F25 equal -(f_avvsq[14]-f_avv[2]*f_avv[5])*${ffac}
+variable F25 equal -(f_avvsq[14]-f_avv[2]*f_avv[5])*2.15159929384811e-06
+variable F26 equal -(f_avvsq[15]-f_avv[2]*f_avv[6])*${ffac}
+variable F26 equal -(f_avvsq[15]-f_avv[2]*f_avv[6])*2.15159929384811e-06
 
-variable F34 equal -(f_avvvq[16]-f_avv[3]*f_avv[4])*${ffac}
-variable F34 equal -(f_avvvq[16]-f_avv[3]*f_avv[4])*2.15159929384811e-06
-variable F35 equal -(f_avvvq[17]-f_avv[3]*f_avv[5])*${ffac}
-variable F35 equal -(f_avvvq[17]-f_avv[3]*f_avv[5])*2.15159929384811e-06
-variable F36 equal -(f_avvvq[18]-f_avv[3]*f_avv[6])*${ffac}
-variable F36 equal -(f_avvvq[18]-f_avv[3]*f_avv[6])*2.15159929384811e-06
+variable F34 equal -(f_avvsq[16]-f_avv[3]*f_avv[4])*${ffac}
+variable F34 equal -(f_avvsq[16]-f_avv[3]*f_avv[4])*2.15159929384811e-06
+variable F35 equal -(f_avvsq[17]-f_avv[3]*f_avv[5])*${ffac}
+variable F35 equal -(f_avvsq[17]-f_avv[3]*f_avv[5])*2.15159929384811e-06
+variable F36 equal -(f_avvsq[18]-f_avv[3]*f_avv[6])*${ffac}
+variable F36 equal -(f_avvsq[18]-f_avv[3]*f_avv[6])*2.15159929384811e-06
 
-variable F45 equal -(f_avvvq[19]-f_avv[4]*f_avv[5])*${ffac}
-variable F45 equal -(f_avvvq[19]-f_avv[4]*f_avv[5])*2.15159929384811e-06
-variable F46 equal -(f_avvvq[20]-f_avv[4]*f_avv[6])*${ffac}
-variable F46 equal -(f_avvvq[20]-f_avv[4]*f_avv[6])*2.15159929384811e-06
+variable F45 equal -(f_avvsq[19]-f_avv[4]*f_avv[5])*${ffac}
+variable F45 equal -(f_avvsq[19]-f_avv[4]*f_avv[5])*2.15159929384811e-06
+variable F46 equal -(f_avvsq[20]-f_avv[4]*f_avv[6])*${ffac}
+variable F46 equal -(f_avvsq[20]-f_avv[4]*f_avv[6])*2.15159929384811e-06
 
-variable F56 equal -(f_avvvq[21]-f_avv[5]*f_avv[6])*${ffac}
-variable F56 equal -(f_avvvq[21]-f_avv[5]*f_avv[6])*2.15159929384811e-06
+variable F56 equal -(f_avvsq[21]-f_avv[5]*f_avv[6])*${ffac}
+variable F56 equal -(f_avvsq[21]-f_avv[5]*f_avv[6])*2.15159929384811e-06
 
 # Born term
 
@@ -507,20 +516,20 @@ Per MPI rank memory allocation (min/avg/max) = 3.803 | 3.803 | 3.803 Mbytes
     147000   1612.1648     -889.02036      1493.4929      2.2938491      1483.6264      85.257214     -4.1316067     -5.4791953     -5.4366116     -5.470521      -53.893357     -56.130483     -54.678501     -0.88444818    -0.84284058    -0.82939488     136.66639      136.65491      136.60409      99.839398      99.835713      99.89409       74.759472      74.721883      74.704107    
     148500   1385.2888     -895.17064      511.97536      2.2938491      1483.7028      85.273248     -4.1315817     -5.4568335     -5.4437179     -5.462439      -53.998399     -56.146683     -54.60025      -0.88583625    -0.83751074    -0.82528605     136.66898      136.65108      136.60529      99.83797       99.838139      99.892596      74.759903      74.72586       74.704198    
     150000   1431.5855     -892.94815      595.02933      2.2938491      1483.6852      80.30342      -4.1315461     -5.48889       -5.4654531     -5.4714235     -53.850954     -56.077255     -54.601877     -0.88398309    -0.84826399    -0.81485358     136.67006      136.64737      136.60261      99.835209      99.835104      99.891182      74.760309      74.728377      74.704703    
-Loop time of 8.48303 on 4 procs for 150000 steps with 216 atoms
+Loop time of 18.2029 on 4 procs for 150000 steps with 216 atoms
 
-Performance: 1170.261 ns/day, 0.021 hours/ns, 17682.358 timesteps/s, 3.819 Matom-step/s
-98.8% CPU use with 4 MPI tasks x 1 OpenMP threads
+Performance: 545.374 ns/day, 0.044 hours/ns, 8240.468 timesteps/s, 1.780 Matom-step/s
+99.8% CPU use with 4 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 5.1196     | 5.1379     | 5.1492     |   0.5 | 60.57
-Neigh   | 0.087342   | 0.087893   | 0.088557   |   0.2 |  1.04
-Comm    | 1.3855     | 1.3954     | 1.4133     |   1.0 | 16.45
-Output  | 0.0022631  | 0.002367   | 0.0026517  |   0.3 |  0.03
-Modify  | 1.6717     | 1.6758     | 1.6824     |   0.3 | 19.75
-Other   |            | 0.1837     |            |       |  2.17
+Pair    | 12.122     | 12.21      | 12.356     |   2.6 | 67.07
+Neigh   | 0.16814    | 0.16825    | 0.16845    |   0.0 |  0.92
+Comm    | 2.1731     | 2.3212     | 2.4095     |   5.9 | 12.75
+Output  | 0.004213   | 0.0045581  | 0.0054736  |   0.8 |  0.03
+Modify  | 3.2461     | 3.2562     | 3.2804     |   0.8 | 17.89
+Other   |            | 0.2431     |            |       |  1.34
 
 Nlocal:             54 ave          54 max          54 min
 Histogram: 4 0 0 0 0 0 0 0 0 0
@@ -542,29 +551,29 @@ include final_output.in
 # Average moduli for cubic crystals
 
 variable C11cubic equal (${C11}+${C22}+${C33})/3.0
-variable C11cubic equal (133.188974219565+${C22}+${C33})/3.0
-variable C11cubic equal (133.188974219565+133.189723753051+${C33})/3.0
-variable C11cubic equal (133.188974219565+133.189723753051+133.138994205418)/3.0
+variable C11cubic equal (133.188974219595+${C22}+${C33})/3.0
+variable C11cubic equal (133.188974219595+133.189723753073+${C33})/3.0
+variable C11cubic equal (133.188974219595+133.189723753073+133.138994205429)/3.0
 variable C12cubic equal (${C12}+${C13}+${C23})/3.0
-variable C12cubic equal (73.8763258824622+${C13}+${C23})/3.0
-variable C12cubic equal (73.8763258824622+73.8801135018079+${C23})/3.0
-variable C12cubic equal (73.8763258824622+73.8801135018079+73.8898492459715)/3.0
+variable C12cubic equal (73.8763258824441+${C13}+${C23})/3.0
+variable C12cubic equal (73.8763258824441+73.8801135017861+${C23})/3.0
+variable C12cubic equal (73.8763258824441+73.8801135017861+73.8898492459823)/3.0
 variable C44cubic equal (${C44}+${C55}+${C66})/3.0
-variable C44cubic equal (46.9881596973667+${C55}+${C66})/3.0
-variable C44cubic equal (46.9881596973667+44.7617526165945+${C66})/3.0
-variable C44cubic equal (46.9881596973667+44.7617526165945+46.293209129848)/3.0
+variable C44cubic equal (46.9881596973902+${C55}+${C66})/3.0
+variable C44cubic equal (46.9881596973902+44.7617526165931+${C66})/3.0
+variable C44cubic equal (46.9881596973902+44.7617526165931+46.2932091298334)/3.0
 
 variable bulkmodulus equal (${C11cubic}+2*${C12cubic})/3.0
-variable bulkmodulus equal (133.172564059345+2*${C12cubic})/3.0
-variable bulkmodulus equal (133.172564059345+2*73.8820962100805)/3.0
+variable bulkmodulus equal (133.172564059366+2*${C12cubic})/3.0
+variable bulkmodulus equal (133.172564059366+2*73.8820962100708)/3.0
 variable shearmodulus1 equal ${C44cubic}
-variable shearmodulus1 equal 46.0143738146031
+variable shearmodulus1 equal 46.0143738146056
 variable shearmodulus2 equal (${C11cubic}-${C12cubic})/2.0
-variable shearmodulus2 equal (133.172564059345-${C12cubic})/2.0
-variable shearmodulus2 equal (133.172564059345-73.8820962100805)/2.0
+variable shearmodulus2 equal (133.172564059366-${C12cubic})/2.0
+variable shearmodulus2 equal (133.172564059366-73.8820962100708)/2.0
 variable poissonratio equal 1.0/(1.0+${C11cubic}/${C12cubic})
-variable poissonratio equal 1.0/(1.0+133.172564059345/${C12cubic})
-variable poissonratio equal 1.0/(1.0+133.172564059345/73.8820962100805)
+variable poissonratio equal 1.0/(1.0+133.172564059366/${C12cubic})
+variable poissonratio equal 1.0/(1.0+133.172564059366/73.8820962100708)
 
 # For Stillinger-Weber silicon, the analytical results
 # are known to be (E. R. Cowley, 1988):
@@ -577,53 +586,53 @@ variable poissonratio equal 1.0/(1.0+133.172564059345/73.8820962100805)
 #print "========================================="
 
 print "Elastic Constant C11 = ${C11} ${cunits}"
-Elastic Constant C11 = 133.188974219565 GPa
+Elastic Constant C11 = 133.188974219595 GPa
 print "Elastic Constant C22 = ${C22} ${cunits}"
-Elastic Constant C22 = 133.189723753051 GPa
+Elastic Constant C22 = 133.189723753073 GPa
 print "Elastic Constant C33 = ${C33} ${cunits}"
-Elastic Constant C33 = 133.138994205418 GPa
+Elastic Constant C33 = 133.138994205429 GPa
 
 print "Elastic Constant C12 = ${C12} ${cunits}"
-Elastic Constant C12 = 73.8763258824622 GPa
+Elastic Constant C12 = 73.8763258824441 GPa
 print "Elastic Constant C13 = ${C13} ${cunits}"
-Elastic Constant C13 = 73.8801135018079 GPa
+Elastic Constant C13 = 73.8801135017861 GPa
 print "Elastic Constant C23 = ${C23} ${cunits}"
-Elastic Constant C23 = 73.8898492459715 GPa
+Elastic Constant C23 = 73.8898492459823 GPa
 
 print "Elastic Constant C44 = ${C44} ${cunits}"
-Elastic Constant C44 = 46.9881596973667 GPa
+Elastic Constant C44 = 46.9881596973902 GPa
 print "Elastic Constant C55 = ${C55} ${cunits}"
-Elastic Constant C55 = 44.7617526165945 GPa
+Elastic Constant C55 = 44.7617526165931 GPa
 print "Elastic Constant C66 = ${C66} ${cunits}"
-Elastic Constant C66 = 46.293209129848 GPa
+Elastic Constant C66 = 46.2932091298334 GPa
 
 print "Elastic Constant C14 = ${C14} ${cunits}"
-Elastic Constant C14 = 0.265097081681133 GPa
+Elastic Constant C14 = 0.265097081679859 GPa
 print "Elastic Constant C15 = ${C15} ${cunits}"
-Elastic Constant C15 = -0.0617727175950439 GPa
+Elastic Constant C15 = -0.061772717596552 GPa
 print "Elastic Constant C16 = ${C16} ${cunits}"
-Elastic Constant C16 = -0.269356644748486 GPa
+Elastic Constant C16 = -0.269356644752641 GPa
 
 print "Elastic Constant C24 = ${C24} ${cunits}"
-Elastic Constant C24 = 0.509730392764228 GPa
+Elastic Constant C24 = 0.509730392804277 GPa
 print "Elastic Constant C25 = ${C25} ${cunits}"
-Elastic Constant C25 = -0.309381388699193 GPa
+Elastic Constant C25 = -0.309381388700557 GPa
 print "Elastic Constant C26 = ${C26} ${cunits}"
-Elastic Constant C26 = 0.135992199467102 GPa
+Elastic Constant C26 = 0.135992199455437 GPa
 
 print "Elastic Constant C34 = ${C34} ${cunits}"
-Elastic Constant C34 = 0.205535166571933 GPa
+Elastic Constant C34 = 0.205535166577658 GPa
 print "Elastic Constant C35 = ${C35} ${cunits}"
-Elastic Constant C35 = 0.0748061185059935 GPa
+Elastic Constant C35 = 0.0748061185077146 GPa
 print "Elastic Constant C36 = ${C36} ${cunits}"
-Elastic Constant C36 = 0.153083177648792 GPa
+Elastic Constant C36 = 0.153083177626209 GPa
 
 print "Elastic Constant C45 = ${C45} ${cunits}"
-Elastic Constant C45 = 0.789585024403853 GPa
+Elastic Constant C45 = 0.789585024396366 GPa
 print "Elastic Constant C46 = ${C46} ${cunits}"
-Elastic Constant C46 = -0.353765107820623 GPa
+Elastic Constant C46 = -0.353765107811331 GPa
 print "Elastic Constant C56 = ${C56} ${cunits}"
-Elastic Constant C56 = -0.0232993838235995 GPa
+Elastic Constant C56 = -0.0232993838256713 GPa
 
 print "========================================="
 =========================================
@@ -633,13 +642,13 @@ print "========================================="
 =========================================
 
 print "Bulk Modulus = ${bulkmodulus} ${cunits}"
-Bulk Modulus = 93.6455854931687 GPa
+Bulk Modulus = 93.6455854931692 GPa
 print "Shear Modulus 1 = ${shearmodulus1} ${cunits}"
-Shear Modulus 1 = 46.0143738146031 GPa
+Shear Modulus 1 = 46.0143738146056 GPa
 print "Shear Modulus 2 = ${shearmodulus2} ${cunits}"
-Shear Modulus 2 = 29.6452339246323 GPa
+Shear Modulus 2 = 29.6452339246476 GPa
 print "Poisson Ratio = ${poissonratio}"
-Poisson Ratio = 0.356824116462498
+Poisson Ratio = 0.356824116462432
 
 # summarize sampling protocol
 
@@ -660,4 +669,4 @@ variable tmp equal 150000/${neveryborn}
 variable tmp equal 150000/100
 print "Born sample count = ${tmp}"
 Born sample count = 1500
-Total wall time: 0:00:09
+Total wall time: 0:00:19

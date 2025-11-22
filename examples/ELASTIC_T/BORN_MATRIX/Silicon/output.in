@@ -1,8 +1,17 @@
 # Setup output
 
+# For a detailed explanation of the different terms that
+# contribute to the elastic constants, see
+
+
 # Stress fluctuation term F
+# NOTE: Only force virial contribution to stress is used,
+#       thermal velocity contributions are accounted for
+#       in the kinetic term below
+
 
 compute     virial all pressure NULL virial
+
 variable v1 equal c_virial[1]
 variable v2 equal c_virial[2]
 variable v3 equal c_virial[3]
@@ -39,7 +48,7 @@ fix avt all ave/time ${nevery} ${nrepeat} ${nfreq} v_mytemp ave running
 fix avp all ave/time ${nevery} ${nrepeat} ${nfreq} v_mypress ave running
 fix avpe all ave/time ${nevery} ${nrepeat} ${nfreq} v_mype ave running
 fix avv all ave/time ${nevery} ${nrepeat} ${nfreq} v_v1 v_v2 v_v3 v_v4 v_v5 v_v6 ave running
-fix avvvq all ave/time ${nevery} ${nrepeat} ${nfreq} &
+fix avvsq all ave/time ${nevery} ${nrepeat} ${nfreq} &
 v_v11 v_v22 v_v33 v_v44 v_v55 v_v66 &
 v_v12 v_v13 v_v14 v_v15 v_v16 &
 v_v23 v_v24 v_v25 v_v26 &
@@ -59,32 +68,32 @@ variable nktv2p equal 1.6021765e6
 variable vkt equal vol/(${boltz}*${temp})/${nktv2p}
 variable ffac equal ${pconv}*${vkt}
 
-variable F11 equal -(f_avvvq[1]-f_avv[1]*f_avv[1])*${ffac}
-variable F22 equal -(f_avvvq[2]-f_avv[2]*f_avv[2])*${ffac}
-variable F33 equal -(f_avvvq[3]-f_avv[3]*f_avv[3])*${ffac}
-variable F44 equal -(f_avvvq[4]-f_avv[4]*f_avv[4])*${ffac}
-variable F55 equal -(f_avvvq[5]-f_avv[5]*f_avv[5])*${ffac}
-variable F66 equal -(f_avvvq[6]-f_avv[6]*f_avv[6])*${ffac}
+variable F11 equal -(f_avvsq[1]-f_avv[1]*f_avv[1])*${ffac}
+variable F22 equal -(f_avvsq[2]-f_avv[2]*f_avv[2])*${ffac}
+variable F33 equal -(f_avvsq[3]-f_avv[3]*f_avv[3])*${ffac}
+variable F44 equal -(f_avvsq[4]-f_avv[4]*f_avv[4])*${ffac}
+variable F55 equal -(f_avvsq[5]-f_avv[5]*f_avv[5])*${ffac}
+variable F66 equal -(f_avvsq[6]-f_avv[6]*f_avv[6])*${ffac}
 
-variable F12 equal -(f_avvvq[7]-f_avv[1]*f_avv[2])*${ffac}
-variable F13 equal -(f_avvvq[8]-f_avv[1]*f_avv[3])*${ffac}
-variable F14 equal -(f_avvvq[9]-f_avv[1]*f_avv[4])*${ffac}
-variable F15 equal -(f_avvvq[10]-f_avv[1]*f_avv[5])*${ffac}
-variable F16 equal -(f_avvvq[11]-f_avv[1]*f_avv[6])*${ffac}
+variable F12 equal -(f_avvsq[7]-f_avv[1]*f_avv[2])*${ffac}
+variable F13 equal -(f_avvsq[8]-f_avv[1]*f_avv[3])*${ffac}
+variable F14 equal -(f_avvsq[9]-f_avv[1]*f_avv[4])*${ffac}
+variable F15 equal -(f_avvsq[10]-f_avv[1]*f_avv[5])*${ffac}
+variable F16 equal -(f_avvsq[11]-f_avv[1]*f_avv[6])*${ffac}
 
-variable F23 equal -(f_avvvq[12]-f_avv[2]*f_avv[3])*${ffac}
-variable F24 equal -(f_avvvq[13]-f_avv[2]*f_avv[4])*${ffac}
-variable F25 equal -(f_avvvq[14]-f_avv[2]*f_avv[5])*${ffac}
-variable F26 equal -(f_avvvq[15]-f_avv[2]*f_avv[6])*${ffac}
+variable F23 equal -(f_avvsq[12]-f_avv[2]*f_avv[3])*${ffac}
+variable F24 equal -(f_avvsq[13]-f_avv[2]*f_avv[4])*${ffac}
+variable F25 equal -(f_avvsq[14]-f_avv[2]*f_avv[5])*${ffac}
+variable F26 equal -(f_avvsq[15]-f_avv[2]*f_avv[6])*${ffac}
 
-variable F34 equal -(f_avvvq[16]-f_avv[3]*f_avv[4])*${ffac}
-variable F35 equal -(f_avvvq[17]-f_avv[3]*f_avv[5])*${ffac}
-variable F36 equal -(f_avvvq[18]-f_avv[3]*f_avv[6])*${ffac}
+variable F34 equal -(f_avvsq[16]-f_avv[3]*f_avv[4])*${ffac}
+variable F35 equal -(f_avvsq[17]-f_avv[3]*f_avv[5])*${ffac}
+variable F36 equal -(f_avvsq[18]-f_avv[3]*f_avv[6])*${ffac}
 
-variable F45 equal -(f_avvvq[19]-f_avv[4]*f_avv[5])*${ffac}
-variable F46 equal -(f_avvvq[20]-f_avv[4]*f_avv[6])*${ffac}
+variable F45 equal -(f_avvsq[19]-f_avv[4]*f_avv[5])*${ffac}
+variable F46 equal -(f_avvsq[20]-f_avv[4]*f_avv[6])*${ffac}
 
-variable F56 equal -(f_avvvq[21]-f_avv[5]*f_avv[6])*${ffac}
+variable F56 equal -(f_avvsq[21]-f_avv[5]*f_avv[6])*${ffac}
 
 # Born term
 
