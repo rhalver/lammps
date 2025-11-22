@@ -30,7 +30,6 @@ using namespace LAMMPS_NS;
 
 static constexpr double BUFFACTOR = 1.5;
 static constexpr int BUFMIN = 1024;
-static constexpr int BUFEXTRA = 1000;
 
 /* ---------------------------------------------------------------------- */
 
@@ -587,7 +586,7 @@ void CommTiledKokkos::grow_send_kokkos(int n, int flag, ExecutionSpace space)
 {
 
   maxsend = static_cast<int> (BUFFACTOR * n);
-  int maxsend_border = (maxsend+BUFEXTRA)/atomKK->avecKK->size_border;
+  int maxsend_border = (maxsend+Comm::BUFEXTRA)/atomKK->avecKK->size_border;
   if (flag) {
     if (space == Device)
       k_buf_send.modify_device();
@@ -599,7 +598,7 @@ void CommTiledKokkos::grow_send_kokkos(int n, int flag, ExecutionSpace space)
                         atomKK->avecKK->size_border + atomKK->avecKK->size_velocity);
     else
       k_buf_send.resize(maxsend_border,atomKK->avecKK->size_border);
-    buf_send = k_buf_send.h_view.data();
+    buf_send = k_buf_send.view_host().data();
   } else {
     if (ghost_velocity)
       MemoryKokkos::realloc_kokkos(k_buf_send,"comm:k_buf_send",maxsend_border,
@@ -607,7 +606,7 @@ void CommTiledKokkos::grow_send_kokkos(int n, int flag, ExecutionSpace space)
     else
       MemoryKokkos::realloc_kokkos(k_buf_send,"comm:k_buf_send",maxsend_border,
                         atomKK->avecKK->size_border);
-    buf_send = k_buf_send.h_view.data();
+    buf_send = k_buf_send.view_host().data();
   }
 }
 
@@ -620,11 +619,11 @@ void CommTiledKokkos::grow_recv_kokkos(int n, int flag, ExecutionSpace /*space*/
   if (flag) maxrecv = n;
   else maxrecv = static_cast<int> (BUFFACTOR * n);
 
-  int maxrecv_border = (maxrecv+BUFEXTRA)/atomKK->avecKK->size_border;
+  int maxrecv_border = (maxrecv+Comm::BUFEXTRA)/atomKK->avecKK->size_border;
 
   MemoryKokkos::realloc_kokkos(k_buf_recv,"comm:k_buf_recv",maxrecv_border,
     atomKK->avecKK->size_border);
-  buf_recv = k_buf_recv.h_view.data();
+  buf_recv = k_buf_recv.view_host().data();
 }
 
 /* ----------------------------------------------------------------------
@@ -669,10 +668,8 @@ void CommTiledKokkos::grow_swap_send(int i, int n, int /*nold*/)
   memory->destroy(sendbox[i]);
   memory->create(sendbox[i],n,6,"comm:sendbox");
   grow_swap_send_multi(i,n);
-  memory->destroy(sendbox_multiold[i]);
-  memory->create(sendbox_multiold[i],n,atom->ntypes+1,6,"comm:sendbox_multiold");
 
-  if (sendlist && !k_sendlist.h_view.data()) {
+  if (sendlist && !k_sendlist.view_host().data()) {
     delete [] sendlist;
     delete [] maxsendlist;
 
