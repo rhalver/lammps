@@ -13,66 +13,74 @@
 
 #ifdef FIX_CLASS
 // clang-format off
-FixStyle(setforce/kk,FixSetForceKokkos<LMPDeviceType>);
-FixStyle(setforce/kk/device,FixSetForceKokkos<LMPDeviceType>);
-FixStyle(setforce/kk/host,FixSetForceKokkos<LMPHostType>);
+FixStyle(addforce/kk,FixAddForceKokkos<LMPDeviceType>);
+FixStyle(addforce/kk/device,FixAddForceKokkos<LMPDeviceType>);
+FixStyle(addforce/kk/host,FixAddForceKokkos<LMPHostType>);
 // clang-format on
 #else
 
 // clang-format off
-#ifndef LMP_FIX_SET_FORCE_KOKKOS_H
-#define LMP_FIX_SET_FORCE_KOKKOS_H
+#ifndef LMP_FIX_ADD_FORCE_KOKKOS_H
+#define LMP_FIX_ADD_FORCE_KOKKOS_H
 
-#include "fix_setforce.h"
+#include "fix_addforce.h"
 #include "kokkos_type.h"
+#include "kokkos_few.h"
 
 namespace LAMMPS_NS {
 
-struct s_double_3 {
-  double d0, d1, d2;
+struct s_double_4 {
+  double d0, d1, d2, d3;
   KOKKOS_INLINE_FUNCTION
-  s_double_3() {
-    d0 = d1 = d2 = 0.0;
+  s_double_4() {
+    d0 = d1 = d2 = d3 = 0.0;
   }
   KOKKOS_INLINE_FUNCTION
-  s_double_3& operator+=(const s_double_3 &rhs) {
+  s_double_4& operator+=(const s_double_4 &rhs) {
     d0 += rhs.d0;
     d1 += rhs.d1;
     d2 += rhs.d2;
+    d3 += rhs.d3;
     return *this;
   }
 };
-typedef s_double_3 double_3;
+typedef s_double_4 double_4;
 
-struct TagFixSetForceConstant{};
+struct TagFixAddForceConstant{};
 
-struct TagFixSetForceNonConstant{};
+struct TagFixAddForceNonConstant{};
 
 template<class DeviceType>
-class FixSetForceKokkos : public FixSetForce {
+class FixAddForceKokkos : public FixAddForce {
  public:
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
-  typedef double_3 value_type;
+  typedef double_4 value_type;
 
-  FixSetForceKokkos(class LAMMPS *, int, char **);
-  ~FixSetForceKokkos() override;
+  FixAddForceKokkos(class LAMMPS *, int, char **);
+  ~FixAddForceKokkos() override;
   void init() override;
   void post_force(int) override;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagFixSetForceConstant, const int&, double_3&) const;
+  void operator()(TagFixAddForceConstant, const int&, double_4&) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagFixSetForceNonConstant, const int&, double_3&) const;
+  void operator()(TagFixAddForceNonConstant, const int&, double_4&) const;
 
  private:
   DAT::ttransform_kkfloat_2d k_sforce;
   typename AT::t_kkfloat_2d_randomread d_sforce;
   typename AT::t_int_1d d_match;
 
+  typename AT::t_kkfloat_1d_3_lr_randomread x;
   typename AT::t_kkacc_1d_3 f;
+  typename AT::t_imageint_1d_randomread image;
   typename AT::t_int_1d_randomread mask;
+
+  Few<double,3> prd;
+  Few<double,6> h;
+  int triclinic;
 };
 
 }

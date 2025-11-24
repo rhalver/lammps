@@ -52,7 +52,7 @@ extern double lmp_gpu_update_bin_size(const double subx, const double suby, cons
                                       const int nlocal, const double cut);
 
 static const char cite_gpu_package[] =
-  "GPU package (short-range, long-range and three-body potentials): doi:10.1016/j.cpc.2010.12.021, doi:10.1016/j.cpc.2011.10.012, doi:10.1016/j.cpc.2013.08.002, doi:10.1016/j.commatsci.2014.10.068, doi:10.1016/j.cpc.2016.10.020, doi:10.3233/APC200086\n\n"
+  "GPU package (short-range, long-range and three-body potentials): https://doi.org/10.1016/j.cpc.2010.12.021, https://doi.org/10.1016/j.cpc.2011.10.012, https://doi.org/10.1016/j.cpc.2013.08.002, https://doi.org/10.1016/j.commatsci.2014.10.068, https://doi.org/10.1016/j.cpc.2016.10.020, https://doi.org/10.3233/APC200086\n\n"
   "@Article{Brown11,\n"
   " author = {W. M. Brown and P. Wang and S. J. Plimpton and A. N. Tharrington},\n"
   " title = {Implementing Molecular Dynamics on Hybrid High Performance Computers---Short Range Forces},\n"

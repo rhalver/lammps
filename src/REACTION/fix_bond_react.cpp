@@ -59,8 +59,8 @@ using namespace FixConst;
 using namespace MathConst;
 
 static const char cite_fix_bond_react[] =
-    "fix bond/react: reacter.org doi:10.1016/j.polymer.2017.09.038, "
-    "doi:10.1021/acs.macromol.0c02012, doi:10.1016/j.cpc.2024.109287\n\n"
+    "fix bond/react: https://reacter.org, https://doi.org/10.1016/j.polymer.2017.09.038, "
+    "https://doi.org/10.1021/acs.macromol.0c02012, https://doi.org/10.1016/j.cpc.2024.109287\n\n"
     "@Article{Gissinger17,\n"
     " author = {J. R. Gissinger and B. D. Jensen and K. E. Wise},\n"
     " title = {Modeling Chemical Reactions in Classical Molecular Dynamics Simulations},\n"
@@ -239,6 +239,7 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
         utils::missing_cmd_args(FLERR, std::string("Fix bond/react ") + arg[iarg], error);
       outflag = true;
       if (comm->me == 0) {
+        if (fpout) fclose(fpout);
         fpout = fopen(arg[iarg + 1], "w");
         if (fpout == nullptr)
           error->one(FLERR, "Cannot open fix bond/react output file {}: {}", arg[iarg + 1],
@@ -447,9 +448,8 @@ FixBondReact::FixBondReact(LAMMPS *lmp, int narg, char **arg) :
     rxn_metadata->key = "reaction";
     std::vector<std::string> rxn_names;
     rxn_names.reserve(rxns.size());
-    for (auto const& rxn : rxns)
-      rxn_names.push_back(rxn.name);
-    rxn_metadata->values = rxn_names;
+    for (auto const& rxn : rxns) rxn_names.push_back(rxn.name);
+    rxn_metadata->values = std::move(rxn_names);
   }
 
   for (auto &rlm : rate_limits) {
@@ -649,9 +649,9 @@ FixBondReact::~FixBondReact()
 
   delete[] set;
 
-  if (comm->me == 0) {
-    if (outflag) fprintf(fpout, "        }\n    ]\n}");
-    if (fpout) fclose(fpout);
+  if (fpout) {
+    fprintf(fpout, "        }\n    ]\n}");
+    fclose(fpout);
   }
 
   if (group) {
