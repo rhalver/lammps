@@ -252,7 +252,7 @@ int** YukawaColloidT::compute(const int ago, const int inum_full,
   if (ago==0) {
     this->build_nbor_list(inum, inum_full-inum, nall, host_x, host_type,
                     sublo, subhi, tag, nspecial, special,
-                    prd, periodicity, success);                          
+                    prd, periodicity, success);
     if (!success)
       return nullptr;
     this->cast_rad_data(rad);
