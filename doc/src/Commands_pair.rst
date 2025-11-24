@@ -261,6 +261,7 @@ OPT.
    * :doc:`rheo <pair_rheo>`
    * :doc:`rheo/solid <pair_rheo_solid>`
    * :doc:`saip/metal (t) <pair_saip_metal>`
+   * :doc:`saip/metal/tmd (t) <pair_saip_metal>`
    * :doc:`sdpd/taitwater/isothermal <pair_sdpd_taitwater_isothermal>`
    * :doc:`smatb <pair_smatb>`
    * :doc:`smatb/single <pair_smatb>`

@@ -265,11 +265,11 @@ where :math:`h` is Planck's constant, :math:`\sigma` is the length
 scale, :math:`\epsilon` is the energy scale, and :math:`m` is the mass
 of the particles.  For example, for Neon, :math:`m = 20.1797` Dalton,
 :math:`\varepsilon = 3.0747 \times 10^{-3}` eV and :math:`\sigma =
-2.7616` Å. Then we have
+2.7616 \AA`. Then we have
 
 .. math::
 
-   \Lambda^{\ast} = \frac{4.135667403\times 10^{-3}\ \mathrm{eV} \cdot\ \mathrm{ps}}{2.7616\ \mathrm{Å}\times \sqrt{20.1797\ \mathrm{Dalton}\times\ 3.0747\times 10^{-3}\ \mathrm{eV}\times 1.0364269\times 10^{-4}\ \mathrm{eV}\cdot\mathrm{Dalton}^{-1}\cdot\mathrm{Å}^{-2}\cdot\mathrm{ps}^{2}}} = 0.600.
+   \Lambda^{\ast} = \frac{4.135667403\times 10^{-3}\ \mathrm{eV} \cdot\ \mathrm{ps}}{2.7616\ \mathrm{\AA}\times \sqrt{20.1797\ \mathrm{Dalton}\times\ 3.0747\times 10^{-3}\ \mathrm{eV}\times 1.0364269\times 10^{-4}\ \mathrm{eV}\cdot\mathrm{Dalton}^{-1}\cdot\mathrm{\AA}^{-2}\cdot\mathrm{ps}^{2}}} = 0.600.
 
 Thus for a fully quantum simulation of Neon using *lj* units, *sp*
 should be set to 0.600.  The modification of the quantumness should be

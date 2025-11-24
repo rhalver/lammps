@@ -140,7 +140,7 @@ if((PKG_KOKKOS) AND (Kokkos_ENABLE_CUDA) AND (LAMMPS_CXX_COMPILER_NAME STREQUAL 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xcudafe --diag_suppress=unrecognized_pragma,--diag_suppress=128,--diag_suppress=186")
 endif()
 
-# We *require* C++17 without extensions
+# we *require* C++17 without extensions
 # Kokkos also requires at least C++17 (currently)
 if(NOT CMAKE_CXX_STANDARD)
 # uncomment in case we plan to switch to C++20 as minimum standard
@@ -181,7 +181,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   if (CMAKE_CXX_STANDARD GREATER_EQUAL 17)
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.3)
       message(WARNING "Using the GNU compilers version ${CMAKE_CXX_COMPILER_VERSION} with C++17 "
-              "or later is not recommended. Please use the GNU compilers version 9.3 or later")
+              "or later is not recommended. Please use GNU compilers version 9.3 or later")
     endif()
   endif()
 endif()

@@ -397,7 +397,7 @@ will destroy the original file, if the generation run does not complete,
 so using ``-g`` is recommended unless the YAML file is fully tested
 and working.  To have the new test file recognized by ``ctest``, you
 need to re-run cmake.  You can verify that the new test is available
-by checking the output of ``ctest -N`.
+by checking the output of ``ctest -N``.
 
 Some of the force style tests are rather slow to run and some are very
 sensitive to small differences like CPU architecture, compiler
