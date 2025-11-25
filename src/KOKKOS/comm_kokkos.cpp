@@ -136,7 +136,9 @@ void CommKokkos::forward_comm(int dummy)
     atomKK->sync(Host,atomKK->avecKK->datamask_comm_vel);
   else
     atomKK->sync(Host,atomKK->avecKK->datamask_comm);
+
   CommBrick::forward_comm(dummy);
+
   if (ghost_velocity)
     atomKK->modified(Host,atomKK->avecKK->datamask_comm_vel);
   else
