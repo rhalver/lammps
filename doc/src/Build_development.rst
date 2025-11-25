@@ -102,11 +102,13 @@ compilation and linking stages.  This is done through setting the
 Code Coverage and Unit Testing (CMake only)
 -------------------------------------------
 
-The LAMMPS code is subject to multiple levels of automated testing
-during development:
+The LAMMPS code is subject to multiple levels of automated testing when
+pull requests are submitted to `the LAMMPS repository on GitHub
+<https://github.com/lammps/lammps/pulls>`_:
 
-- Integration testing (i.e. whether the code compiles
-  on various platforms and with a variety of compilers and settings),
+- Coding style compliance (see :ref:`Coding style utilities <coding-style>`)
+- Integration testing (i.e. whether the code compiles on multiple
+  platforms and with a variety of compilers and settings),
 - Unit testing (i.e. whether certain functions or classes of the code
   produce the expected results for given inputs),
 - Run testing (i.e. whether selected input decks can run to completion
@@ -115,15 +117,8 @@ during development:
   same results over a given number of steps and operations within a
   given error margin).
 
-The status of this automated testing can be viewed on `https://ci.lammps.org
-<https://ci.lammps.org>`_.
-
-The scripts and inputs for integration, run, and legacy regression
-testing are maintained in a `separate repository
-<https://github.com/lammps/lammps-testing>`_ of the LAMMPS project on
-GitHub.  A few tests are also run as GitHub Actions and their
-configuration files are in the ``.github/workflows/`` folder of the
-LAMMPS git tree.
+The tests are currently run as GitHub Actions and their configuration
+files are in the ``.github/workflows/`` folder of the LAMMPS git tree.
 
 Regression tests can also be performed locally with the :ref:`regression
 tester tool <regression>`.  The tool checks if a given LAMMPS binary run
@@ -601,6 +596,8 @@ and currently available at: https://download.lammps.org/coverage/
       :width: 60%
 
       Source page with branches
+
+.. _coding-style:
 
 Coding style utilities
 ----------------------
