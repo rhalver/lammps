@@ -357,7 +357,12 @@ void CommTiledKokkos::reverse_comm_device()
 void CommTiledKokkos::exchange()
 {
   atomKK->sync(Host,atomKK->avecKK->datamask_exchange);
+
+  int prev_auto_sync = lmp->kokkos->auto_sync;
+  lmp->kokkos->auto_sync = 1;
   CommTiled::exchange();
+  lmp->kokkos->auto_sync = prev_auto_sync;
+
   atomKK->modified(Host,atomKK->avecKK->datamask_exchange);
 }
 
@@ -373,12 +378,16 @@ void CommTiledKokkos::exchange()
 
 void CommTiledKokkos::borders()
 {
+  k_sendlist.sync_host();
   if (ghost_velocity)
     atomKK->sync(Host,atomKK->avecKK->datamask_border_vel);
   else
     atomKK->sync(Host,atomKK->avecKK->datamask_border);
 
+  int prev_auto_sync = lmp->kokkos->auto_sync;
+  lmp->kokkos->auto_sync = 1;
   CommTiled::borders();
+  lmp->kokkos->auto_sync = prev_auto_sync;
 
   k_sendlist.modify_host();
   if (ghost_velocity)
@@ -400,6 +409,7 @@ void CommTiledKokkos::borders()
 
 void CommTiledKokkos::forward_comm(Pair *pair, int size)
 {
+  k_sendlist.sync_host();
   CommTiled::forward_comm(pair, size);
 }
 
@@ -414,6 +424,7 @@ void CommTiledKokkos::forward_comm(Pair *pair, int size)
 
 void CommTiledKokkos::reverse_comm(Pair *pair, int size)
 {
+  k_sendlist.sync_host();
   CommTiled::reverse_comm(pair, size);
 }
 
@@ -428,6 +439,7 @@ void CommTiledKokkos::reverse_comm(Pair *pair, int size)
 
 void CommTiledKokkos::forward_comm(Bond *bond, int size)
 {
+  k_sendlist.sync_host();
   CommTiled::forward_comm(bond, size);
 }
 
@@ -442,6 +454,7 @@ void CommTiledKokkos::forward_comm(Bond *bond, int size)
 
 void CommTiledKokkos::reverse_comm(Bond *bond, int size)
 {
+  k_sendlist.sync_host();
   CommTiled::reverse_comm(bond, size);
 }
 
@@ -456,6 +469,7 @@ void CommTiledKokkos::reverse_comm(Bond *bond, int size)
 
 void CommTiledKokkos::forward_comm(Fix *fix, int size)
 {
+  k_sendlist.sync_host();
   CommTiled::forward_comm(fix, size);
 }
 
@@ -470,6 +484,7 @@ void CommTiledKokkos::forward_comm(Fix *fix, int size)
 
 void CommTiledKokkos::reverse_comm(Fix *fix, int size)
 {
+  k_sendlist.sync_host();
   CommTiled::reverse_comm(fix, size);
 }
 
@@ -482,6 +497,7 @@ void CommTiledKokkos::reverse_comm(Fix *fix, int size)
 
 void CommTiledKokkos::reverse_comm_variable(Fix *fix)
 {
+  k_sendlist.sync_host();
   CommTiled::reverse_comm_variable(fix);
 }
 
@@ -496,6 +512,7 @@ void CommTiledKokkos::reverse_comm_variable(Fix *fix)
 
 void CommTiledKokkos::forward_comm(Compute *compute, int size)
 {
+  k_sendlist.sync_host();
   CommTiled::forward_comm(compute, size);
 }
 
@@ -510,6 +527,7 @@ void CommTiledKokkos::forward_comm(Compute *compute, int size)
 
 void CommTiledKokkos::reverse_comm(Compute *compute, int size)
 {
+  k_sendlist.sync_host();
   CommTiled::reverse_comm(compute, size);
 }
 
@@ -524,6 +542,7 @@ void CommTiledKokkos::reverse_comm(Compute *compute, int size)
 
 void CommTiledKokkos::forward_comm(Dump *dump, int size)
 {
+  k_sendlist.sync_host();
   CommTiled::forward_comm(dump, size);
 }
 
@@ -538,6 +557,7 @@ void CommTiledKokkos::forward_comm(Dump *dump, int size)
 
 void CommTiledKokkos::reverse_comm(Dump *dump, int size)
 {
+  k_sendlist.sync_host();
   CommTiled::reverse_comm(dump, size);
 }
 
@@ -547,6 +567,7 @@ void CommTiledKokkos::reverse_comm(Dump *dump, int size)
 
 void CommTiledKokkos::forward_comm_array(int nsize, double **array)
 {
+  k_sendlist.sync_host();
   CommTiled::forward_comm_array(nsize,array);
 }
 
