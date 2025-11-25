@@ -20,6 +20,7 @@ done
 echo "Move LAMMPS shared library to its own folder"
 mkdir -p ${DESTDIR}/libexec/lammps
 mv -v  ${DESTDIR}/lib/liblammps* ${DESTDIR}/libexec/lammps/
+chmod +x ${DESTDIR}/libexec/lammps/liblammps.so.*
 
 # add certain LAMMPS library dependencies
 LIBDEPS=$(LD_LIBRARY_PATH=${DESTDIR}/lib ldd ${DESTDIR}/libexec/lammps/liblammps.so | grep -v ${DESTDIR} | grep -E '(libz\.so\.|libpng|libjpeg)' | sed -e 's/^.*=> *//' -e 's/\(lib.*.so.*\) .*$/\1/')
