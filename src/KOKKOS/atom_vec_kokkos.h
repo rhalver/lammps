@@ -98,7 +98,7 @@ class AtomVecKokkos : virtual public AtomVec {
                              ExecutionSpace space,
                              DAT::tdual_int_1d &k_indices);
 
-  int size_exchange;
+  int size_exchange,size_exchange_default;
 
   uint64_t datamask_grow;
   uint64_t datamask_comm;
