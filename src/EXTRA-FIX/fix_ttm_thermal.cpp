@@ -71,7 +71,7 @@ FixTTMThermal::FixTTMThermal(LAMMPS *lmp, int narg, char **arg) :
 
   inductive_power = 0.0;
   tinit = 0.0;
-  gamma_p = 0.0;    // to avoid uninitialzed data access when calling FixTTM::init()
+  gamma_p = 0.0;    // to avoid uninitialized data access when calling FixTTM::init()
 
   int iarg = 8;
   while (iarg < narg) {
@@ -216,10 +216,11 @@ void FixTTMThermal::post_force(int /*vflag*/)
 
       if (T_electron[iz][iy][ix] < 0)
         error->one(FLERR, Error::NOLASTLINE, "Electronic temperature dropped below zero");
-      //Come back and check this for scaling
-      for (int i = 1; i <= atom->ntypes; i++) {
-        gfactor1[i] = - gamma_p_grid[iz][iy][ix] / force->ftm2v;
-        gfactor2[i] = sqrt(24.0*force->boltz*gamma_p_grid[iz][iy][ix]/update->dt/force->mvv2e) / force->ftm2v;
+
+      for (int itype = 1; itype <= atom->ntypes; itype++) {
+        gfactor1[itype] = - gamma_p_grid[iz][iy][ix] / force->ftm2v;
+        gfactor2[itype] = sqrt(24.0*force->boltz*gamma_p_grid[iz][iy][ix]/update->dt/force->mvv2e)
+          / force->ftm2v;
       }
 
       double tsqrt = sqrt(T_electron[iz][iy][ix]);
@@ -408,7 +409,7 @@ void FixTTMThermal::read_electron_properties(const std::string &filename)
 
       while (nread < ngridtotal) {
         // reader will skip over comment-only lines
-        auto values = reader.next_values(4);
+        auto values = reader.next_values(7);
         ++nread;
 
         int ix = values.next_int() - 1;
@@ -518,7 +519,7 @@ void FixTTMThermal::allocate_grid()
   memory->create(c_e_grid,nzgrid,nygrid,nxgrid,"ttm:c_e_grid");
   memory->create(k_e_grid,nzgrid,nygrid,nxgrid,"ttm:k_e_grid");
   memory->create(gamma_p_grid,nzgrid,nygrid,nxgrid,"ttm:gamma_p_grid");
-  memory->create(inductive_response_grid,nzgrid,nygrid,nxgrid,"ttm:gamma_p_grid");
+  memory->create(inductive_response_grid,nzgrid,nygrid,nxgrid,"ttm:inductive_response_grid");
 }
 
 /* ----------------------------------------------------------------------

@@ -271,10 +271,10 @@ units setting in use, grid size and the current timestep.
   reads.
 
 For the fix ttm, fix ttm/mod, and fix ttm/thermal commands, the
-corresponding atomic temperature for atoms in each grid cell can
-be computed and output by the :doc:`fix ave/chunk <fix_ave_chunk>`
-command using the:doc:`compute chunk/atom <compute_chunk_atom>` command
-to create a 3d array of chunks consistent with the grid used by this fix.
+corresponding atomic temperature for atoms in each grid cell can be
+computed and output by the :doc:`fix ave/chunk <fix_ave_chunk>` command
+using the :doc:`compute chunk/atom <compute_chunk_atom>` command to
+create a 3d array of chunks consistent with the grid used by this fix.
 
 For the fix ttm/grid command the same thing can be done using the
 :doc:`fix ave/grid <fix_ave_grid>` command and its per-grid values can
