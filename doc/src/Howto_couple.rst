@@ -18,7 +18,7 @@ the context of your application.
    make library calls to the other code, which has been linked to LAMMPS
    as a library.  This is the way the :ref:`VORONOI <PKG-VORONOI>`
    package, which computes Voronoi tesselations using the `Voro++
-   library <http://math.lbl.gov/voro++>`_, is interfaced to LAMMPS.  See
+   library <https://math.lbl.gov/voro++/>`_, is interfaced to LAMMPS.  See
    the :doc:`compute voronoi <compute_voronoi_atom>` command for more
    details.  Also see the :doc:`Modify <Modify>` pages for information
    on how to add a new fix or compute to LAMMPS.
@@ -36,7 +36,7 @@ the context of your application.
    steps, invoke the command, etc.
 
    In this scenario, the other code can be called as a library, as in
-   1., or it could be a stand-alone code, invoked by a system() call
+   1., or it could be a stand-alone code, invoked by a ``system()`` call
    made by the command (assuming your parallel machine allows one or
    more processors to start up another program).  In the latter case the
    stand-alone code could communicate with LAMMPS through files that the
@@ -59,7 +59,7 @@ the context of your application.
 .. spacer
 
 4. Couple LAMMPS with another code in a client/server fashion, using the
-   `MDI Library <https://molssi-mdi.github.io/MDI_Library/html/index.html>`_
+   `MDI Library <https://molssi-mdi.github.io/MDI_Library/>`_
    developed by the `Molecular Sciences Software Institute (MolSSI)
    <https://molssi.org>`_ to run LAMMPS as either an MDI driver (client)
    or an MDI engine (server).  The MDI driver issues commands to the MDI

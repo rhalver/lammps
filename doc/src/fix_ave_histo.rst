@@ -281,7 +281,7 @@ assigned to the lower of the two bins.  If *beyond* is set to *ignore* then
 values :math:`<` *lo* and values :math:`>` *hi* are ignored (i.e., they are not
 binned). If *beyond* is set to *end*, then values :math:`<` *lo* are counted in
 the first bin and values :math:`>` *hi* are counted in the last bin.
-If *beyond* is set to *extend*, then two extra bins are created so that there
+If *beyond* is set to *extra*, then two extra bins are created so that there
 are :math:`N_\text{bins}+2` total bins.  Values :math:`<` *lo* are counted in
 the first bin and values :math:`>` *hi* are counted in the last bin
 :math:`(N_\text{bins}+2)`\ .  Values between
@@ -376,10 +376,10 @@ can only be accessed on timesteps that are multiples of :math:`N_\text{freq}`
 since that is when a histogram is generated.  The global vector has four
 values:
 
-* 1 = total counts in the histogram
-* 2 = values that were not histogrammed (see *beyond* keyword)
-* 3 = min value of all input values, including ones not histogrammed
-* 4 = max value of all input values, including ones not histogrammed
+  #. total counts in the histogram
+  #. values that were not histogrammed (see *beyond* keyword)
+  #. min value of all input values, including ones not histogrammed
+  #. max value of all input values, including ones not histogrammed
 
 The global array has :math:`N_\text{bins}` rows and three columns.  The
 first column has the bin coordinate, the second column has the count of

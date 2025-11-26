@@ -13,7 +13,7 @@ Syntax
 * ID, group-ID are documented in :doc:`fix <fix>` command
 * deposit = style name of this fix command
 * N = # of atoms or molecules to insert
-* type = atom type to assign to inserted atoms (offset for molecule insertion)
+* type = atom type (1-Ntypes or type label) to assign to inserted atoms (offset for molecule insertion)
 * M = insert a single atom or molecule every M steps
 * seed = random # seed (positive integer)
 * one or more keyword/value pairs may be appended to args
@@ -75,6 +75,9 @@ Examples
    fix 2 newatoms deposit 10000 1 500 12345 region disk near 2.0 vz -1.0 -0.8
    fix 4 sputter deposit 1000 2 500 12235 region sphere vz -1.0 -1.0 target 5.0 5.0 0.0 units lattice
    fix 5 insert deposit 200 2 100 777 region disk gaussian 5.0 5.0 9.0 1.0 units box
+
+   labelmap atom 1 Au
+   fix 4 sputter deposit 1000 Au 500 12235 region sphere vz -1.0 -1.0 target 5.0 5.0 0.0 units lattice
 
 Description
 """""""""""
@@ -222,22 +225,25 @@ rotated configuration of the molecule.
 
 .. versionadded:: 21Nov2023
 
-The *var* and *set* keywords can be used together to provide a criterion
-for accepting or rejecting the addition of an individual atom, based on its
-coordinates.  The *name* specified for the *var* keyword is the name of an
-:doc:`equal-style variable <variable>` that should evaluate to a zero or
-non-zero value based on one or two or three variables that will store the
-*x*, *y*, or *z* coordinates of an atom (one variable per coordinate).  If
-used, these other variables must be :doc:`internal-style variables
-<variable>` defined in the input script; their initial numeric value can be
-anything. They must be internal-style variables, because this command
-resets their values directly.  The *set* keyword is used to identify the
-names of these other variables, one variable for the *x*-coordinate of a
-created atom, one for *y*, and one for *z*.  When an atom is created, its
-:math:`(x,y,z)` coordinates become the values for any *set* variable that
-is defined.  The *var* variable is then evaluated.  If the returned value
-is 0.0, the atom is not created.  If it is non-zero, the atom is created.
-For an example of how to use these keywords, see the
+The *var* and *set* keywords can be used together to provide a
+criterion for accepting or rejecting the addition of an individual
+atom, based on its coordinates.  The *name* specified for the *var*
+keyword is the name of an :doc:`equal-style variable <variable>` that
+should evaluate to a zero or non-zero value based on one or two or
+three variables that will store the *x*, *y*, or *z* coordinates of an
+atom (one variable per coordinate).  If used, these other variables
+must be :doc:`internal-style variables <variable>` specified by the
+*set* keyword.  They must be internal-style variables, because this
+command resets their values directly.  The internal-style variables do
+not need to be defined in the input script (though they can be); if
+one (or more) is not defined, then the *set* option creates an
+:doc:`internal-style variable <variable>` with the specified name.
+
+When an atom is about to be created, its :math:`(x,y,z)` coordinates
+become the values for any *set* variable that is defined.  The *var*
+variable is then evaluated.  If the returned value is 0.0, the atom is
+not created.  If it is non-zero, the atom is created.  For an example
+of how to use the set/var keywords in a similar context, see the
 :doc:`create_atoms <create_atoms>` command.
 
 The *rate* option moves the insertion volume in the z direction (3d)
@@ -301,12 +307,13 @@ units of distance or velocity.
 Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-This fix writes the state of the deposition to :doc:`binary restart files <restart>`.  This includes information about how many
-particles have been deposited, the random number generator seed, the
-next timestep for deposition, etc.  See the
-:doc:`read_restart <read_restart>` command for info on how to re-specify
-a fix in an input script that reads a restart file, so that the
-operation of the fix continues in an uninterrupted fashion.
+This fix writes the state of the deposition to :doc:`binary restart
+files <restart>`.  This includes information about how many particles
+have been deposited, the random number generator seed, the next
+timestep for deposition, etc.  See the :doc:`read_restart
+<read_restart>` command for info on how to re-specify a fix in an
+input script that reads a restart file, so that the operation of the
+fix continues in an uninterrupted fashion.
 
 .. note::
 
