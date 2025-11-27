@@ -10,8 +10,8 @@ set(BUILD_OMP OFF CACHE BOOL "" FORCE)
 set(CMAKE_CXX_COMPILER "hipcc" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdenormal-fp-math=ieee -fgpu-flush-denormals-to-zero" CACHE STRING "" FORCE)
 
-set(ENV{MPI_CXX_INCLUDE_PATH} "-I/$ENV{MPICH_DIR}/include")
-set(ENV{MPI_CXX_LIBRARIES} "-L$ENV{MPICH_DIR}/lib -lmpi -L$ENV{CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa")
+set(MPI_CXX_INCLUDE_PATH "$ENV{MPICH_DIR}/include" CACHE STRING "" FORCE)
+set(CMAKE_EXE_LINKER_FLAGS "-L$ENV{MPICH_DIR}/lib -lmpi -L$ENV{CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa -Wl,-rpath,$ENV{CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa -lxpmem -lhugetlbfs" CACHE STRING "" FORCE)
 
 # If KSPACE is also enabled, use HIPFFT for FFTs
 set(FFT_KOKKOS "HIPFFT" CACHE STRING "" FORCE)
