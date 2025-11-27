@@ -1087,3 +1087,15 @@ a specific atom, one has to use a reference with a lower case 'c'
 (e.g. 'c_name') for the former and upper case 'C' (e.g. 'C_name') for
 the latter. The same applies to fix styles.  The full details are
 in the documentation for the :doc:`variable command <variable>`.
+
+.. _err0038:
+
+The ... style ... is no longer available
+----------------------------------------
+
+While the LAMMPS developers try to keep the software backward compatible
+as far as input files and file formats are concerned, this is not always
+desired and changes are made and commands renamed or removed.  In that
+case an error message is printed describing why the command cannot be
+executed.  More details can be found on the manual page
+:doc:`Commands_removed`.
