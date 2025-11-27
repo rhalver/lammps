@@ -31,9 +31,12 @@ using namespace FixConst;
 
 enum { DIPOLE, QUAT };
 
+static constexpr double SMALL = 1.0e-14;
+
 /* ---------------------------------------------------------------------- */
 
-FixPropelSelfAlign::FixPropelSelfAlign(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg), avec(nullptr)
+FixPropelSelfAlign::FixPropelSelfAlign(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg),
+                                                                            avec(nullptr)
 {
 
   if (narg != 5 && narg != 9) error->all(FLERR, "Illegal fix propel/selfalign command");
@@ -43,7 +46,7 @@ FixPropelSelfAlign::FixPropelSelfAlign(LAMMPS *lmp, int narg, char **arg) : Fix(
   } else if (strcmp(arg[3], "quat") == 0) {
     mode = QUAT;
   } else {
-    error->all(FLERR, "Illegal fix propel/selfalign command");
+    error->all(FLERR, 3, "Unknown fix propel/selfalign keyword {}", arg[3]);
   }
 
   magnitude = utils::numeric(FLERR, arg[4], false, lmp);
@@ -51,17 +54,20 @@ FixPropelSelfAlign::FixPropelSelfAlign(LAMMPS *lmp, int narg, char **arg) : Fix(
   // check for keyword
 
   if (narg == 9) {
-    if (mode != QUAT) { error->all(FLERR, "Illegal fix propel/selfalign command"); }
+    if (mode != QUAT)
+      error->all(FLERR, "Incorrect number of arguments for 'quat' mode of fix propel/selfalign");
     if (strcmp(arg[5], "qvector") == 0) {
       sx = utils::numeric(FLERR, arg[6], false, lmp);
       sy = utils::numeric(FLERR, arg[7], false, lmp);
       sz = utils::numeric(FLERR, arg[8], false, lmp);
       double snorm = sqrt(sx * sx + sy * sy + sz * sz);
+      if (snorm < SMALL)
+        error->all(FLERR, 5, "Fix propel/selfalign qvector magnitude {} is too small", snorm);
       sx = sx / snorm;
       sy = sy / snorm;
       sz = sz / snorm;
     } else {
-      error->all(FLERR, "Illegal fix propel/selfalign command");
+      error->all(FLERR, 5 "Mismatched fix propel/selfalign keyword {}", arg[5]);
     }
   } else {
     sx = 1.0;
@@ -83,12 +89,14 @@ int FixPropelSelfAlign::setmask()
 
 void FixPropelSelfAlign::init()
 {
-  if (mode == DIPOLE && !atom->mu_flag && !atom->torque_flag)
-    error->all(FLERR, "Fix propel/selfalign requires atom attributes mu + torque with option dipole");
+  if (mode == DIPOLE && (!atom->mu_flag || !atom->torque_flag))
+    error->all(FLERR, Error::NOLASTLINE,
+               "Fix propel/selfalign requires atom attributes mu + torque with option dipole");
 
   if (mode == QUAT) {
     avec = dynamic_cast<AtomVecEllipsoid *>(atom->style_match("ellipsoid"));
-    if (!avec) error->all(FLERR, "Fix propel/selfalign requires atom style ellipsoid with option quat");
+    if (!avec) error->all(FLERR, Error::NOLASTLINE,
+                          "Fix propel/selfalign requires atom style ellipsoid with option quat");
 
     // check that all particles are finite-size ellipsoids
     // no point particles allowed, spherical is OK
@@ -100,7 +108,8 @@ void FixPropelSelfAlign::init()
     for (int i = 0; i < nlocal; i++)
       if (mask[i] & groupbit)
         if (ellipsoid[i] < 0)
-          error->one(FLERR, "Fix propel/selfalign requires extended particles with option quat");
+          error->one(FLERR, Error::NOLASTLINE,
+                     "Fix propel/selfalign requires extended particles with option quat");
   }
 }
 
@@ -124,8 +133,6 @@ void FixPropelSelfAlign::post_force_dipole(int vflag)
   int nlocal = atom->nlocal;
   double **mu = atom->mu;
   double selfTorque[3];
-
-  double a[3], b[3], c[3];
 
   // Add the active torque to the atom torques:
   for (int i = 0; i < nlocal; i++)
