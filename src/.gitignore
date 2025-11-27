@@ -77,6 +77,8 @@
 /fix_brownian*.h
 /fix_propel_self.cpp
 /fix_propel_self.h
+/fix_propel_selfalign.cpp
+/fix_propel_selfalign.h
 
 /kim_*.cpp
 /kim_*.h

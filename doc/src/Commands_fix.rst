@@ -180,6 +180,7 @@ OPT.
    * :doc:`press/langevin <fix_press_langevin>`
    * :doc:`print <fix_print>`
    * :doc:`propel/self <fix_propel_self>`
+   * :doc:`propel/selfalign <fix_propel_selfalign>`
    * :doc:`property/atom (k) <fix_property_atom>`
    * :doc:`python/invoke <fix_python_invoke>`
    * :doc:`python/move <fix_python_move>`
