@@ -35,8 +35,8 @@ static constexpr double SMALL = 1.0e-14;
 
 /* ---------------------------------------------------------------------- */
 
-FixPropelSelfAlign::FixPropelSelfAlign(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg),
-                                                                            avec(nullptr)
+FixPropelSelfAlign::FixPropelSelfAlign(LAMMPS *lmp, int narg, char **arg) :
+    Fix(lmp, narg, arg), avec(nullptr)
 {
 
   if (narg != 5 && narg != 9) error->all(FLERR, "Illegal fix propel/selfalign command");
@@ -95,8 +95,9 @@ void FixPropelSelfAlign::init()
 
   if (mode == QUAT) {
     avec = dynamic_cast<AtomVecEllipsoid *>(atom->style_match("ellipsoid"));
-    if (!avec) error->all(FLERR, Error::NOLASTLINE,
-                          "Fix propel/selfalign requires atom style ellipsoid with option quat");
+    if (!avec)
+      error->all(FLERR, Error::NOLASTLINE,
+                 "Fix propel/selfalign requires atom style ellipsoid with option quat");
 
     // check that all particles are finite-size ellipsoids
     // no point particles allowed, spherical is OK
