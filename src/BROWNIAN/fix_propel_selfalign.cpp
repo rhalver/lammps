@@ -67,7 +67,7 @@ FixPropelSelfAlign::FixPropelSelfAlign(LAMMPS *lmp, int narg, char **arg) :
       sy = sy / snorm;
       sz = sz / snorm;
     } else {
-      error->all(FLERR, 5 "Mismatched fix propel/selfalign keyword {}", arg[5]);
+      error->all(FLERR, 5, "Mismatched fix propel/selfalign keyword {}", arg[5]);
     }
   } else {
     sx = 1.0;
