@@ -1,0 +1,219 @@
+LAMMPS (10 Sep 2025 - Development - patch_10Sep2025-628-g2877ee4689-modified)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread.
+  using 1 OpenMP thread(s) per MPI task
+# -----------------------------
+# Example script for self-propelled and self-aligning particles performing 2D collective motion using sphere + dipole
+# -----------------------------
+variable NParticles equal 10000
+variable Seed equal 12345
+variable BoxSize equal 200
+
+variable Mass equal 1.0
+variable ActiveForce equal 2.0
+variable SelfAlignment equal 0.6
+variable RelaxTime equal 0.2            # Relaxation time to terminal velocity for mass 1
+variable Temperature equal 0.01
+
+variable WCA_cut equal 1.122
+
+# -----------------------------
+# Generic Simulation parameters
+# -----------------------------
+units       lj
+dimension   2
+boundary    p p p
+atom_style  hybrid sphere dipole
+WARNING: Atom style hybrid defines both, per-type and per-atom masses; both must be set, but only per-atom masses will be used (src/atom_vec_hybrid.cpp:132)
+
+# -----------------------------
+# Simulation box and atoms
+# -----------------------------
+region       box block 0 ${BoxSize} 0 ${BoxSize} -0.5 0.5
+region       box block 0 200 0 ${BoxSize} -0.5 0.5
+region       box block 0 200 0 200 -0.5 0.5
+create_box   2 box
+Created orthogonal box = (0 0 -0.5) to (200 200 0.5)
+  1 by 1 by 1 MPI processor grid
+create_atoms 1 random ${NParticles} ${Seed} box
+create_atoms 1 random 10000 ${Seed} box
+create_atoms 1 random 10000 12345 box
+Created 10000 atoms
+  using lattice units in orthogonal box = (0 0 -0.5) to (200 200 0.5)
+  create_atoms CPU = 0.003 seconds
+
+# -----------------------------
+# Equilibration run to remove overlaps
+# -----------------------------
+pair_style      soft 1.122
+pair_coeff      * * 0.0
+variable        prefactor equal ramp(0,100) # strength of soft potential is increase slowly over time
+
+fix             1 all brownian 0.0001 ${Seed} gamma_t 1.0
+fix             1 all brownian 0.0001 12345 gamma_t 1.0
+fix             2 all adapt 1 pair soft a * * v_prefactor
+thermo          1000
+run             5000
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 1.422
+  ghost atom cutoff = 1.422
+  binsize = 0.711, bins = 282 282 2
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair soft, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/2d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 5.439 | 5.439 | 5.439 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press     
+         0   0              0              0              0              0            
+      1000   0.021113923    1.0220439e-06  0              0.021112834    0.0054846086 
+      2000   0.021093288    1.0805107e-06  0              0.021092259    0.0054612696 
+      3000   0.021180991    4.7013736e-07  0              0.021179343    0.0054023223 
+      4000   0.02142783     4.3795561e-07  0              0.021426126    0.0054725284 
+      5000   0.020964781    4.5831063e-07  0              0.020963142    0.005351966  
+Loop time of 1.61033 on 1 procs for 5000 steps with 10000 atoms
+
+Performance: 1341342.199 tau/day, 3104.959 timesteps/s, 31.050 Matom-step/s
+99.6% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.23774    | 0.23774    | 0.23774    |   0.0 | 14.76
+Neigh   | 0.0062327  | 0.0062327  | 0.0062327  |   0.0 |  0.39
+Comm    | 0.015796   | 0.015796   | 0.015796   |   0.0 |  0.98
+Output  | 0.00019347 | 0.00019347 | 0.00019347 |   0.0 |  0.01
+Modify  | 1.2891     | 1.2891     | 1.2891     |   0.0 | 80.05
+Other   |            | 0.06128    |            |       |  3.81
+
+Nlocal:          10000 ave       10000 max       10000 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:            263 ave         263 max         263 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:           8022 ave        8022 max        8022 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 8022
+Ave neighs/atom = 0.8022
+Neighbor list builds = 16
+Dangerous builds = 0
+unfix           1
+unfix           2
+
+# -----------------------------
+# Mass, dipole, velocities
+# -----------------------------
+mass        * ${Mass}
+mass        * 1
+set         type * dipole/random ${Seed} 1.0    # dipole orientation
+set         type * dipole/random 12345 1.0    
+Setting atom values ...
+  10000 settings made for dipole/random
+velocity    all create 0.0 ${Seed} mom yes rot yes
+velocity    all create 0.0 12345 mom yes rot yes
+
+# -----------------------------
+# Interactions (WCA)
+# -----------------------------
+pair_style      lj/cut ${WCA_cut}
+pair_style      lj/cut 1.122
+pair_coeff      * * 1 1 ${WCA_cut}  # Cutoff LJ at minima to become WCA
+pair_coeff      * * 1 1 1.122  
+
+# -----------------------------
+# Individual dynamics
+# -----------------------------
+fix rotLangevin all langevin ${Temperature} ${Temperature} ${RelaxTime} ${Seed} omega yes
+fix rotLangevin all langevin 0.01 ${Temperature} ${RelaxTime} ${Seed} omega yes
+fix rotLangevin all langevin 0.01 0.01 ${RelaxTime} ${Seed} omega yes
+fix rotLangevin all langevin 0.01 0.01 0.2 ${Seed} omega yes
+fix rotLangevin all langevin 0.01 0.01 0.2 12345 omega yes
+fix active all propel/self dipole ${ActiveForce}
+fix active all propel/self dipole 2
+fix align all propel/selfalign dipole -${SelfAlignment}
+fix align all propel/selfalign dipole -0.6
+
+# -----------------------------
+# Integrators
+# -----------------------------
+fix nve_rot all nve/sphere update dipole
+fix dipole2D all enforce2d # force z-components to zero every timestep
+
+# -----------------------------
+# Output
+# -----------------------------
+thermo      100
+#dump        1 all custom 100 collective_motion_dipole.lammpstrj id type x y vx vy mux muy omegax omegay omegaz tqx tqy tqz
+
+# -----------------------------
+# Run
+# -----------------------------
+timestep    0.01
+run         2000
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 1.422
+  ghost atom cutoff = 1.422
+  binsize = 0.711, bins = 282 282 2
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/cut, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/2d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 5.439 | 5.439 | 5.439 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press     
+      5000   0             -0.00149993     0             -0.00149993     0.11424923   
+      5100   0.12365402    -0.26501393     0             -0.14137228     0.2423619    
+      5200   0.11411591    -0.32538939     0             -0.21128489     0.275516     
+      5300   0.10996221    -0.3496261      0             -0.23967488     0.33014312   
+      5400   0.10678498    -0.38121645     0             -0.27444215     0.36609801   
+      5500   0.10368693    -0.39506808     0             -0.29139152     0.48149318   
+      5600   0.10264904    -0.41127236     0             -0.30863358     0.55880645   
+      5700   0.10077826    -0.42788421     0             -0.32711602     0.65389359   
+      5800   0.10034112    -0.43428186     0             -0.33395077     0.87860893   
+      5900   0.099888929   -0.43687776     0             -0.33699882     0.9903349    
+      6000   0.099457084   -0.4463239      0             -0.34687677     1.1282724    
+      6100   0.097163044   -0.4622296      0             -0.36507627     1.1851006    
+      6200   0.09687916    -0.46763715     0             -0.37076768     1.2470392    
+      6300   0.096210628   -0.48028451     0             -0.3840835      1.380433     
+      6400   0.095254655   -0.48664344     0             -0.39139831     1.3663331    
+      6500   0.095182604   -0.49570728     0             -0.40053419     1.4421491    
+      6600   0.095794667   -0.49572983     0             -0.39994475     1.5058178    
+      6700   0.094649634   -0.51080046     0             -0.41616029     1.5488448    
+      6800   0.094650795   -0.51357046     0             -0.41892913     1.6932872    
+      6900   0.092611036   -0.51728107     0             -0.4246793      1.7203498    
+      7000   0.093654643   -0.51390883     0             -0.42026355     1.7377402    
+Loop time of 2.13269 on 1 procs for 2000 steps with 10000 atoms
+
+Performance: 810244.945 tau/day, 937.784 timesteps/s, 9.378 Matom-step/s
+99.5% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.24462    | 0.24462    | 0.24462    |   0.0 | 11.47
+Neigh   | 0.067422   | 0.067422   | 0.067422   |   0.0 |  3.16
+Comm    | 0.012043   | 0.012043   | 0.012043   |   0.0 |  0.56
+Output  | 0.00071056 | 0.00071056 | 0.00071056 |   0.0 |  0.03
+Modify  | 1.7783     | 1.7783     | 1.7783     |   0.0 | 83.38
+Other   |            | 0.02959    |            |       |  1.39
+
+Nlocal:          10000 ave       10000 max       10000 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:            251 ave         251 max         251 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:          10275 ave       10275 max       10275 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 10275
+Ave neighs/atom = 1.0275
+Neighbor list builds = 158
+Dangerous builds = 0
+
+Total wall time: 0:00:03
