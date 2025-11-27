@@ -314,16 +314,27 @@ to LAMMPS in https://docs.lammps.org/Modify_requirements.html
 When performing a code review, apply the programming style instructions
 for LAMMPS in https://docs.lammps.org/Modify_style.html
 
-When performing a code review, check any changes to the documentation (in the
-`doc/src/` folder) to be written in American English and with plain ASCII characters.
+When performing a code review, check any changes to the documentation
+(in the `doc/src/` folder) to be written in American English and with
+plain ASCII characters.
 
 When performing a code review, ensure that the documentation for any new
-commands or added keywords to existing commands contains a `.. versionadded:: TBD`
-directive.  For any modified commands or keywords a `.. versionchanged:: TBD`
-directive should be included in the documentation. Check if any examples use
-the new or modified commands and check if they need updating. Ensure that
-building the documentation with "make html", "make pdf", and "make spelling"
-can complete and does *NOT* produce any *NEW* warnings or errors.
+commands or added keywords to existing commands contains a
+`.. versionadded:: TBD` directive.  For any modified commands or
+keywords a `.. versionchanged:: TBD` directive should be included in the
+documentation. Check if any examples use the new or modified commands
+and check if they need updating. Ensure that building the documentation
+with "make html", "make pdf", and "make spelling" can complete and does
+*NOT* produce any *NEW* warnings or errors.
+
+When reviewing C++ code, ensure that no alternative tokens are used for
+logical operators.  That is, use `&&` instead of `and`, `||` instead of
+`or`, `!` instead of 'not', `^` instead of `xor` and so on.  These
+alternative tokens are only required for ASCII text in some non
+US-English characters sets, but the LAMMPS sources code are *supposed*
+be in US-English 7-bit ASCII.  Using alternative tokens causes
+compilation failures with some compilers by default, most prominently
+Microsoft Visual C++.
 
 ## Documentation Changes
 
