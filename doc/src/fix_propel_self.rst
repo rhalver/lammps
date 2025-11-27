@@ -145,18 +145,19 @@ the :doc:`run <run>` command.
 Restrictions
 """"""""""""
 
+This fix is part of the BROWNIAN package.  It is only enabled if LAMMPS
+was built with that package.  See the :doc:`Build package
+<Build_package>` doc page for more info.
+
 With keyword *dipole*, this fix only works when the DIPOLE package is enabled.
 See the :doc:`Build package <Build_package>` page for more info.
-
-This fix is part of the BROWNIAN package.  It is only enabled if
-LAMMPS was built with that package.  See the :doc:`Build package <Build_package>`
-doc page for more info.
-
 
 Related commands
 """"""""""""""""
 
-:doc:`fix efield <fix_efield>` , :doc:`fix setforce <fix_setforce>`,
+:doc:`fix propel/selfalign <fix_propel_selfalign>`,
+:doc:`fix efield <fix_efield>`,
+:doc:`fix setforce <fix_setforce>`,
 :doc:`fix addforce <fix_addforce>`
 
 Default

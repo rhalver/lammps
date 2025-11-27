@@ -34,16 +34,23 @@ Examples
 Description
 """""""""""
 
-Add a torque to each atom in the group due to a self-alignment toward an intrinsic orientation. The
-torque is given by :
+.. versionadded:: TBD
+
+Add a torque to each atom in the group due to a self-alignment toward an
+intrinsic orientation. The torque is given by :
 
 .. math::
 
    \mathbf{\tau}_i = \zeta(\mathbf{e}_i \times \mathbf{v}_i)
 
-where *i* is the particle the torque is being applied to, :math:`\zeta` is the magnitude of the torque, :math:`\mathbf{e}_i`
-is the orientation of the particle, and :math:`\mathbf{v}_i` is its velocity. The self-alignment term, introduced in :ref:`(Shimoyama1996) <Shimoyama1996>` with the study of collective motion
-in systems of self-propelled particles, is an effective torque arising from diffential drag in asymetric rigid bodies (see :ref:`(Baconnier2025) <Baconnier2025>`).
+where *i* is the particle the torque is being applied to, :math:`\zeta`
+is the magnitude of the torque, :math:`\mathbf{e}_i` is the orientation
+of the particle, and :math:`\mathbf{v}_i` is its velocity. The
+self-alignment term, introduced in :ref:`(Shimoyama1996)
+<Shimoyama1996>` with the study of collective motion in systems of
+self-propelled particles, is an effective torque arising from
+differential drag in asymmetric rigid bodies (see :ref:`(Baconnier2025)
+<Baconnier2025>`).
 
 
 For mode *dipole*, :math:`e_i` is just equal to
@@ -52,36 +59,37 @@ are not unit vectors, the :math:`e_i` will not be unit vectors.
 
 .. note::
 
-   If another command changes the magnitude of the dipole, this force will
-   change accordingly (since :math:`|e_i|` will change, which is physically
-   equivalent to re-scaling :math:`f_P` while keeping :math:`|e_i|` constant),
-   and no warning will be provided by LAMMPS. This is almost never what you
-   want, so ensure you are not changing dipole magnitudes with another LAMMPS
-   fix or pair style. Furthermore, self-propulsion forces (almost) always
-   set :math:`e_i`  to be a unit vector for all times, so it's best to set
+   If another command changes the magnitude of the dipole, this force
+   will change accordingly (since :math:`|e_i|` will change, which is
+   physically equivalent to re-scaling :math:`f_P` while keeping
+   :math:`|e_i|` constant), and no warning will be provided by
+   LAMMPS. This is almost never what you want, so ensure you are not
+   changing dipole magnitudes with another LAMMPS fix or pair
+   style. Furthermore, self-propulsion forces (almost) always set
+   :math:`e_i` to be a unit vector for all times, so it's best to set
    all the dipole magnitudes to 1.0 unless you have a good reason not to
    (see the :doc:`set <set>` command on how to do this).
 
-For mode *quat*, :math:`e_i` points in the direction of a unit
-vector, oriented in the coordinate frame of the ellipsoidal particles,
-which defaults to point along the x-direction. This default behavior
-can be changed by via the *quatvec* keyword.
+For mode *quat*, :math:`e_i` points in the direction of a unit vector,
+oriented in the coordinate frame of the ellipsoidal particles, which
+defaults to point along the x-direction. This default behavior can be
+changed by via the *qvector* keyword.
 
-The optional *quatvec* keyword specifies the direction of self-propulsion
-via a unit vector (sx,sy,sz). The arguments *sx*, *sy*, and *sz*, are
-defined within the coordinate frame of the atom's
-ellipsoid. For instance, for an ellipsoid with long axis along
-its x-direction, if one wanted the self-propulsion force to also
-be along this axis, set *sx* equal to 1 and *sy*, *sz* both equal
-to zero. This keyword may only be specified for mode *quat*.
+The optional *qvector* keyword specifies the direction of
+self-propulsion via a unit vector (sx,sy,sz). The arguments *sx*, *sy*,
+and *sz*, are defined within the coordinate frame of the atom's
+ellipsoid. For instance, for an ellipsoid with long axis along its
+x-direction, if one wanted the self-propulsion force to also be along
+this axis, set *sx* equal to 1 and *sy*, *sz* both equal to zero. This
+keyword may only be specified for mode *quat*.
 
 .. note::
 
-   In using keyword *quatvec*, the three arguments *sx*,
-   *sy*, and *sz* will be automatically normalized to components
-   of a unit vector internally to avoid users having to explicitly
-   do so themselves. Therefore, in mode *quat*, the vectors :math:`e_i`
-   will always be of unit length.
+   In using keyword *qvector*, the three arguments *sx*, *sy*, and *sz*
+   will be automatically normalized to components of a unit vector
+   internally to avoid users having to explicitly do so
+   themselves. Therefore, in mode *quat*, the vectors :math:`e_i` will
+   always be of unit length.
 
 ----------
 
@@ -100,22 +108,23 @@ the :doc:`run <run>` command.  This fix is not invoked during
 Restrictions
 """"""""""""
 
-The keyword *dipole* requires that atoms store torque and
-angular velocity (omega) as defined by the :doc:`atom_style sphere
-<atom_style>` command, as well as a dipole moment as defined by the :doc:`atom_style
-dipole <atom_style>` command. The keyword *quat* requires that
-atoms store torque and quaternions as defined by the :doc:`atom_style
-ellipsoid <atom_style>` command.
+This fix is part of the BROWNIAN package.  It is only enabled if LAMMPS
+was built with that package.  See the :doc:`Build package
+<Build_package>` doc page for more info.
 
-This fix is part of the BROWNIAN package.  It is only enabled if
-LAMMPS was built with that package.  See the :doc:`Build package <Build_package>`
-doc page for more info.
-
+The keyword *dipole* requires that atoms store torque and angular
+velocity (omega) as defined by the :doc:`atom_style sphere <atom_style>`
+command, as well as a dipole moment as defined by the :doc:`atom_style
+dipole <atom_style>` command which is part of the DIPOLE package.  The
+keyword *quat* requires that atoms store torque and quaternions as
+defined by the :doc:`atom_style ellipsoid <atom_style>` command.
 
 Related commands
 """"""""""""""""
 
-:doc:`fix propel/self <fix_propel_self>` , :doc:`fix brownian <fix_brownian>`, :doc:`fix addtorque <fix_addtorque>`
+:doc:`fix propel/self <fix_propel_self>`,
+:doc:`fix brownian <fix_brownian>`,
+:doc:`fix addtorque <fix_addtorque>`
 
 Default
 """""""
@@ -127,7 +136,7 @@ none
 
 .. _Baconnier2025:
 
-**(Baconnier2025)** P. Baconnier, O. Dauchot, V. Démery, G. Düring, S. Henkes, C. Huepe, and A. Shee, Self-aligning polar active matter, Rev. Mod. Phys. 97, 015007 (2025).
+**(Baconnier2025)** P. Baconnier, O. Dauchot, V. Demery, G. Duering, S. Henkes, C. Huepe, and A. Shee, Self-aligning polar active matter, Rev. Mod. Phys. 97, 015007 (2025).
 
 .. _Shimoyama1996:
 

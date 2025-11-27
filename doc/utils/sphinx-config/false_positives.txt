@@ -229,6 +229,7 @@ Azuri
 ba
 Babadi
 Babaei
+Baconnier
 backcolor
 Baczewski
 Bagchi
@@ -747,6 +748,7 @@ datafile
 datatype
 dataset
 datums
+Dauchot
 Davidchack
 Daw
 dcd
@@ -785,6 +787,7 @@ delr
 deltaHf
 deltamu
 dem
+Demery
 Dendrimer
 dendritic
 Denniston
@@ -927,6 +930,7 @@ du
 dU
 Ducastelle
 Dudarev
+Duering
 Dufils
 Duin
 Dullweber
@@ -1485,6 +1489,7 @@ Hasan
 Hashtable
 Haswell
 Haugk
+Hayakawa
 Hayoun
 Hayre
 hbar
@@ -1570,6 +1575,7 @@ hTST
 https
 hu
 Hueckel
+Huepe
 Huetter
 Hugonio
 hugoniostat
@@ -2362,6 +2368,7 @@ Mishra
 mistyped
 mistyrose
 Miyazaki
+Mizuguchi
 Mj
 mK
 mkdir
@@ -3470,6 +3477,7 @@ sandia
 Sandia
 sandybrown
 sanitizer
+Sano
 Sanyal
 Sanz
 Sarath
@@ -3520,6 +3528,7 @@ segmental
 Seibold
 Seifert
 Seleson
+selfalign
 sellerio
 Sellerio
 Semaev
@@ -3555,11 +3564,13 @@ shapshot
 shardlow
 Shardlow
 shawn
+Shee
 Shen
 Shenderova
 Sherrill
 Shi
 Shiga
+Shimoyama
 Shinoda
 Shiomi
 shlib
@@ -3747,6 +3758,7 @@ subscripted
 subscripting
 sudo
 Sugaku
+Sugawara
 Suhai
 Sukumaran
 Sulc
