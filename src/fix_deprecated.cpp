@@ -70,5 +70,5 @@ FixDeprecated::FixDeprecated(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
     if (lmp->comm->me == 0)
       utils::logmesg(lmp, "\nFix style 'reax/c/species' has been renamed to 'reaxff/species'.\n\n");
   }
-  error->all(FLERR, 2, "The fix style {} is no longer available: {}", style, utils::errorurl(38));
+  error->all(FLERR, 2, "Fix style {} is no longer available. {}", style, utils::errorurl(38));
 }
