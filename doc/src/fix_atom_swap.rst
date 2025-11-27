@@ -66,20 +66,10 @@ swapped atoms are not well equilibrated.
 .. note::
    
    To run an MC-only simulation (no MD), you should define no
-   time-integration fix, set *N* = 1, set *X* to the total number of
-   MC swaps *M* to attempt, and run the simulation for a single
-   timestep.  This will invoke energy evaluations only for the MC
-   operations, and none for MD.  The initial and final potential
-   energy of the system will be output for the single step.  If you
-   instead define no time-integration fix, set *N* = 1, *X* = 1, and
-   run for *M* steps (to attempt *M* total swaps), you will get the
-   same result, but there will be 3x more energy evaluations due to
-   the requirements of (what LAMMPS presumes is a) hybrid MC+MD
-   simulation.  If you wish to monitor the progress of an MC-only
-   simulation (e.g. attempted/accepted swaps, potential energy), you
-   can run for a small number of *M* steps and divide *X* by *M*, with
-   little loss in efficiency.  If thermo output is performed every
-   timestep, then *M* steps of MC progress will be output.
+   time-integration fix, set the :doc:`thermo <thermo>` command to 1,
+   set *N* to 1, and set *X* small enough to see the MC evolution of
+   the system.  But if *X* is too small, the overhead at the start and
+   stop of MC moves each timestep will slow down the simulation.
 
 The *types* keyword is required. At least two atom types must be
 specified. If not using *semi-grand*, exactly two atom types are

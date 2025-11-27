@@ -1,3 +1,4 @@
+
 .. index:: fix gcmc
 
 fix gcmc command
@@ -78,12 +79,20 @@ chemical potential, constant volume, and constant temperature) can be
 performed.  Specific uses include computing isotherms in microporous
 materials, or computing vapor-liquid coexistence curves.
 
-Every N timesteps the fix attempts both GCMC exchanges (insertions or
+Every *N* timesteps the fix attempts both GCMC exchanges (insertions or
 deletions) and MC moves of gas atoms or molecules.  On those timesteps, the
-average number of attempted GCMC exchanges is X, while the average number
-of attempted MC moves is M.  For GCMC exchanges of either molecular or
+average number of attempted GCMC exchanges is *X*, while the average number
+of attempted MC moves is *M*.  For GCMC exchanges of either molecular or
 atomic gasses, these exchanges can be either deletions or insertions, with
 equal probability.
+
+.. note::
+   
+   To run an MC-only simulation (no MD), you should define no
+   time-integration fix, set the :doc:`thermo <thermo>` command to 1,
+   set *N* to 1, and set *X+M* small enough to see the MC evolution of
+   the system.  But if *X+M* is too small, the overhead at the start
+   and stop of MC moves each timestep will slow down the simulation.
 
 The possible choices for MC moves are translation of an atom, translation
 of a molecule, and rotation of a molecule.  The relative amounts of each are
