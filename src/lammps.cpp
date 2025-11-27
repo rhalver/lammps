@@ -1152,15 +1152,15 @@ void _noopt LAMMPS::init_pkg_lists()
 
 /** \brief Return name of package that a specific style belongs to
  *
- * This function checks the given name against all list of styles
- * for all types of styles and if the name and the style match, it
- * returns which package this style belongs to.
+ * This function checks the given style name against the list of all
+ * styles for all kinds of styles and if the name and the style match,
+ * it returns the name of the package this style belongs to.
  *
  * \param style Type of style (e.g. atom, pair, fix, etc.)
  * \param name Name of style
  * \return Name of the package this style is part of
  */
-const char *LAMMPS::match_style(const char *style, const char *name)
+const char *LAMMPS::get_style_pkg(const char *style, const char *name)
 {
   check_for_match(angle,style,name);
   check_for_match(atom,style,name);

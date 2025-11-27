@@ -77,7 +77,8 @@ class LAMMPS {
 
   void *mdicomm;    // for use with MDI code coupling library
 
-  const char *match_style(const char *style, const char *name);
+  // get name of package that a style is part of
+  const char *get_style_pkg(const char *style, const char *name);
   static const char *installed_packages[];
 
   static bool has_git_info();
