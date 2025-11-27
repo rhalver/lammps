@@ -88,7 +88,7 @@ atomic gasses, these exchanges can be either deletions or insertions, with
 equal probability.
 
 .. note::
-   
+
    To run an MC-only simulation (no MD), you should define no
    time-integration fix, set the :doc:`thermo <thermo>` command to 1,
    set *N* to 1, and set *X+M* small enough to see the MC evolution of

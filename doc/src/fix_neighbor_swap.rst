@@ -98,7 +98,7 @@ The algorithm implemented by this fix is as follows:
      *T*.
 
 .. note::
-   
+
    To run an MC-only simulation (no MD), you should define no
    time-integration fix, set the :doc:`thermo <thermo>` command to 1,
    set *N* to 1, and set *X* small enough to see the MC evolution of
