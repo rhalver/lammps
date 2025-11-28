@@ -126,6 +126,8 @@ action dihedral_charmmfsw_kokkos.cpp dihedral_charmmfsw.cpp
 action dihedral_charmmfsw_kokkos.h dihedral_charmmfsw.h
 action dihedral_class2_kokkos.cpp dihedral_class2.cpp
 action dihedral_class2_kokkos.h dihedral_class2.h
+action dihedral_fourier_kokkos.cpp dihedral_fourier.cpp
+action dihedral_fourier_kokkos.h dihedral_fourier.h
 action dihedral_harmonic_kokkos.cpp dihedral_harmonic.cpp
 action dihedral_harmonic_kokkos.h dihedral_harmonic.h
 action dihedral_multi_harmonic_kokkos.cpp dihedral_multi_harmonic.cpp
@@ -234,6 +236,8 @@ action grid3d_kokkos.h fft3d.h
 action group_kokkos.h
 action improper_class2_kokkos.cpp improper_class2.cpp
 action improper_class2_kokkos.h improper_class2.h
+action improper_cvff_kokkos.cpp improper_cvff.cpp
+action improper_cvff_kokkos.h improper_cvff.h
 action improper_harmonic_kokkos.cpp improper_harmonic.cpp
 action improper_harmonic_kokkos.h improper_harmonic.h
 action improper_hybrid_kokkos.cpp improper_hybrid.cpp

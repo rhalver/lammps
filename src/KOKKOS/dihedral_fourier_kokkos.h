@@ -13,44 +13,44 @@
 
 #ifdef DIHEDRAL_CLASS
 // clang-format off
-DihedralStyle(harmonic/kk,DihedralHarmonicKokkos<LMPDeviceType>);
-DihedralStyle(harmonic/kk/device,DihedralHarmonicKokkos<LMPDeviceType>);
-DihedralStyle(harmonic/kk/host,DihedralHarmonicKokkos<LMPHostType>);
+DihedralStyle(fourier/kk,DihedralFourierKokkos<LMPDeviceType>);
+DihedralStyle(fourier/kk/device,DihedralFourierKokkos<LMPDeviceType>);
+DihedralStyle(fourier/kk/host,DihedralFourierKokkos<LMPHostType>);
 // clang-format on
 #else
 
 // clang-format off
-#ifndef LMP_DIHEDRAL_HARMONIC_KOKKOS_H
-#define LMP_DIHEDRAL_HARMONIC_KOKKOS_H
+#ifndef LMP_DIHEDRAL_FOURIER_KOKKOS_H
+#define LMP_DIHEDRAL_FOURIER_KOKKOS_H
 
-#include "dihedral_harmonic.h"
+#include "dihedral_fourier.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {
 
 template<int NEWTON_BOND, int EVFLAG>
-struct TagDihedralHarmonicCompute{};
+struct TagDihedralFourierCompute{};
 
 template<class DeviceType>
-class DihedralHarmonicKokkos : public DihedralHarmonic {
+class DihedralFourierKokkos : public DihedralFourier {
  public:
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
   typedef EV_FLOAT value_type;
 
-  DihedralHarmonicKokkos(class LAMMPS *);
-  ~DihedralHarmonicKokkos() override;
+  DihedralFourierKokkos(class LAMMPS *);
+  ~DihedralFourierKokkos() override;
   void compute(int, int) override;
   void coeff(int, char **) override;
   void read_restart(FILE *) override;
 
   template<int NEWTON_BOND, int EVFLAG>
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagDihedralHarmonicCompute<NEWTON_BOND,EVFLAG>, const int&, EV_FLOAT&) const;
+  void operator()(TagDihedralFourierCompute<NEWTON_BOND,EVFLAG>, const int&, EV_FLOAT&) const;
 
   template<int NEWTON_BOND, int EVFLAG>
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagDihedralHarmonicCompute<NEWTON_BOND,EVFLAG>, const int&) const;
+  void operator()(TagDihedralFourierCompute<NEWTON_BOND,EVFLAG>, const int&) const;
 
   //template<int NEWTON_BOND>
   KOKKOS_INLINE_FUNCTION
@@ -64,6 +64,7 @@ class DihedralHarmonicKokkos : public DihedralHarmonic {
   DAT::ttransform_kkacc_1d_6 k_vatom;
 
  protected:
+  int nterms_max;
 
   class NeighborKokkos *neighborKK;
 
@@ -80,22 +81,22 @@ class DihedralHarmonicKokkos : public DihedralHarmonic {
   typename AT::t_int_scalar d_warning_flag;
   HAT::t_int_scalar h_warning_flag;
 
-  DAT::tdual_kkfloat_1d k_k;
-  DAT::tdual_kkfloat_1d k_cos_shift;
-  DAT::tdual_kkfloat_1d k_sin_shift;
-  DAT::tdual_int_1d k_sign;
-  DAT::tdual_int_1d k_multiplicity;
+  DAT::tdual_kkfloat_2d k_k;
+  DAT::tdual_kkfloat_2d k_cos_shift;
+  DAT::tdual_kkfloat_2d k_sin_shift;
+  DAT::tdual_int_2d k_multiplicity;
+  DAT::tdual_int_1d k_nterms;
 
-  typename AT::t_kkfloat_1d d_k;
-  typename AT::t_kkfloat_1d d_cos_shift;
-  typename AT::t_kkfloat_1d d_sin_shift;
-  typename AT::t_int_1d d_sign;
-  typename AT::t_int_1d d_multiplicity;
+  typename AT::t_kkfloat_2d d_k;
+  typename AT::t_kkfloat_2d d_cos_shift;
+  typename AT::t_kkfloat_2d d_sin_shift;
+  typename AT::t_int_2d d_multiplicity;
+  typename AT::t_int_1d d_nterms;
 
-  void allocate() override;
+  void allocate_kokkos();
 };
 
-}
+}    // namespace LAMMPS_NS
 
 #endif
 #endif

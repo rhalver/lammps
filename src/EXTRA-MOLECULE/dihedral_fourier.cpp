@@ -45,6 +45,8 @@ DihedralFourier::DihedralFourier(LAMMPS *lmp) : Dihedral(lmp)
 
 DihedralFourier::~DihedralFourier()
 {
+  if (copymode) return;
+
   if (allocated) {
     memory->destroy(setflag);
     memory->destroy(nterms);
