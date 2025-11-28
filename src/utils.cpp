@@ -453,7 +453,7 @@ std::string utils::check_packages_for_style(const std::string &style, const std:
   if (pkg) {
     errmsg += fmt::format(" is part of the {} package", pkg);
     if (Info::has_package(pkg)) {
-      errmsg += " but seems to be missing because of a dependency. ";
+      errmsg += " but seems to be missing because of a dependency.";
     } else {
       errmsg += " which is not enabled in this LAMMPS binary.";
     }
