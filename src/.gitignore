@@ -835,8 +835,10 @@
 /fix_adapt_fep.h
 /fix_add_heat.cpp
 /fix_add_heat.h
-/fix_addtorque.cpp
-/fix_addtorque.h
+/fix_addtorque_atom.cpp
+/fix_addtorque_atom.h
+/fix_addtorque_group.cpp
+/fix_addtorque_group.h
 /fix_append_atoms.cpp
 /fix_append_atoms.h
 /fix_atc.cpp
@@ -1070,6 +1072,8 @@
 /fix_rigid_nvt_small.h
 /fix_rigid_small.cpp
 /fix_rigid_small.h
+/fix_settorque_atom.cpp
+/fix_settorque_atom.h
 /fix_sgcmc.cpp
 /fix_sgcmc.h
 /fix_shake.cpp
