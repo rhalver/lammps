@@ -13,21 +13,22 @@
 
 #ifdef FIX_CLASS
 // clang-format off
-FixStyle(addtorque,FixAddTorque);
+FixStyle(addtorque,FixAddTorqueGroup);
+FixStyle(addtorque/group,FixAddTorqueGroup);
 // clang-format on
 #else
 
-#ifndef LMP_FIX_ADDTORQUE_H
-#define LMP_FIX_ADDTORQUE_H
+#ifndef LMP_FIX_ADDTORQUE_GROUP_H
+#define LMP_FIX_ADDTORQUE_GROUP_H
 
 #include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixAddTorque : public Fix {
+class FixAddTorqueGroup : public Fix {
  public:
-  FixAddTorque(class LAMMPS *, int, char **);
-  ~FixAddTorque() override;
+  FixAddTorqueGroup(class LAMMPS *, int, char **);
+  ~FixAddTorqueGroup() override;
   int setmask() override;
   void init() override;
   void setup(int) override;

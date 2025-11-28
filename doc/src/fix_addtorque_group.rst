@@ -1,17 +1,17 @@
-.. index:: fix addtorque
+.. index:: fix addtorque/group
 
-fix addtorque command
-=====================
+fix addtorque/group command
+===========================
 
 Syntax
 """"""
 
 .. code-block:: LAMMPS
 
-   fix ID group-ID addtorque Tx Ty Tz
+   fix ID group-ID addtorque/group Tx Ty Tz
 
 * ID, group-ID are documented in :doc:`fix <fix>` command
-* addtorque = style name of this fix command
+* addtorque/group = style name of this fix command
 * Tx,Ty,Tz = torque component values (torque units)
 * any of Tx,Ty,Tz can be a variable (see below)
 
@@ -20,8 +20,8 @@ Examples
 
 .. code-block:: LAMMPS
 
-   fix kick bead addtorque 2.0 3.0 5.0
-   fix kick bead addtorque 0.0 0.0 v_oscillate
+   fix kick bead addtorque/group 2.0 3.0 5.0
+   fix kick bead addtorque/group 0.0 0.0 v_oscillate
 
 Description
 """""""""""
@@ -34,7 +34,9 @@ the group such that:
 * the group would move as a rigid body in the absence of other
   forces.
 
-This command can be used to drive a group of atoms into rotation.
+This command can be used to drive a group of atoms into rotation. To
+apply a torque to a single finite-sized atom, use
+:doc:`fix addtorque/atom <fix_addtorque_atom>` instead.
 
 Any of the three quantities defining the torque components can be specified
 as an equal-style :doc:`variable <variable>`, namely *Tx*,
@@ -47,6 +49,11 @@ Equal-style variables can specify formulas with various mathematical
 functions, and include :doc:`thermo_style <thermo_style>` command
 keywords for the simulation box parameters and timestep and elapsed
 time.  Thus it is easy to specify a time-dependent torque.
+
+.. note::
+   Fix addtorque/group previously was known as fix addtorque and was
+   renamed in .. versionadded:: TBD to clarify that the fix operates
+   on a group of atoms as opposed to a single finite-sized atom.
 
 ----------
 
@@ -108,6 +115,7 @@ Related commands
 """"""""""""""""
 
 :doc:`fix addforce <fix_addforce>`
+:doc:`fix addtorque/atom <fix_addtorque_atom>`
 
 Default
 """""""
