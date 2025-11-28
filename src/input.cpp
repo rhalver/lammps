@@ -933,7 +933,8 @@ void Input::ifthenelse()
 
   // bound "then" commands
 
-  if (strcmp(arg[1],"then") != 0) error->all(FLERR,"Illegal if command: expected \"then\" but found \"{}\"", arg[1]);
+  if (strcmp(arg[1],"then") != 0)
+    error->all(FLERR,"Illegal if command: expected \"then\" but found \"{}\"", arg[1]);
 
   int first = 2;
   int iarg = first;
@@ -1007,7 +1008,8 @@ void Input::ifthenelse()
     ncommands = 0;
     for (int i = first; i <= last; i++) {
       n = strlen(arg[i]) + 1;
-      if (n == 1) error->all(FLERR,"Illegal if elif/else command: execute command is empty");
+      if (n == 1)
+        error->all(FLERR,"Illegal if elif/else command: execute command is empty");
       commands[ncommands] = new char[n];
       strcpy(commands[ncommands],arg[i]);
       ncommands++;
@@ -1029,11 +1031,12 @@ void Input::ifthenelse()
 
 void Input::include()
 {
-  if (narg != 1) error->all(FLERR,"Illegal include command");
+  if (narg != 1)
+    error->all(FLERR, Error::COMMAND, "Illegal include command. Must name one file to include.");
 
   if (me == 0) {
     if (nfile == LMP_MAXFILE)
-      error->one(FLERR,"Too many nested levels of input scripts");
+      error->one(FLERR, Error::COMMAND, "Too many nested levels ({}) of input scripts", nfile);
 
     // expand variables
     int n = strlen(arg[0]) + 1;
@@ -1043,7 +1046,7 @@ void Input::include()
 
     infile = fopen(line,"r");
     if (infile == nullptr)
-      error->one(FLERR,"Cannot open input script {}: {}", line, utils::getsyserror());
+      error->one(FLERR, Error::ARGZERO, "Cannot open input script {}: {}", line, utils::getsyserror());
 
     infiles[nfile++] = infile;
   }
@@ -1231,7 +1234,8 @@ void Input::quit()
 {
   if (narg == 0) error->done(0); // 1 would be fully backwards compatible
   if (narg == 1) error->done(utils::inumeric(FLERR,arg[0],false,lmp));
-  error->all(FLERR,"Illegal quit command: expected 0 or 1 argument but found {}", narg);
+  error->all(FLERR, Error::COMMAND,
+             "Illegal quit command: expected at most one argument but found {}", narg);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1322,7 +1326,7 @@ void Input::shell()
       }
 
       if (system(cmd.c_str()) != 0)
-        error->warning(FLERR,"Shell command {} returned with non-zero status", cmd);
+        error->warning(FLERR, "Shell command {} returned with non-zero status", cmd);
     }
   }
 }
@@ -1347,11 +1351,12 @@ void Input::variable_command()
 void Input::angle_coeff()
 {
   if (domain->box_exist == 0)
-    error->all(FLERR,"Angle_coeff command before simulation box is defined" + utils::errorurl(33));
+    error->all(FLERR, Error::COMMAND, "Angle_coeff command before simulation box is defined"
+               + utils::errorurl(33));
   if (force->angle == nullptr)
-    error->all(FLERR,"Angle_coeff command before angle_style is defined");
+    error->all(FLERR, Error::COMMAND, "Angle_coeff command before angle_style is defined");
   if (atom->avec->angles_allow == 0)
-    error->all(FLERR,"Angle_coeff command when no angles allowed");
+    error->all(FLERR, Error::COMMAND, "Angle_coeff command when no angles are allowed");
   char *newarg = utils::expand_type(FLERR, arg[0], Atom::ANGLE, lmp);
   if (newarg) arg[0] = newarg;
   force->angle->coeff(narg,arg);
@@ -1362,9 +1367,9 @@ void Input::angle_coeff()
 
 void Input::angle_style()
 {
-  if (narg < 1) error->all(FLERR,"Illegal angle_style command");
+  if (narg < 1) utils::missing_cmd_args(FLERR, "angle_style", error);
   if (atom->avec->angles_allow == 0)
-    error->all(FLERR,"Angle_style command when no angles allowed");
+    error->all(FLERR, Error::COMMAND, "Angle_style command when no angles are allowed");
   force->create_angle(arg[0],1);
   if (force->angle) force->angle->settings(narg-1,&arg[1]);
 }
@@ -1382,7 +1387,8 @@ void Input::atom_style()
 {
   if (narg < 1) utils::missing_cmd_args(FLERR, "atom_style", error);
   if (domain->box_exist)
-    error->all(FLERR,"Atom_style command after simulation box is defined" + utils::errorurl(34));
+    error->all(FLERR, Error::COMMAND, "Atom_style command after simulation box is defined"
+               + utils::errorurl(34));
   atom->create_avec(arg[0],narg-1,&arg[1],1);
 }
 
@@ -1391,11 +1397,12 @@ void Input::atom_style()
 void Input::bond_coeff()
 {
   if (domain->box_exist == 0)
-    error->all(FLERR,"Bond_coeff command before simulation box is defined" + utils::errorurl(33));
+    error->all(FLERR, Error::COMMAND,
+               "Bond_coeff command before simulation box is defined" + utils::errorurl(33));
   if (force->bond == nullptr)
-    error->all(FLERR,"Bond_coeff command before bond_style is defined");
+    error->all(FLERR, Error::COMMAND, "Bond_coeff command before bond_style is defined");
   if (atom->avec->bonds_allow == 0)
-    error->all(FLERR,"Bond_coeff command when no bonds allowed");
+    error->all(FLERR, Error::COMMAND, "Bond_coeff command when no bonds are allowed");
   char *newarg = utils::expand_type(FLERR, arg[0], Atom::BOND, lmp);
   if (newarg) arg[0] = newarg;
   force->bond->coeff(narg,arg);
@@ -1406,9 +1413,9 @@ void Input::bond_coeff()
 
 void Input::bond_style()
 {
-  if (narg < 1) error->all(FLERR,"Illegal bond_style command");
+  if (narg < 1) utils::missing_cmd_args(FLERR, "bond_style", error);
   if (atom->avec->bonds_allow == 0)
-    error->all(FLERR,"Bond_style command when no bonds allowed");
+    error->all(FLERR, Error::COMMAND, "Bond_style command when no bonds allowed");
   force->create_bond(arg[0],1);
   if (force->bond) force->bond->settings(narg-1,&arg[1]);
 }
@@ -1891,7 +1898,7 @@ void Input::special_bonds()
 
 void Input::suffix()
 {
-  if (narg < 1) error->all(FLERR,"Illegal suffix command");
+  if (narg < 1) utils::missing_cmd_args(FLERR,"suffix", error);
 
   const std::string firstarg = arg[0];
 
