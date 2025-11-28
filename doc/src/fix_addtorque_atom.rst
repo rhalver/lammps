@@ -47,16 +47,12 @@ finite-sized atom in the group to the specified values. Unlike
 collective torque to a set of point particles.
 
 Add :math:`(t_x,t_y,t_z)` to the corresponding component of the torque for each
-atom in the group.  This command can be used to give an additional push to
-atoms in a simulation, such as for a simulation of Poiseuille flow in
-a channel.
-
-Any of the three quantities defining the torque components, namely :math:`t_x`,
-:math:`t_y`, and :math:`t_z`, can be specified as an equal-style or atom-style
-:doc:`variable <variable>`.  If the value is a variable, it should be specified
-as v_name, where name is the variable name.  In this case, the variable
-will be evaluated each time step, and its value(s) will be used to determine
-the torque component(s).
+atom in the group. Any of the three quantities defining the torque components,
+namely :math:`t_x`, :math:`t_y`, and :math:`t_z`, can be specified as an
+equal-style or atom-style :doc:`variable <variable>`.  If the value is a variable,
+it should be specified as v_name, where name is the variable name.  In this case,
+the variable will be evaluated each time step, and its value(s) will be used to
+determine the torque component(s).
 
 Equal-style variables can specify formulas with various mathematical
 functions and include :doc:`thermo_style <thermo_style>` command
@@ -113,7 +109,7 @@ package <Build_package>` page for more info.
 Related commands
 """"""""""""""""
 
-:doc:`fix settorque/atom <fix_settorque_atom>`, :doc:`fix setforce <fix_setforce>`
+:doc:`fix settorque/atom <fix_settorque_atom>`, :doc:`fix addforce <fix_addforce>`
 
 Default
 """""""

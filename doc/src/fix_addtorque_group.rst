@@ -26,6 +26,9 @@ Examples
 Description
 """""""""""
 
+.. versionchanged:: TBD
+   Fix *addtorque* was renamed to fix *addtorque/group*
+
 Add a set of forces to each atom in
 the group such that:
 
@@ -52,8 +55,8 @@ time.  Thus it is easy to specify a time-dependent torque.
 
 .. note::
    Fix addtorque/group previously was known as fix addtorque and was
-   renamed in .. versionadded:: TBD to clarify that the fix operates
-   on a group of atoms as opposed to a single finite-sized atom.
+   renamed to clarify that the fix operates on a group of atoms as
+   opposed to a single finite-sized atom.
 
 ----------
 
