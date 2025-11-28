@@ -285,7 +285,8 @@ void Input::file()
 
     MPI_Bcast(&n,1,MPI_INT,0,world);
     if (n == 0) {
-      if (label_active) error->all(FLERR,"Label wasn't found in input script");
+      if (label_active)
+        error->all(FLERR, Error::NOLASTLINE, "Label {} wasn't found in input script", labelstr);
       break;
     }
 
@@ -312,7 +313,7 @@ void Input::file()
     // execute the command
 
     if (execute_command() && line)
-      error->all(FLERR,"Unknown command: {}",line);
+      error->all(FLERR, Error::COMMAND, "Unknown command: {}",line);
     nline = *output->thermo->get_line();
   }
 }
@@ -340,12 +341,14 @@ void Input::file(const char *filename)
   // call to file() will close filename and decrement nfile
 
   if (me == 0) {
-    if (nfile == LMP_MAXFILE) error->one(FLERR,"Too many nested levels of input scripts");
+    if (nfile == LMP_MAXFILE)
+      error->one(FLERR, Error::NOLASTLINE, "Too many nested levels ({}) of input scripts", nfile);
 
     if (filename) {
       infile = fopen(filename,"r");
       if (infile == nullptr)
-        error->one(FLERR,"Cannot open input script {}: {}", filename, utils::getsyserror());
+        error->one(FLERR, Error::NOLASTLINE, "Cannot open input script {}: {}",
+                   filename, utils::getsyserror());
       if (nfile > 0) inlines[nfile - 1] = *output->thermo->get_line();
       inlines[nfile] = -1;
       infiles[nfile++] = infile;
@@ -406,7 +409,7 @@ char *Input::one(const std::string &single)
   // execute the command and return its name
 
   if (execute_command())
-    error->all(FLERR,"Unknown command: {}",line);
+    error->all(FLERR, Error::COMMAND, "Unknown command: {}",line);
 
   return command;
 }
@@ -455,18 +458,18 @@ void Input::parse()
     if (*ptr == '\'') {
       ptrmatch = strchr(ptr+1,'\'');
       if (ptrmatch == nullptr)
-        error->all(FLERR,"Unmatched single quote in command");
+        error->all(FLERR,"Unmatched single quote in command: {}",line);
       ptr = ptrmatch + 1;
     } else if (*ptr == '"') {
       if (strstr(ptr,"\"\"\"") == ptr) {
         ptrmatch = strstr(ptr+3,"\"\"\"");
         if (ptrmatch == nullptr)
-          error->all(FLERR,"Unmatched triple quote in command");
+          error->all(FLERR,"Unmatched triple quote in command: {}",line);
         ptr = ptrmatch + 3;
       } else {
         ptrmatch = strchr(ptr+1,'"');
         if (ptrmatch == nullptr)
-          error->all(FLERR,"Unmatched double quote in command");
+          error->all(FLERR,"Unmatched double quote in command: {}",line);
         ptr = ptrmatch + 1;
       }
     } else ptr++;
@@ -476,9 +479,8 @@ void Input::parse()
     std::string buf = utils::utf8_subst(copy);
     strcpy(copy,buf.c_str());
     if (utf8_warn && (comm->me == 0))
-      error->warning(FLERR,"Detected non-ASCII characters in input. "
-                     "Will try to continue by replacing with ASCII "
-                     "equivalents where known.");
+      error->warning(FLERR,"Detected non-ASCII characters in input. Will try to continue by "
+                     "replacing with ASCII equivalents where known.");
     utf8_warn = false;
   }
 
@@ -883,7 +885,8 @@ int Input::execute_command()
 
 void Input::clear()
 {
-  if (narg > 0) error->all(FLERR,"Illegal clear command: unexpected arguments but found {}", narg);
+  if (narg > 0)
+    error->all(FLERR, Error::COMMAND, "Incorrect clear command: unexpected argument(s) found");
   if (output->thermo) output->thermo->set_line(-1);
   lmp->destroy();
   lmp->create();
@@ -895,7 +898,8 @@ void Input::clear()
 
 void Input::echo()
 {
-  if (narg != 1) error->all(FLERR,"Illegal echo command: expected 1 argument but found {}", narg);
+  if (narg != 1)
+    error->all(FLERR, Error::COMMAND, "Incorrect echo command: expected exactly one argument");
 
   if (strcmp(arg[0],"none") == 0) {
     echo_screen = 0;
@@ -909,7 +913,7 @@ void Input::echo()
   } else if (strcmp(arg[0],"both") == 0) {
     echo_screen = 1;
     echo_log = 1;
-  } else error->all(FLERR,"Unknown echo keyword: {}", arg[0]);
+  } else error->all(FLERR, Error::ARGZERO, "Unknown echo command keyword: {}", arg[0]);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -934,7 +938,7 @@ void Input::ifthenelse()
   // bound "then" commands
 
   if (strcmp(arg[1],"then") != 0)
-    error->all(FLERR,"Illegal if command: expected \"then\" but found \"{}\"", arg[1]);
+    error->all(FLERR, 1, "Illegal if command: expected \"then\" but found \"{}\"", arg[1]);
 
   int first = 2;
   int iarg = first;
