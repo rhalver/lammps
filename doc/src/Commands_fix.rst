@@ -13,7 +13,7 @@ OPT.
    * :doc:`acks2/reaxff (k) <fix_acks2_reaxff>`
    * :doc:`adapt <fix_adapt>`
    * :doc:`adapt/fep <fix_adapt_fep>`
-   * :doc:`addforce <fix_addforce>`
+   * :doc:`addforce (k) <fix_addforce>`
    * :doc:`add/heat <fix_add_heat>`
    * :doc:`addtorque/atom <fix_addtorque_atom>`
    * :doc:`addtorque/group <fix_addtorque_group>`
