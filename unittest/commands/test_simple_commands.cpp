@@ -80,8 +80,9 @@ TEST_F(SimpleCommandsTest, Echo)
     ASSERT_EQ(lmp->input->echo_screen, 0);
     ASSERT_EQ(lmp->input->echo_log, 1);
 
-    TEST_FAILURE(".*ERROR: Illegal echo command.*", command("echo"););
-    TEST_FAILURE(".*ERROR: Unknown echo keyword: xxx.*", command("echo xxx"););
+    TEST_FAILURE(".*ERROR: Incorrect echo command: expected exactly one.*", command("echo"););
+    TEST_FAILURE(".*ERROR: Incorrect echo command: expected exactly one.*", command("echo x x"););
+    TEST_FAILURE(".*ERROR: Unknown echo command keyword: xxx.*", command("echo xxx"););
 }
 
 TEST_F(SimpleCommandsTest, Log)
