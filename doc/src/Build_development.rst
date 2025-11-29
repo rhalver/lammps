@@ -478,19 +478,20 @@ Use custom linker for faster link times when ENABLE_TESTING is active
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When compiling LAMMPS with testing enabled, most test executables will
-need to be linked against the LAMMPS library.  Since this can be a very
-large library with many C++ objects when many packages are enabled, link
-times can become very long on machines that use the GNU BFD linker (e.g.
-Linux systems).  Alternatives like the ``mold`` linker, the ``lld``
-linker of the LLVM project, or the ``gold`` linker available with GNU
-binutils can speed up this step substantially (in this order).  CMake
-will by default test if any of the three can be enabled and use it when
-``ENABLE_TESTING`` is active.  It can also be selected manually through
-the ``CMAKE_CUSTOM_LINKER`` CMake variable.  Allowed values are
-``mold``, ``lld``, ``gold``, ``bfd``, or ``default``.  The ``default``
-option will use the system default linker otherwise, the linker is
-chosen explicitly.  This option is only available for the GNU or Clang
-C++ compilers.
+need to be linked against the LAMMPS library and re-linked whenever
+there is a change to LAMMPS.  Since this can be a very large library
+with many C++ objects when many packages are enabled, link times can
+become very long on machines that use the GNU BFD linker (e.g.  Linux
+systems).  Alternative linker programs like the ``mold`` linker, the
+``lld`` linker of the LLVM project, or the ``gold`` linker available
+with GNU binutils can speed up this step substantially (in this order).
+CMake will by default test if any of the three can be enabled and use it
+when ``ENABLE_TESTING`` is active.  The linker can also be selected
+manually through the ``LAMMPS_CUSTOM_LINKER`` CMake variable.  Allowed
+values are ``mold``, ``lld``, ``gold``, ``bfd``, or ``default``.  The
+``default`` option will use the system default linker otherwise, the
+linker is chosen explicitly.  This option is only available for the GNU
+or Clang C++ compilers.
 
 A small additional improvement can be obtained by building LAMMPS as a
 shared library with ``-D BUILD_SHARED_LIBS=on``.  But this is a small
