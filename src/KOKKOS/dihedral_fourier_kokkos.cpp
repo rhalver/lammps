@@ -58,7 +58,7 @@ DihedralFourierKokkos<DeviceType>::DihedralFourierKokkos(LAMMPS *lmp) : Dihedral
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-DihedralFourierKokkos<DeviceType>::~DihedralFourierKokkos<DeviceType>()
+DihedralFourierKokkos<DeviceType>::~DihedralFourierKokkos()
 {
   if (!copymode) {
     memoryKK->destroy_kokkos(k_eatom,eatom);
