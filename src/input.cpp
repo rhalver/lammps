@@ -1668,7 +1668,8 @@ void Input::min_modify()
 void Input::min_style()
 {
   if (domain->box_exist == 0)
-    error->all(FLERR, Error::COMMAND, "Min_style command before simulation box is defined" + utils::errorurl(33));
+    error->all(FLERR, Error::COMMAND, "Min_style command before simulation box is defined"
+               + utils::errorurl(33));
   update->create_minimize(narg,arg,1);
 }
 
@@ -1769,11 +1770,14 @@ void Input::package()
 void Input::pair_coeff()
 {
   if (domain->box_exist == 0)
-    error->all(FLERR,"Pair_coeff command before simulation box is defined" + utils::errorurl(33));
-  if (force->pair == nullptr) error->all(FLERR,"Pair_coeff command without a pair style");
+    error->all(FLERR, Error::COMMAND, "Pair_coeff command before simulation box is defined"
+               + utils::errorurl(33));
+  if (force->pair == nullptr)
+    error->all(FLERR, Error::COMMAND, "Pair_coeff command without a pair style");
   if (narg < 2) utils::missing_cmd_args(FLERR,"pair_coeff", error);
   if (force->pair->one_coeff && ((strcmp(arg[0],"*") != 0) || (strcmp(arg[1],"*") != 0)))
-    error->all(FLERR,"Pair_coeff must start with * * for pair style {}", force->pair_style);
+    error->all(FLERR, Error::COMMAND, "Pair_coeff must start with * * for pair style {}",
+               force->pair_style);
 
   char *newarg0 = utils::expand_type(FLERR, arg[0], Atom::ATOM, lmp);
   if (newarg0) arg[0] = newarg0;
@@ -1803,7 +1807,7 @@ void Input::pair_coeff()
 void Input::pair_modify()
 {
   if (force->pair == nullptr)
-    error->all(FLERR,"Pair_modify command before pair_style is defined");
+    error->all(FLERR, Error::COMMAND, "Pair_modify command before pair_style is defined");
   force->pair->modify_params(narg,arg);
 }
 
@@ -2036,7 +2040,8 @@ void Input::units()
 {
   if (narg != 1) error->all(FLERR,"Illegal units command: expected 1 argument but found {}", narg);
   if (domain->box_exist)
-    error->all(FLERR,"Units command after simulation box is defined" + utils::errorurl(34));
+    error->all(FLERR, Error::COMMAND, "Units command after simulation box is defined"
+               + utils::errorurl(34));
   update->set_units(arg[0]);
 }
 
