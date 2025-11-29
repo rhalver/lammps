@@ -80,8 +80,8 @@ TEST_F(SimpleCommandsTest, Echo)
     ASSERT_EQ(lmp->input->echo_screen, 0);
     ASSERT_EQ(lmp->input->echo_log, 1);
 
-    TEST_FAILURE(".*ERROR: Incorrect echo command: expected exactly one.*", command("echo"););
-    TEST_FAILURE(".*ERROR: Incorrect echo command: expected exactly one.*", command("echo x x"););
+    TEST_FAILURE(".*ERROR: Echo command expects exactly one argument.*", command("echo"););
+    TEST_FAILURE(".*ERROR: Echo command expects exactly one argument.*", command("echo x x"););
     TEST_FAILURE(".*ERROR: Unknown echo command keyword: xxx.*", command("echo xxx"););
 }
 
@@ -328,8 +328,8 @@ TEST_F(SimpleCommandsTest, Suffix)
     ASSERT_EQ(lmp->suffix_enable, 1);
 
     TEST_FAILURE(".*ERROR: Illegal suffix command.*", command("suffix"););
-    TEST_FAILURE(".*ERROR: Illegal suffix command.*", command("suffix hybrid"););
-    TEST_FAILURE(".*ERROR: Illegal suffix command.*", command("suffix hybrid one"););
+    TEST_FAILURE(".*ERROR: Illegal suffix hybrid command.*", command("suffix hybrid"););
+    TEST_FAILURE(".*ERROR: Illegal suffix hybrid command.*", command("suffix hybrid one"););
 }
 
 TEST_F(SimpleCommandsTest, Thermo)
@@ -382,7 +382,9 @@ TEST_F(SimpleCommandsTest, TimeStep)
     END_HIDE_OUTPUT();
     ASSERT_EQ(lmp->update->dt, -0.1);
 
-    TEST_FAILURE(".*ERROR: Illegal timestep command.*", command("timestep"););
+    TEST_FAILURE(".*ERROR: Timestep command expects exactly one argument.*", command("timestep"););
+    TEST_FAILURE(".*ERROR: Timestep command expects exactly one argument.*",
+                 command("timestep 1.0 2.0"););
     TEST_FAILURE(".*ERROR: Expected floating point.*", command("timestep xxx"););
 }
 
