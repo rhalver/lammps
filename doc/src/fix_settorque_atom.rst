@@ -45,9 +45,8 @@ Each component of torque on each atom in the group to the specified
 values tx,ty,tz.  This erases all previously computed torques on the
 atom, though additional fixes could add new torques.  This command can
 be used to freeze the rotation of certain atoms in the simulation by
-zeroing their torque, either for running dynamics or performing an energy
-minimization.  For dynamics, this assumes their initial angular velocity
-is also zero.
+zeroing their torque, assuming their initial angular velocities are also
+zero.
 
 Any of the tx,ty,tz values can be specified as NULL which means do not
 alter the torque component in that dimension.
@@ -95,12 +94,6 @@ changed by the fix.  The vector values calculated by this fix are
 
 No parameter of this fix can be used with the *start/stop* keywords of
 the :doc:`run <run>` command.
-
-The torques due to this fix are imposed during an energy minimization,
-invoked by the :doc:`minimize <minimize>` command, but you cannot set
-torques to any value besides zero when performing a minimization.  Use
-the :doc:`fix addforce <fix_addforce>` command if you want to apply a
-non-zero torque to atoms during a minimization.
 
 Restrictions
 """"""""""""
