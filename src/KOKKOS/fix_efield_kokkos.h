@@ -43,7 +43,6 @@ class FixEfieldKokkos : public FixEfield {
   typedef double value_type[];
   const int value_count = 10;
 
-
   FixEfieldKokkos(class LAMMPS *, int, char **);
   ~FixEfieldKokkos() override;
   void init() override;
