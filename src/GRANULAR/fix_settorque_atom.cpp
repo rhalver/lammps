@@ -176,8 +176,8 @@ void FixSetTorqueAtom::init()
       ilevel_respa = nlevels_respa - 1;
   }
 
-  // cannot use non-zero forces for a minimization since no energy is integrated
-  // use fix addforce instead
+  // cannot use non-zero torques for a minimization since no energy is integrated
+  // use fix addtorque/atom instead
 
   int flag = 0;
   if (update->whichflag == 2) {
@@ -188,7 +188,7 @@ void FixSetTorqueAtom::init()
     if (ystyle == CONSTANT && yvalue != 0.0) flag = 1;
     if (zstyle == CONSTANT && zvalue != 0.0) flag = 1;
   }
-  if (flag) error->all(FLERR, "Cannot use non-zero forces in an energy minimization");
+  if (flag) error->all(FLERR, "Cannot use non-zero torques in an energy minimization");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -248,7 +248,7 @@ void FixSetTorqueAtom::post_force(int /*vflag*/)
         if (zstyle) torque[i][2] = zvalue;
       }
 
-    // variable force, wrap with clear/add
+    // variable torques, wrap with clear/add
 
   } else {
 
@@ -295,7 +295,7 @@ void FixSetTorqueAtom::post_force(int /*vflag*/)
 
 void FixSetTorqueAtom::post_force_respa(int vflag, int ilevel, int /*iloop*/)
 {
-  // set force to desired value on requested level, 0.0 on other levels
+  // set torque to desired value on requested level, 0.0 on other levels
 
   if (ilevel == 0) toriginal_saved[0] = toriginal_saved[1] = toriginal_saved[2] = 0.0;
 
@@ -333,7 +333,7 @@ void FixSetTorqueAtom::min_post_force(int vflag)
 }
 
 /* ----------------------------------------------------------------------
-   return components of total force on fix group before force was changed
+   return components of total torque on fix group before torque was changed
 ------------------------------------------------------------------------- */
 
 double FixSetTorqueAtom::compute_vector(int n)

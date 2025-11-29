@@ -19,6 +19,7 @@
 #include "fix_addtorque_group.h"
 
 #include "atom.h"
+#include "comm.h"
 #include "domain.h"
 #include "error.h"
 #include "force.h"
@@ -40,6 +41,9 @@ FixAddTorqueGroup::FixAddTorqueGroup(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
   if (narg != 6) error->all(FLERR,"Illegal fix addtorque/group command");
+
+  if ((strcmp(style, "addtorque") == 0) && (comm->me == 0))
+    error->warning(FLERR,"Fix addtorque was renamed to fix addtorque/group. Please update your input");
 
   scalar_flag = 1;
   vector_flag = 1;

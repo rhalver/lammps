@@ -292,7 +292,7 @@ void FixAddTorqueAtom::min_post_force(int vflag)
 }
 
 /* ----------------------------------------------------------------------
-   return components of total force on fix group before force was changed
+   return components of total torque on fix group before torque was changed
 ------------------------------------------------------------------------- */
 
 double FixAddTorqueAtom::compute_vector(int n)
