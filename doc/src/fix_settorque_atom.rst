@@ -47,6 +47,8 @@ atom, though additional fixes could add new torques.  This command can
 be used to freeze the rotation of certain atoms in the simulation by
 zeroing their torque, assuming their initial angular velocities are also
 zero.
+Freezing both rotational and translational degrees of freedom can
+also be accomplished using :doc:`fix freeze <fix_freeze>.`
 
 Any of the tx,ty,tz values can be specified as NULL which means do not
 alter the torque component in that dimension.
@@ -106,7 +108,7 @@ Related commands
 """"""""""""""""
 
 :doc:`fix addforce <fix_addforce>`, :doc:`fix addtorque/group <fix_addtorque_group>`,
-:doc:`fix setforce <fix_setforce>`
+:doc:`fix setforce <fix_setforce>`, :doc:`fix freeze <fix_freeze>`
 
 Default
 """""""
