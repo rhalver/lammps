@@ -32,7 +32,6 @@ some selected examples for derived classes of specific models.
 .. toctree::
    :caption: Individual Base Classes
    :name: lammpsbase
-   :maxdepth: 1
 
    Classes_lammps
    Classes_atom
@@ -43,6 +42,5 @@ some selected examples for derived classes of specific models.
 .. toctree::
    :caption: Individual Utility Classes
    :name: lammpsutils
-   :maxdepth: 1
 
    Classes_cite
