@@ -3538,6 +3538,7 @@ Sethna
 setmask
 Setmask
 setpoint
+settorque
 setvel
 sevenbody
 sfftw
@@ -3990,7 +3991,9 @@ tweakable
 twobody
 twojmax
 Tx
+tx
 txt
+ty
 Tyagi
 typeargs
 typedefs
@@ -4001,6 +4004,7 @@ typeN
 typesafe
 typestr
 Tz
+tz
 Tzou
 ub
 Uberuaga

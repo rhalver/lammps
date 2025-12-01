@@ -1,17 +1,17 @@
-.. index:: fix settorque
+.. index:: fix settorque/atom
 
-fix settorque command
-=====================
+fix settorque/atom command
+==========================
 
 Syntax
 """"""
 
 .. code-block:: LAMMPS
 
-   fix ID group-ID settorque tx ty tz keyword value ...
+   fix ID group-ID settorque/atom tx ty tz keyword value ...
 
 * ID, group-ID are documented in :doc:`fix <fix>` command
-* settorque = style name of this fix command
+* settorque/atom = style name of this fix command
 * tx,ty,tz = torque component values
 * any of tx,ty,tz can be a variable (see below)
 * zero or more keyword/value pairs may be appended to args
@@ -27,36 +27,37 @@ Examples
 
 .. code-block:: LAMMPS
 
-   fix freeze indenter settorque 0.0 0.0 0.0
-   fix 2 edge settorque NULL 0.0 0.0
-   fix 2 edge settorque NULL 0.0 v_oscillate
+   fix freeze indenter settorque/atom 0.0 0.0 0.0
+   fix 2 edge settorque/atom NULL 0.0 0.0
+   fix 2 edge settorque/atom NULL 0.0 v_oscillate
 
 Description
 """""""""""
 
 .. versionadded:: TBD
 
-This fix is intended to set the peratom torque of each individual
-finite-sized atom in the group to the specified values. Unlike
-:doc:`fix addtorque/group <fix_addtorque_group>`, it does not set a
-collective torque to a set of point particles.
+This fix is intended to set the peratom torque of individual finite-size
+atoms in the fix group to the specified values. Unlike :doc:`fix
+addtorque/group <fix_addtorque_group>`, it does not set a collective
+torque to a set of point particles.
 
 Each component of torque on each atom in the group to the specified
-values tx,ty,tz.  This erases all previously computed torques on the
-atom, though additional fixes could add new torques.  This command can
-be used to freeze the rotation of certain atoms in the simulation by
+values *tx*, *ty*, *tz*.  This erases all previously computed torques on
+the atom, though additional fixes could add new torques.  This command
+can be used to freeze the rotation of certain atoms in the simulation by
 zeroing their torque, assuming their initial angular velocities are also
 zero.
-Freezing both rotational and translational degrees of freedom can
-also be accomplished using :doc:`fix freeze <fix_freeze>.`
 
-Any of the tx,ty,tz values can be specified as NULL which means do not
-alter the torque component in that dimension.
+Freezing both rotational and translational degrees of freedom can
+also be accomplished using :doc:`fix freeze <fix_freeze>`.
+
+Any of the *tx*, *ty*, *tz* values can be specified as NULL which means
+do not alter the torque component in that dimension.
 
 Any of the 3 quantities defining the torque components can be specified
 as an equal-style or atom-style :doc:`variable <variable>`, namely *tx*,
 *ty*, *tz*\ .  If the value is a variable, it should be specified as
-v_name, where name is the variable name.  In this case, the variable
+*v_name*, where *name* is the variable name.  In this case, the variable
 will be evaluated each timestep, and its value used to determine the
 torque component.
 
@@ -85,7 +86,7 @@ The :doc:`fix_modify <fix_modify>` *respa* option is supported by
 this fix. This allows to set at which level of the :doc:`r-RESPA <run_style>`
 integrator the fix is setting the torques to the desired values; on all
 other levels, the torque is set to 0.0 for the atoms in the fix group,
-so that settorque values are not counted multiple times. Default is to
+so that settorque/atom values are not counted multiple times. Default is to
 to override torques at the outermost level.
 
 This fix computes a global 3-vector of torques, which can be accessed
@@ -107,7 +108,7 @@ package <Build_package>` page for more info.
 Related commands
 """"""""""""""""
 
-:doc:`fix addforce <fix_addforce>`, :doc:`fix addtorque/group <fix_addtorque_group>`,
+:doc:`fix addforce <fix_addforce>`, :doc:`fix addtorque/atom <fix_addtorque_atom>`,
 :doc:`fix setforce <fix_setforce>`, :doc:`fix freeze <fix_freeze>`
 
 Default

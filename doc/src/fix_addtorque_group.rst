@@ -37,9 +37,9 @@ the group such that:
 * the group would move as a rigid body in the absence of other
   forces.
 
-This command can be used to drive a group of atoms into rotation. To
-apply a torque to a single finite-sized atom, use
-:doc:`fix addtorque/atom <fix_addtorque_atom>` instead.
+This command can be used to drive a group of atoms into rotation by
+adding forces to the atoms.  To apply a torque to individual finite-size
+atoms, use :doc:`fix addtorque/atom <fix_addtorque_atom>` instead.
 
 Any of the three quantities defining the torque components can be specified
 as an equal-style :doc:`variable <variable>`, namely *Tx*,
@@ -54,9 +54,10 @@ keywords for the simulation box parameters and timestep and elapsed
 time.  Thus it is easy to specify a time-dependent torque.
 
 .. note::
-   Fix addtorque/group previously was known as fix addtorque and was
+
+   Fix *addtorque/group* previously was known as fix *addtorque* and was
    renamed to clarify that the fix operates on a group of atoms as
-   opposed to a single finite-sized atom.
+   opposed to individual finite-size atoms.
 
 ----------
 
