@@ -72,7 +72,7 @@ OPT.
    * :doc:`eos/table <fix_eos_table>`
    * :doc:`eos/table/rx (k) <fix_eos_table_rx>`
    * :doc:`evaporate <fix_evaporate>`
-   * :doc:`external <fix_external>`
+   * :doc:`external (k) <fix_external>`
    * :doc:`ffl <fix_ffl>`
    * :doc:`filter/corotate <fix_filter_corotate>`
    * :doc:`flow/gauss <fix_flow_gauss>`
