@@ -11,11 +11,12 @@ Syntax
    kspace_modify keyword value ...
 
 * one or more keyword/value pairs may be listed
-* keyword = *collective* or *compute* or *cutoff/adjust* or *diff* or *disp/auto* or *fftbench* or *force/disp/kspace* or *force/disp/real* or *force* or *gewald/disp* or *gewald* or *kmax/ewald* or *mesh* or *minorder* or *mix/disp* or *order/disp* or *order* or *overlap* or *scafacos* or *slab* or *splittol* or *wire*
+* keyword = *collective* or *nonblocking* or *compute* or *cutoff/adjust* or *diff* or *disp/auto* or *fftbench* or *force/disp/kspace* or *force/disp/real* or *force* or *gewald/disp* or *gewald* or *kmax/ewald* or *mesh* or *minorder* or *mix/disp* or *order/disp* or *order* or *overlap* or *scafacos* or *slab* or *splittol* or *wire*
 
   .. parsed-literal::
 
        *collective* value = *yes* or *no*
+       *nonblocking* value = *yes* or *no*
        *compute* value = *yes* or *no*
        *cutoff/adjust* value = *yes* or *no*
        *diff* value = *ad* or *ik* = 2 or 4 FFTs for PPPM in smoothed or non-smoothed mode
@@ -83,6 +84,16 @@ default, except on IBM BlueGene machines.  If this option is set to
 This is faster on IBM BlueGene machines, and may also be faster on
 other machines if they have an efficient implementation of MPI
 collective operations and adequate hardware.
+
+----------
+
+The *nonblocking* keyword applies only to PPPM.  It is set to *no* by
+default. If this option is set to *yes*, LAMMPS will use non-blocking
+point-to-point MPI operations to remap data for 3d-FFT operations
+instead of the default blocking point-to-point communication. This
+allows for better utilization of full network bandwidth by overlapping
+communication to multiple other ranks at the same time, as well as
+overlapping receiving/unpacking data and sending data.
 
 ----------
 
