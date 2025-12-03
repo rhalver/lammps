@@ -15,6 +15,7 @@
 #include "remap.h"
 
 #include <cstdlib>
+#include <set>
 
 #define PACK_DATA FFT_SCALAR
 
@@ -149,13 +150,13 @@ void remap_3d(FFT_SCALAR *in, FFT_SCALAR *out, FFT_SCALAR *buf,
 
       int numpacked = 0;
       for (isend = 0; isend < plan->commringlen; isend++) {
-        if (plan->sendcnts[isend]) {
+        if (isend == plan->selfcommringloc && plan->self) {
+          numpacked++;
+        }
+        else if (plan->sendcnts[isend]) {
           plan->pack(&in[plan->send_offset[numpacked]],
                       &plan->sendbuf[plan->sdispls[isend]],
                       &plan->packplan[numpacked]);
-          numpacked++;
-        }
-        else if (plan->commringlist[isend] == me && plan->self) {
           numpacked++;
         }
       }
@@ -179,13 +180,13 @@ void remap_3d(FFT_SCALAR *in, FFT_SCALAR *out, FFT_SCALAR *buf,
 
       numpacked = 0;
       for (irecv = 0; irecv < plan->commringlen; irecv++) {
-        if (plan->rcvcnts[irecv]) {
+        if (irecv == plan->selfcommringloc && plan->self) {
+          numpacked++;
+        }
+        else if (plan->rcvcnts[irecv]) {
           plan->unpack(&scratch[plan->rdispls[irecv]],
                        &out[plan->recv_offset[numpacked]],
                        &plan->unpackplan[numpacked]);
-          numpacked++;
-        }
-        else if (plan->commringlist[irecv] == me && plan->self) {
           numpacked++;
         }
       }
@@ -488,70 +489,61 @@ struct remap_plan_3d *remap_3d_create_plan(
 
     MPI_Comm_dup(comm,&plan->comm);
   } else {
-    // Improved approach - use an AllReduce to aggregate which ranks need to be included
-    // To do this, we build the local proc's send/receive list, then do an AllReduce
-    // to create the send/recv count for the Alltoallv
-
-    // local arrays to be used in the allreduce
-    // start with max length -- nprocs. Unused entries will be removed later
-
-    int *local_cnts = (int*) malloc(2*nprocs*sizeof(int));
-    if (local_cnts == nullptr) return nullptr;
-    int *local_sendcnts = local_cnts;
-    int *local_recvcnts = (local_cnts + nprocs);
-
-    // local arrays used to store the results of the allreduce
-
-    int *global_cnts = (int*) malloc(2*nprocs*sizeof(int));
-    if (global_cnts == nullptr) return nullptr;
-    int *global_sendcnts = global_cnts;
-    int *global_recvcnts = (global_cnts + nprocs);
-
-    // count send & recv collides, including self
+    int *commringlist;
+    int commringlen = 0;
+    // use a C++ set to organize the commringlist (C++17)
+    std::set<int> commringset;
 
     nsend = 0;
     nrecv = 0;
     for (i = 0; i < nprocs; i++) {
-      local_sendcnts[i] = remap_3d_collide(&in,&outarray[i],&overlap);
-      local_recvcnts[i] = remap_3d_collide(&out,&inarray[i],&overlap);
-      nsend += local_sendcnts[i];
-      nrecv += local_recvcnts[i];
-    }
-
-    // perform an AllReduce to get the counts from all other processors and build sendcnts list
-
-    MPI_Allreduce(local_cnts, global_cnts, 2*nprocs, MPI_INT, MPI_SUM, comm);
-
-    // now remove procs that are 0 in send or recv to create minimized sendcnts/recvcnts for AlltoAllv
-    // also builds commringlist -- which is already sorted
-
-    int *commringlist = (int*) malloc(nprocs * sizeof(int));
-    int commringlen = 0;
-
-    for (i = 0; i < nprocs; i++) {
-      if (global_sendcnts[i] > 0 || global_recvcnts[i] > 0) {
-        commringlist[commringlen] = i;
-        commringlen++;
+      if (remap_3d_collide(&in,&outarray[i],&overlap)) {
+        commringset.insert(i);
+        nsend++;
+      }
+      if (remap_3d_collide(&out,&inarray[i],&overlap)) {
+        commringset.insert(i);
+        nrecv++;
       }
     }
 
-    // resize commringlist to final size
+    int commringappend = 1;
+    while (commringappend) {
+      commringappend = 0;
+      for (int setproci : commringset) {
+        for (j = 0; j < nprocs; j++) {
+          // short-circuit if already in commring
+          if (commringset.find(j) != commringset.end())
+            continue;
+          if (remap_3d_collide(&inarray[setproci],&outarray[j],&overlap)) {
+            auto set_insert_result = commringset.insert(j);
+            if (set_insert_result.second) {
+              commringappend++;
+            }
+          }
+          if (remap_3d_collide(&outarray[setproci],&inarray[j],&overlap)) {
+            auto set_insert_result = commringset.insert(j);
+            if (set_insert_result.second) {
+              commringappend++;
+            }
+          }
+        }
+      }
+    }
 
-    commringlist = (int *) realloc(commringlist, commringlen*sizeof(int));
+    // build already-sorted commringlist as an array
+    commringlist = (int*) malloc(commringset.size() * sizeof(int));
+    commringlen = 0;
+
+    for (int setproci : commringset) {
+      commringlist[commringlen] = setproci;
+      commringlen++;
+    }
 
     // set the plan->commringlist
 
     plan->commringlen = commringlen;
     plan->commringlist = commringlist;
-
-    // clean up local buffers that are finished
-
-    local_sendcnts = nullptr;
-    local_recvcnts = nullptr;
-    global_recvcnts = nullptr;
-    global_sendcnts = nullptr;
-    free(local_cnts);
-    free(global_cnts);
 
     // malloc space for send & recv info
     // if the current proc is involved in any way in the communication, allocate space
