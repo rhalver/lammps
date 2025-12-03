@@ -85,9 +85,11 @@ void FixExternalKokkos<DeviceType>::post_force(int vflag)
   // it will fill fexternal with forces
   // base class will move them along with atoms if ncall != napply
 
-  if ((mode == PF_CALLBACK) && (ntimestep % ncall == 0))
+  if ((mode == PF_CALLBACK) && (ntimestep % ncall == 0)) {
+    atomKK->k_x.sync_hostkk();
     (this->callback)(ptr_caller,update->ntimestep,
                      atom->nlocal,atom->tag,atom->x,fexternal);
+  }
 
   // add forces from current fexternal to KOKKOS array and then to atoms in group
 
