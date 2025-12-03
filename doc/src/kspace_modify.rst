@@ -451,7 +451,8 @@ parameters, see the :doc:`Howto dispersion <Howto_dispersion>` doc page.
 Restrictions
 """"""""""""
 
-none
+The *collective* and *nonblocking* keywords are mutually exclusive and
+cannot be enabled at the same time.
 
 Related commands
 """"""""""""""""
@@ -463,6 +464,8 @@ Default
 
 The option defaults are as follows:
 
+* collective = no
+* nonblocking = no
 * compute = yes
 * cutoff/adjust = yes (MSM)
 * diff = ik (PPPM)
