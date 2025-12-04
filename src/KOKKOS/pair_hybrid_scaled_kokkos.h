@@ -58,7 +58,7 @@ protected:
 
   DAT::t_kkfloat_1d_3_lr_randomread x;
   DAT::t_kkacc_1d_3 f;
-  friend void pair_virial_fdotr_compute<PairHybridKokkos>(PairHybridScaledKokkos*);
+  friend void pair_virial_fdotr_compute<PairHybridScaledKokkos>(PairHybridScaledKokkos*);
 };
 
 }    // namespace LAMMPS_NS

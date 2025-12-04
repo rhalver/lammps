@@ -309,7 +309,8 @@ void PairHybridScaledKokkos::compute(int eflag, int vflag)
   this->x = atomKK->k_x.view_device();
   this->f = atomKK->k_f.view_device();
 
-  if (vflag_fdotr) virial_fdotr_compute();
+  if (vflag_fdotr)
+    pair_virial_fdotr_compute(this);
 }
 
 /* ----------------------------------------------------------------------
