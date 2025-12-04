@@ -51,8 +51,6 @@ DihedralFourierKokkos<DeviceType>::DihedralFourierKokkos(LAMMPS *lmp) : Dihedral
   h_warning_flag = k_warning_flag.view_host();
 
   centroidstressflag = CENTROID_NOTAVAIL;
-
-  nterms_max = 0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -345,10 +343,6 @@ void DihedralFourierKokkos<DeviceType>::allocate_kokkos()
 {
   int n = atom->ndihedraltypes;
 
-  nterms_max = 0;
-  for (int i = 1; i <= n; i++)
-    nterms_max = MAX(nterms_max,nterms[i]);
-
   k_k = DAT::tdual_kkfloat_2d("DihedralFourier::k",n+1,nterms_max);
   k_cos_shift = DAT::tdual_kkfloat_2d("DihedralFourier::cos_shift",n+1,nterms_max);
   k_sin_shift = DAT::tdual_kkfloat_2d("DihedralFourier::sin_shift",n+1,nterms_max);
@@ -372,8 +366,10 @@ void DihedralFourierKokkos<DeviceType>::coeff(int narg, char **arg)
   DihedralFourier::coeff(narg, arg);
   allocate_kokkos();
 
-  int n = atom->ndihedraltypes;
-  for (int i = 1; i <= n; i++) {
+  int ilo,ihi;
+  utils::bounds(FLERR,arg[0],1,atom->ndihedraltypes,ilo,ihi,error);
+
+  for (int i = ilo; i <= ihi; i++) {
     k_nterms.view_host()[i] = nterms[i];
     for (int j = 0; j < nterms[i]; j++) {
       k_k.view_host()(i,j) = k[i][j];

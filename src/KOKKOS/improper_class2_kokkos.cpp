@@ -887,7 +887,10 @@ void ImproperClass2Kokkos<DeviceType>::coeff(int narg, char **arg)
   d_setflag_i = k_setflag_i.template view<DeviceType>();
   d_setflag_aa = k_setflag_aa.template view<DeviceType>();
 
-  for (int i = 1; i <= n; i++) {
+  int ilo,ihi;
+  utils::bounds(FLERR,arg[0],1,atom->nimpropertypes,ilo,ihi,error);
+
+  for (int i = ilo; i <= ihi; i++) {
     k_k0.view_host()[i] = k0[i];
     k_chi0.view_host()[i] = chi0[i];
     k_aa_k1.view_host()[i] = aa_k1[i];

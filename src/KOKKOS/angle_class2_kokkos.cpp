@@ -368,8 +368,10 @@ void AngleClass2Kokkos<DeviceType>::coeff(int narg, char **arg)
   d_setflag_ba = k_setflag_ba.template view<DeviceType>();
   d_theta0 = k_theta0.template view<DeviceType>();
 
-  //int n = atom->nangletypes;
-  for (int i = 1; i <= n; i++) {
+  int ilo,ihi;
+  utils::bounds(FLERR,arg[0],1,atom->nangletypes,ilo,ihi,error);
+
+  for (int i = ilo; i <= ihi; i++) {
     k_k2.view_host()[i] = k2[i];
     k_k3.view_host()[i] = k3[i];
     k_k4.view_host()[i] = k4[i];

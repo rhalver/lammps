@@ -463,8 +463,10 @@ void DihedralCharmmfswKokkos<DeviceType>::coeff(int narg, char **arg)
   d_sin_shift = k_sin_shift.template view<DeviceType>();
   d_weight = k_weight.template view<DeviceType>();
 
-  int n = atom->ndihedraltypes;
-  for (int i = 1; i <= n; i++) {
+  int ilo,ihi;
+  utils::bounds(FLERR,arg[0],1,atom->ndihedraltypes,ilo,ihi,error);
+
+  for (int i = ilo; i <= ihi; i++) {
     k_k.view_host()[i] = k[i];
     k_multiplicity.view_host()[i] = multiplicity[i];
     k_shift.view_host()[i] = shift[i];

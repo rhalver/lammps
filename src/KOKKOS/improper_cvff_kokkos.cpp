@@ -381,8 +381,10 @@ void ImproperCvffKokkos<DeviceType>::coeff(int narg, char **arg)
 {
   ImproperCvff::coeff(narg, arg);
 
-  int n = atom->nimpropertypes;
-  for (int i = 1; i <= n; i++) {
+  int ilo,ihi;
+  utils::bounds(FLERR,arg[0],1,atom->nimpropertypes,ilo,ihi,error);
+
+  for (int i = ilo; i <= ihi; i++) {
     k_k.view_host()[i] = static_cast<KK_FLOAT>(k[i]);
     k_sign.view_host()[i] = sign[i];
     k_multiplicity.view_host()[i] = multiplicity[i];
