@@ -14,12 +14,14 @@
 
 #include "pair_hybrid_scaled_kokkos.h"
 
-#include "atom.h"
+#include "atom_kokkos.h"
+#include "atom_masks.h"
 #include "atom_vec.h"
 #include "comm.h"
 #include "error.h"
 #include "force.h"
 #include "input.h"
+#include "kokkos.h"
 #include "memory.h"
 #include "respa.h"
 #include "update.h"
@@ -39,9 +41,9 @@ PairHybridScaledKokkos::PairHybridScaledKokkos(LAMMPS *lmp) : PairHybridKokkos(l
   // set comm size needed by this Pair (if atomscaleflag)
 
   comm_forward = 1;
-
 }
 
+/* ---------------------------------------------------------------------- */
 
 PairHybridScaledKokkos::~PairHybridScaledKokkos()
 {
@@ -115,9 +117,9 @@ void PairHybridScaledKokkos::compute(int eflag, int vflag)
 
   ev_init(eflag, vflag);
 
-  atomKK->sync(Host,F_FLAG);
+  atomKK->sync(Host,F_MASK);
   if (atom->torque_flag)
-    atomKK->sync(Host,TORQUE_FLAG);
+    atomKK->sync(Host,TORQUE_MASK);
 
   // grow fsum array if needed, and copy existing forces (usually 0.0) to it.
 
@@ -176,9 +178,9 @@ void PairHybridScaledKokkos::compute(int eflag, int vflag)
     memset(&f[0][0], 0, nall * 3 * sizeof(double));
     if (atom->torque_flag) memset(&t[0][0], 0, nall * 3 * sizeof(double));
 
-    atomKK->modify(Host,F_FLAG);
+    atomKK->modified(Host,F_MASK);
     if (atom->torque_flag)
-      atomKK->modify(Host,TORQUE_FLAG);
+      atomKK->modified(Host,TORQUE_MASK);
 
     set_special(m);
 
@@ -199,9 +201,9 @@ void PairHybridScaledKokkos::compute(int eflag, int vflag)
     // add scaled forces to global sum
     const double scale = scaleval[m];
 
-    atomKK->sync(Host,F_FLAG);
+    atomKK->sync(Host,F_MASK);
     if (atom->torque_flag)
-      atomKK->sync(Host,TORQUE_FLAG);
+      atomKK->sync(Host,TORQUE_MASK);
 
     // if scale factor is constant or equal-style variable
     if (scaleidx[m] < 0 || atomvar[m] < 0) {
@@ -279,9 +281,9 @@ void PairHybridScaledKokkos::compute(int eflag, int vflag)
     }
   }
 
-  atomKK->sync(Host,F_FLAG);
+  atomKK->sync(Host,F_MASK);
   if (atom->torque_flag)
-    atomKK->sync(Host,TORQUE_FLAG);
+    atomKK->sync(Host,TORQUE_MASK);
 
   // copy accumulated scaled forces to original force array
 
@@ -297,15 +299,15 @@ void PairHybridScaledKokkos::compute(int eflag, int vflag)
   }
   delete[] saved_special;
 
-  atomKK->modified(Host,F_FLAG);
+  atomKK->modified(Host,F_MASK);
   if (atom->torque_flag)
-    atomKK->modified(Host,TORQUE_FLAG);
+    atomKK->modified(Host,TORQUE_MASK);
 
   // perform virial_fdotr on device
 
   atomKK->sync(Device,X_MASK|F_MASK);
-  x = atomKK->k_x.view_device();
-  f = atomKK->k_f.view_device();
+  this->x = atomKK->k_x.view_device();
+  this->f = atomKK->k_f.view_device();
 
   if (vflag_fdotr) virial_fdotr_compute();
 }
