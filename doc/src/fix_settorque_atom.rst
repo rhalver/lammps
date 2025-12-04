@@ -75,6 +75,16 @@ If the *region* keyword is used, the atom must also be in the
 specified geometric :doc:`region <region>` in order to have torque added
 to it.
 
+.. note::
+
+   This fix is not (currently) designed to be used with rigid fixes.
+   While it will set the torque of all of the atoms in a rigid body as
+   described above, there is not always an easy mapping between these
+   peratom torques and the torque experienced by the body. The exception
+   may be when used in conjunction to :doc:`fix setforce <set_force>` to
+   simultaneously zero forces and torques to freeze a rigid body.
+
+
 ----------
 
 Restart, fix_modify, output, run start/stop, minimize info

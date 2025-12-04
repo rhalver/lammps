@@ -99,6 +99,13 @@ specify torque components with a variable that has time-dependence for
 use with a minimizer, since the minimizer increments the time step as
 the iteration count during the minimization.
 
+.. note::
+
+   This fix is not (currently) designed to be used with rigid fixes.
+   While it will apply additional torques to all of the atoms in a
+   rigid body as described above, there is not always an easy mapping
+   between these peratom torques and the torque experienced by the body.
+
 Restrictions
 """"""""""""
 
