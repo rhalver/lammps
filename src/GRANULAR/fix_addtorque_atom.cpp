@@ -15,6 +15,7 @@
 
 #include "atom.h"
 #include "atom_masks.h"
+#include "comm.h"
 #include "domain.h"
 #include "error.h"
 #include "input.h"
@@ -172,6 +173,9 @@ void FixAddTorqueAtom::init()
     ilevel_respa = (dynamic_cast<Respa *>(update->integrate))->nlevels - 1;
     if (respa_level >= 0) ilevel_respa = MIN(respa_level, ilevel_respa);
   }
+
+  if ((modify->check_rigid_group_overlap(groupbit)) && (comm->me == 0))
+    error->warning(FLERR,"Adding torques to atoms in rigid bodies with fix addtorque/atom may not work as expected");
 }
 
 /* ---------------------------------------------------------------------- */

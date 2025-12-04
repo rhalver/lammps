@@ -14,6 +14,7 @@
 #include "fix_settorque_atom.h"
 
 #include "atom.h"
+#include "comm.h"
 #include "domain.h"
 #include "error.h"
 #include "input.h"
@@ -175,6 +176,9 @@ void FixSetTorqueAtom::init()
     else
       ilevel_respa = nlevels_respa - 1;
   }
+
+  if ((modify->check_rigid_group_overlap(groupbit)) && (comm->me == 0))
+    error->warning(FLERR,"Setting torques to atoms in rigid bodies with fix settorque/atom may not work as expected");
 }
 
 /* ---------------------------------------------------------------------- */
