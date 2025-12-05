@@ -73,10 +73,6 @@ static const char cite_fix_srd[] =
     " pages =   174106\n"
     "}\n\n";
 
-//#define SRD_DEBUG 1
-//#define SRD_DEBUG_ATOMID 58
-//#define SRD_DEBUG_TIMESTEP 449
-
 /* ---------------------------------------------------------------------- */
 
 FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
@@ -1369,11 +1365,6 @@ void FixSRD::collisions_single()
               collision_wall_inexact(x[i], j, xscoll, xbcoll, norm);
           }
 
-#ifdef SRD_DEBUG
-          if (update->ntimestep == SRD_DEBUG_TIMESTEP && tag[i] == SRD_DEBUG_ATOMID)
-            print_collision(i, j, ibounce, t_remain, dt, xscoll, xbcoll, norm, type);
-#endif
-
           if (t_remain > dt) {
             ninside++;
             if (insideflag == INSIDE_ERROR || insideflag == INSIDE_WARN) {
@@ -1524,11 +1515,6 @@ void FixSRD::collisions_multi()
             t_remain = collision_tri_exact(x[i], x[j], v[i], v[j], big, dt, xscoll, xbcoll, norm);
           else
             t_remain = collision_wall_exact(x[i], j, v[i], xscoll, xbcoll, norm);
-
-#ifdef SRD_DEBUG
-          if (update->ntimestep == SRD_DEBUG_TIMESTEP && tag[i] == SRD_DEBUG_ATOMID)
-            print_collision(i, j, ibounce, t_remain, dt, xscoll, xbcoll, norm, type);
-#endif
 
           if (t_remain > dt || t_remain < 0.0) {
             ninside++;
@@ -1730,42 +1716,6 @@ int FixSRD::inside_line(double *xs, double *xb, double *vs, double *vb, Big *big
 
   tfraction = newton_raphson(0.0, 1.0);
 
-  // quadratic equation solve of approximate parametric equation
-
-  /*
-  n1_n0[0] = n1[0]-n0[0]; n1_n0[1] = n1[1]-n0[1];
-  pmc1_pmc0[0] = pmc1[0]-pmc0[0]; pmc1_pmc0[1] = pmc1[1]-pmc0[1];
-
-  double a = pmc1_pmc0[0]*n1_n0[0] + pmc1_pmc0[1]*n1_n0[1];
-  double b = pmc1_pmc0[0]*n0[0] + pmc1_pmc0[1]*n0[1] +
-  n1_n0[0]*pmc0[0] + n1_n0[1]*pmc0[1];
-  double c = pmc0[0]*n0[0] + pmc0[1]*n0[1];
-
-  if (a == 0.0) {
-    double dot0 = pmc0[0]*n0[0] + pmc0[1]*n0[1];
-    double dot1 = pmc1[0]*n0[0] + pmc1[1]*n0[1];
-    double root = -dot0 / (dot1 - dot0);
-    //printf("Linear root: %g %g\n",root,tfraction);
-    tfraction = root;
-
-  } else {
-
-    double term = sqrt(b*b - 4.0*a*c);
-    double root1 = (-b + term) / (2.0*a);
-    double root2 = (-b - term) / (2.0*a);
-
-    //printf("ABC vecs: %g %g: %g %g\n",
-    //           pmc1_pmc0[0],pmc1_pmc0[1],n1_n0[0],n1_n0[1]);
-    //printf("ABC vecs: %g %g: %g %g: %g %g %g\n",
-    //           n0[0],n0[1],n1[0],n1[1],theta0,theta1,big->omega[2]);
-    //printf("ABC root: %g %g %g: %g %g %g\n",a,b,c,root1,root2,tfraction);
-
-    if (0.0 <= root1 && root1 <= 1.0) tfraction = root1;
-    else if (0.0 <= root2 && root2 <= 1.0) tfraction = root2;
-    else error->one(FLERR,"Bad quadratic solve for particle/line collision");
-  }
-  */
-
   // check if collision pt is within line segment at collision time
 
   xsc[0] = xs0[0] + tfraction * (xs1[0] - xs0[0]);
@@ -1776,9 +1726,6 @@ int FixSRD::inside_line(double *xs, double *xb, double *vs, double *vb, Big *big
   double dely = xsc[1] - xbc[1];
   double rsq = delx * delx + dely * dely;
   if (rsq > 0.25 * big->length * big->length) return 0;
-
-  //nbc[0] = n0[0] + tfraction*(n1[0]-n0[0]);
-  //nbc[1] = n0[1] + tfraction*(n1[1]-n0[1]);
 
   nbc[0] = sin(theta0 + tfraction * (theta1 - theta0));
   nbc[1] = -cos(theta0 + tfraction * (theta1 - theta0));
@@ -3999,91 +3946,3 @@ double FixSRD::distance(int i, int j)
   double dz = atom->x[i][2] - atom->x[j][2];
   return sqrt(dx * dx + dy * dy + dz * dz);
 }
-
-/* ---------------------------------------------------------------------- */
-#ifdef SRD_DEBUG
-
-void FixSRD::print_collision(int i, int j, int ibounce, double t_remain, double dt, double *xscoll,
-                             double *xbcoll, double *norm, int type)
-{
-  double xsstart[3], xbstart[3];
-  double **x = atom->x;
-  double **v = atom->v;
-
-  if (type != WALL) {
-    utils::print("COLLISION between SRD {} and BIG {}\n", atom->tag[i], atom->tag[j]);
-    printf("  bounce # = %d\n", ibounce + 1);
-    printf("  local indices: %d %d\n", i, j);
-    printf("  timestep = %g\n", dt);
-    printf("  time remaining post-collision = %g\n", t_remain);
-
-    xsstart[0] = x[i][0] - dt * v[i][0];
-    xsstart[1] = x[i][1] - dt * v[i][1];
-    xsstart[2] = x[i][2] - dt * v[i][2];
-    xbstart[0] = x[j][0] - dt * v[j][0];
-    xbstart[1] = x[j][1] - dt * v[j][1];
-    xbstart[2] = x[j][2] - dt * v[j][2];
-
-    printf("  SRD start position = %g %g %g\n", xsstart[0], xsstart[1], xsstart[2]);
-    printf("  BIG start position = %g %g %g\n", xbstart[0], xbstart[1], xbstart[2]);
-    printf("  SRD coll  position = %g %g %g\n", xscoll[0], xscoll[1], xscoll[2]);
-    printf("  BIG coll  position = %g %g %g\n", xbcoll[0], xbcoll[1], xbcoll[2]);
-    printf("  SRD end   position = %g %g %g\n", x[i][0], x[i][1], x[i][2]);
-    printf("  BIG end   position = %g %g %g\n", x[j][0], x[j][1], x[j][2]);
-
-    printf("  SRD vel = %g %g %g\n", v[i][0], v[i][1], v[i][2]);
-    printf("  BIG vel = %g %g %g\n", v[j][0], v[j][1], v[j][2]);
-    printf("  surf norm = %g %g %g\n", norm[0], norm[1], norm[2]);
-
-    double rstart = sqrt((xsstart[0] - xbstart[0]) * (xsstart[0] - xbstart[0]) +
-                         (xsstart[1] - xbstart[1]) * (xsstart[1] - xbstart[1]) +
-                         (xsstart[2] - xbstart[2]) * (xsstart[2] - xbstart[2]));
-    double rcoll = sqrt((xscoll[0] - xbcoll[0]) * (xscoll[0] - xbcoll[0]) +
-                        (xscoll[1] - xbcoll[1]) * (xscoll[1] - xbcoll[1]) +
-                        (xscoll[2] - xbcoll[2]) * (xscoll[2] - xbcoll[2]));
-    double rend =
-        sqrt((x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) + (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +
-             (x[i][2] - x[j][2]) * (x[i][2] - x[j][2]));
-
-    printf("  separation at start = %g\n", rstart);
-    printf("  separation at coll  = %g\n", rcoll);
-    printf("  separation at end   = %g\n", rend);
-
-  } else {
-    int dim = wallwhich[j] / 2;
-
-    utils::print("COLLISION between SRD {} and WALL {}\n", atom->tag[i], j);
-    printf("  bounce # = %d\n", ibounce + 1);
-    printf("  local indices: %d %d\n", i, j);
-    printf("  timestep = %g\n", dt);
-    printf("  time remaining post-collision = %g\n", t_remain);
-
-    xsstart[0] = x[i][0] - dt * v[i][0];
-    xsstart[1] = x[i][1] - dt * v[i][1];
-    xsstart[2] = x[i][2] - dt * v[i][2];
-    xbstart[0] = xbstart[1] = xbstart[2] = 0.0;
-    xbstart[dim] = xwall[j] - dt * vwall[j];
-
-    printf("  SRD start position = %g %g %g\n", xsstart[0], xsstart[1], xsstart[2]);
-    printf("  WALL start position = %g\n", xbstart[dim]);
-    printf("  SRD coll  position = %g %g %g\n", xscoll[0], xscoll[1], xscoll[2]);
-    printf("  WALL coll position = %g\n", xbcoll[dim]);
-    printf("  SRD end   position = %g %g %g\n", x[i][0], x[i][1], x[i][2]);
-    printf("  WALL end  position = %g\n", xwall[j]);
-
-    printf("  SRD vel = %g %g %g\n", v[i][0], v[i][1], v[i][2]);
-    printf("  WALL vel = %g\n", vwall[j]);
-    printf("  surf norm = %g %g %g\n", norm[0], norm[1], norm[2]);
-
-    double rstart = xsstart[dim] - xbstart[dim];
-    double rcoll = xscoll[dim] - xbcoll[dim];
-    double rend = x[dim][0] - xwall[j];
-
-    printf("  separation at start = %g\n", rstart);
-    printf("  separation at coll  = %g\n", rcoll);
-    printf("  separation at end   = %g\n", rend);
-  }
-}
-#else
-void FixSRD::print_collision(int, int, int, double, double, double *, double *, double *, int) {}
-#endif
