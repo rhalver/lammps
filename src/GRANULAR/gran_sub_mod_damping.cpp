@@ -191,11 +191,12 @@ GranSubModDampingMDR::GranSubModDampingMDR(GranularModel *gm, LAMMPS *lmp) :
     GranSubModDamping(gm, lmp)
 {
   num_coeffs = 1;
+  damp_type = 0;
 }
 
 void GranSubModDampingMDR::coeffs_to_local()
 {
-  damp_type = coeffs[0]; // damping type 1 = mdr stiffness or 2 = velocity
+  damp_type = (int)coeffs[0]; // damping type 1 = mdr stiffness or 2 = velocity
   if (damp_type != 1 && damp_type != 2)
     error->all(FLERR, "Illegal MDR damping model, damping type must an integer equal to 1 or 2");
 }
@@ -220,7 +221,7 @@ double GranSubModDampingMDR::calculate_forces()
     damp_prefactor = damp * history[DAMP_SCALE];
   } else if (damp_type == 2) {
     if (history[DAMP_SCALE] == 0.0) {
-      damp_prefactor == 0.0;
+      damp_prefactor = 0.0;
     } else {
       damp_prefactor = damp;
     }

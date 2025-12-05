@@ -171,6 +171,18 @@ initially will not experience force until they come into contact
 experience a tensile force up to :math:`3\pi\gamma R`, at which point they
 lose contact.
 
+.. note::
+
+   Typically, neighbor lists are constructed for pair granular by testing
+   whether finite sized particles overlap (using their radii). However,
+   this is not the case for normal models which can interact beyond
+   contact, e.g. *jkr*. Instead, the maximum radius for each particle
+   type is first calculated then used to calculate a maximum per-type
+   cutoff distance. For polydisperse systems, this affects the performance
+   of the :doc:`multi neighbor <neigh_modify>` option where one should
+   assign atoms of similar radii the same type. See the
+   :doc:`pair lj/cut/sphere <pair_lj_cut_sphere>` page for a related discussion.
+
 The *mdr* model is a mechanically-derived contact model designed to capture the
 contact response between adhesive elastic-plastic particles into large deformation.
 The theoretical foundations of the *mdr* model are detailed in the
@@ -421,8 +433,8 @@ by specifying different integer values for the :math:`d_{type}` input parameter.
 damping option is only compatible with the normal *mdr* contact model.
 
 Setting :math:`d_{type} = 1` is the suggested damping option. This specifies a damping
-model that takes into account the contact stiffness :math:`k_{mdr}` calulated
-by the normal *mdr* contact model to determine the damping coefficent:
+model that takes into account the contact stiffness :math:`k_{mdr}` calculated
+by the normal *mdr* contact model to determine the damping coefficient:
 
 .. math::
 
@@ -435,8 +447,8 @@ normal *mdr* contact model:
 
    k_{mdr} = 2 E_{eff} a_{mdr}.
 
-In this case, :math:`\eta_{n0}` is simply a dimensionless coefficent that scales the
-the overall damping coefficent.
+In this case, :math:`\eta_{n0}` is simply a dimensionless coefficient that scales the
+the overall damping coefficient.
 
 The other supported option is :math:`d_{type} = 2`, which defines a simple damping model
 similar to the *velocity* option

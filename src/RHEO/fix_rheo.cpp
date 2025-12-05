@@ -32,14 +32,15 @@
 #include "memory.h"
 #include "modify.h"
 #include "update.h"
-#include "utils.h"
+
+#include <cstring>
 
 using namespace LAMMPS_NS;
 using namespace RHEO_NS;
 using namespace FixConst;
 
 static const char cite_rheo[] =
-    "RHEO package: doi:10.1063/5.0228823\n\n"
+    "RHEO package: https://doi.org/10.1063/5.0228823\n\n"
     "@article{Palermo2024,\n"
     " journal = {Physics of Fluids},\n"
     " title = {Reproducing hydrodynamics and elastic objects: A hybrid mesh-free model framework for dynamic multi-phase flows},\n"
@@ -110,7 +111,7 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
     kernel_style = RK2;
   } else
     error->all(FLERR, "Unknown kernel style {} in fix rheo", arg[4]);
-  zmin_kernel = utils::numeric(FLERR, arg[5], false, lmp);
+  zmin_kernel = utils::inumeric(FLERR, arg[5], false, lmp);
 
   int iarg = 6;
   while (iarg < narg) {
@@ -342,8 +343,6 @@ void FixRHEO::initial_integrate(int /*vflag*/)
   double *rmass = atom->rmass;
   double **gradr = compute_grad->gradr;
   double **gradv = compute_grad->gradv;
-  double **vshift;
-  if (shift_flag) vshift = compute_vshift->vshift;
 
   int nlocal = atom->nlocal;
   int rmass_flag = atom->rmass_flag;
@@ -400,6 +399,7 @@ void FixRHEO::initial_integrate(int /*vflag*/)
 
   // Shifting atoms
   if (shift_flag) {
+    double **vshift = compute_vshift->vshift;
     for (i = 0; i < nlocal; i++) {
       if (status[i] & STATUS_NO_SHIFT) continue;
       if (status[i] & PHASECHECK) continue;

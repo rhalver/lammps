@@ -27,22 +27,23 @@
 #include "force.h"
 #include "gran_sub_mod_normal.h"
 #include "granular_model.h"
-#include "input.h"
 #include "math_const.h"
-#include "memory.h"
+#include "math_special.h"
 #include "modify.h"
 #include "neigh_list.h"
 #include "pair.h"
 #include "pair_granular.h"
 #include "region.h"
 #include "update.h"
-#include "variable.h"
+
+#include <cmath>
 
 using namespace LAMMPS_NS;
 using namespace Granular_NS;
 using namespace Granular_MDR_NS;
 using namespace FixConst;
 using MathConst::MY_PI;
+using MathSpecial::cube;
 
 static constexpr double EPSILON = 1e-16;
 static constexpr double OVERLAP_LIMIT = 0.95;
@@ -244,7 +245,7 @@ void FixGranularMDR::pre_force(int)
 
     const double R = radius[i];
     const double Rsq = R * R;
-    const double Vo = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
+    const double Vo = 4.0 / 3.0 * MY_PI * cube(Ro[i]);
     const double Vgeoi = 4.0 / 3.0 * MY_PI * Rsq * R - Vcaps[i];
 
     Vgeo[i] = MIN(Vgeoi, Vo);
@@ -676,7 +677,7 @@ void FixGranularMDR::update_fix_gran_wall()
   double *ddelta_bar = atom->dvector[index_ddelta_bar];
 
   for (auto &ifix : fix_wall_list) {
-    FixWallGranRegion *fix = dynamic_cast<FixWallGranRegion *>(ifix);
+    auto *fix = dynamic_cast<FixWallGranRegion *>(ifix);
     if (fix) {
       GranularModel *model = fix->model;
       const int size_history = model->size_history;

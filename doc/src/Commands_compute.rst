@@ -30,6 +30,7 @@ KOKKOS, o = OPENMP, t = OPT.
    * :doc:`cnp/atom <compute_cnp_atom>`
    * :doc:`com <compute_com>`
    * :doc:`com/chunk <compute_com_chunk>`
+   * :doc:`composition/atom (k) <compute_composition_atom>`
    * :doc:`contact/atom <compute_contact_atom>`
    * :doc:`coord/atom (k) <compute_coord_atom>`
    * :doc:`count/type <compute_count_type>`
@@ -78,7 +79,6 @@ KOKKOS, o = OPENMP, t = OPT.
    * :doc:`ke/atom/eff <compute_ke_atom_eff>`
    * :doc:`ke/eff <compute_ke_eff>`
    * :doc:`ke/rigid <compute_ke_rigid>`
-   * :doc:`composition/atom (k) <compute_composition_atom>`
    * :doc:`mliap <compute_mliap>`
    * :doc:`momentum <compute_momentum>`
    * :doc:`msd <compute_msd>`
@@ -161,7 +161,7 @@ KOKKOS, o = OPENMP, t = OPT.
    * :doc:`temp/asphere <compute_temp_asphere>`
    * :doc:`temp/body <compute_temp_body>`
    * :doc:`temp/chunk <compute_temp_chunk>`
-   * :doc:`temp/com <compute_temp_com>`
+   * :doc:`temp/com (k) <compute_temp_com>`
    * :doc:`temp/cs <compute_temp_cs>`
    * :doc:`temp/deform (k) <compute_temp_deform>`
    * :doc:`temp/deform/eff <compute_temp_deform_eff>`

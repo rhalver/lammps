@@ -45,7 +45,7 @@ using MathSpecial::powint;
 enum { AUTO, UPPER, LOWER, AUTOUPPER, AUTOLOWER, FULL, FIRST };
 
 static const char cite_fix_ave_correlate_long[] =
-    "fix ave/correlate/long command: doi:10.1063/1.3491098\n\n"
+    "fix ave/correlate/long command: https://doi.org/10.1063/1.3491098\n\n"
     "@Article{Ramirez10,\n"
     " author = {Jorge Rami{\'}rez and Sathish K. Sukumaran and Bart Vorselaars and Alexei E. "
     "Likhtman},\n"
@@ -809,7 +809,7 @@ void FixAveCorrelateLong::write_restart(FILE *fp) {
 void FixAveCorrelateLong::restart(char *buf)
 {
   int n = 0;
-  auto list = (double *) buf;
+  auto *list = (double *) buf;
   int npairin = static_cast<int>(list[n++]);
   int numcorrelatorsin = static_cast<int> (list[n++]);
   int pin = static_cast<int>(list[n++]);
