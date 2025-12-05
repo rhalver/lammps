@@ -41,8 +41,7 @@ FixExternalKokkos<DeviceType>::FixExternalKokkos(LAMMPS *lmp, int narg, char **a
   datamask_modify = EMPTY_MASK;
 
   memory->destroy(fexternal);
-  memoryKK->create_kokkos(k_fexternal,fexternal,atom->nmax,3,"external:k_fexternal");
-  d_fexternal = k_fexternal.view<DeviceType>();
+  grow_arrays(atom->nmax);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -131,6 +130,7 @@ template<class DeviceType>
 void FixExternalKokkos<DeviceType>::grow_arrays(int nmax)
 {
   memoryKK->grow_kokkos(k_fexternal,fexternal,nmax,3,"external:fexternal");
+  d_fexternal = k_fexternal.view<DeviceType>();
   memset(&fexternal[0][0], 0, sizeof(double)*3*nmax);
   array_atom = fexternal;
 }
