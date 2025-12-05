@@ -84,7 +84,7 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
 {
   if (lmp->citeme) lmp->citeme->add(cite_fix_srd);
 
-  if (narg < 8) error->all(FLERR, "Illegal fix srd command");
+  if (narg < 8) utils::missing_cmd_args(FLERR, "fix srd", error);
 
   restart_pbc = 1;
   vector_flag = 1;
@@ -93,16 +93,23 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
   extvector = 0;
 
   nevery = utils::inumeric(FLERR, arg[3], false, lmp);
+  if (nevery <= 0) error->all(FLERR, 3, "Fix srd nevery value must be > 0");
 
   bigexist = 1;
-  if (strcmp(arg[4], "NULL") == 0)
+  if (strcmp(arg[4], "NULL") == 0) {
     bigexist = 0;
-  else
+    biggroup = -1;
+  } else {
     biggroup = group->find(arg[4]);
+    if (biggroup < 0) error->all(FLERR, 4, "Could not find fix srd big particle group {}", arg[4]);
+  }
 
   temperature_srd = utils::numeric(FLERR, arg[5], false, lmp);
+  if (temperature_srd <= 0.0) error->all(FLERR, 5, "Illegal fix srd temperature {}", arg[5]);
   gridsrd = utils::numeric(FLERR, arg[6], false, lmp);
+  if (gridsrd <= 0.0) error->all(FLERR, 6, "Illegal fix srd grid spacing {}", arg[6]);
   int seed = utils::inumeric(FLERR, arg[7], false, lmp);
+  if (seed <= 0) error->all(FLERR, 7, "Illegal fix srd random seed {}", arg[7]);
 
   // parse options
 
@@ -125,25 +132,26 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
   int iarg = 8;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "lamda") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd lamda", error);
       lamda = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
+      if (lamda <= 0.0) error->all(FLERR, iarg+1, "Illegal fix srd lamda value");
       lamdaflag = 1;
       iarg += 2;
     } else if (strcmp(arg[iarg], "collision") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd collision", error);
       if (strcmp(arg[iarg + 1], "slip") == 0)
         collidestyle = SLIP;
       else if (strcmp(arg[iarg + 1], "noslip") == 0)
         collidestyle = NOSLIP;
       else
-        error->all(FLERR, "Illegal fix srd command");
+        error->all(FLERR, iarg+1, "Unknown fix srd collision argument {}", arg[iarg+1]);
       iarg += 2;
     } else if (strcmp(arg[iarg], "overlap") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd overlap", error);
       overlap = utils::logical(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg], "inside") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd inside", error);
       if (strcmp(arg[iarg + 1], "error") == 0)
         insideflag = INSIDE_ERROR;
       else if (strcmp(arg[iarg + 1], "warn") == 0)
@@ -151,37 +159,42 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
       else if (strcmp(arg[iarg + 1], "ignore") == 0)
         insideflag = INSIDE_IGNORE;
       else
-        error->all(FLERR, "Illegal fix srd command");
+        error->all(FLERR, iarg+1, "Unknown fix srd inside argument {}", arg[iarg+1]);
       iarg += 2;
     } else if (strcmp(arg[iarg], "exact") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd exact", error);
       exactflag = utils::logical(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg], "radius") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd radius", error);
       radfactor = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
+      if (radfactor <= 0.0) error->all(FLERR, iarg+1, "Illegal fix srd radius value");
       iarg += 2;
     } else if (strcmp(arg[iarg], "bounce") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd bounce", error);
       maxbounceallow = utils::inumeric(FLERR, arg[iarg + 1], false, lmp);
+      if (maxbounceallow < 0) error->all(FLERR, "Illegal fix srd bounce value");
       iarg += 2;
     } else if (strcmp(arg[iarg], "search") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd search", error);
       gridsearch = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
+      if (gridsearch <= 0.0) error->all(FLERR, iarg+1, "Illegal fix srd search value");
       iarg += 2;
     } else if (strcmp(arg[iarg], "cubic") == 0) {
-      if (iarg + 3 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 3 > narg) utils::missing_cmd_args(FLERR, "fix srd cubic", error);
       if (strcmp(arg[iarg + 1], "error") == 0)
         cubicflag = CUBIC_ERROR;
       else if (strcmp(arg[iarg + 1], "warn") == 0)
         cubicflag = CUBIC_WARN;
       else
-        error->all(FLERR, "Illegal fix srd command");
+        error->all(FLERR, iarg+1, "Unknown fix srd cubic argument {}", arg[iarg+1]);
       cubictol = utils::numeric(FLERR, arg[iarg + 2], false, lmp);
+      if ((cubictol < 0.0) || (cubictol > 1.0))
+        error->all(FLERR, iarg+2, "Illegal fix srd cubic value");
       iarg += 3;
     } else if (strcmp(arg[iarg], "shift") == 0) {
       if (iarg + 3 > narg)
-        error->all(FLERR, "Illegal fix srd command");
+        utils::missing_cmd_args(FLERR, "fix srd shift", error);
       else if (strcmp(arg[iarg + 1], "no") == 0)
         shiftuser = SHIFT_NO;
       else if (strcmp(arg[iarg + 1], "yes") == 0)
@@ -189,19 +202,23 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
       else if (strcmp(arg[iarg + 1], "possible") == 0)
         shiftuser = SHIFT_POSSIBLE;
       else
-        error->all(FLERR, "Illegal fix srd command");
+        error->all(FLERR, iarg+1, "Unknown fix srd shift argument {}", arg[iarg+1]);
       shiftseed = utils::inumeric(FLERR, arg[iarg + 2], false, lmp);
+      if ((shiftuser == SHIFT_YES || shiftuser == SHIFT_POSSIBLE) && shiftseed <= 0)
+        error->all(FLERR, iarg+2, "Illegal fix srd shift value");
       iarg += 3;
     } else if (strcmp(arg[iarg], "tstat") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd tstat", error);
       tstat = utils::logical(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg], "unbiased") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command: stream");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd unbiased", error);
       unbiasflag = utils::logical(FLERR, arg[iarg + 1], false, lmp);
+      if (unbiasflag && !tstat)
+        error->all(FLERR, iarg+1, "Must use SRD thermostat when enabling unbiased thermostatting");
       iarg += 2;
     } else if (strcmp(arg[iarg], "rescale") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix srd rescale", error);
       if (strcmp(arg[iarg + 1], "no") == 0)
         rescale_rotate = rescale_collide = 0;
       else if (strcmp(arg[iarg + 1], "yes") == 0)
@@ -213,34 +230,15 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
         rescale_rotate = 0;
         rescale_collide = 1;
       } else
-        error->all(FLERR, "Illegal fix srd command");
+        error->all(FLERR, iarg+1, "Unknown fix srd rescale argument {}", arg[iarg+1]);
       iarg += 2;
     } else
-      error->all(FLERR, "Illegal fix srd command");
+      error->all(FLERR, iarg, "Unknown fix srd keyword {}", arg[iarg]);
   }
-
-  // error check
-
-  if (nevery <= 0) error->all(FLERR, "Illegal fix srd command");
-  if (bigexist && biggroup < 0) error->all(FLERR, "Could not find fix srd group ID");
-  if (gridsrd <= 0.0) error->all(FLERR, "Illegal fix srd command");
-  if (temperature_srd <= 0.0) error->all(FLERR, "Illegal fix srd command");
-  if (seed <= 0) error->all(FLERR, "Illegal fix srd command");
-  if (radfactor <= 0.0) error->all(FLERR, "Illegal fix srd command");
-  if (maxbounceallow < 0) error->all(FLERR, "Illegal fix srd command");
-  if (lamdaflag && lamda <= 0.0) error->all(FLERR, "Illegal fix srd command");
-  if (gridsearch <= 0.0) error->all(FLERR, "Illegal fix srd command");
-  if (cubictol < 0.0 || cubictol > 1.0) error->all(FLERR, "Illegal fix srd command");
-  if ((shiftuser == SHIFT_YES || shiftuser == SHIFT_POSSIBLE) && shiftseed <= 0)
-    error->all(FLERR, "Illegal fix srd command");
-  if (unbiasflag && !tstat) error->all(FLERR, "PUT requires tstat");
 
   // initialize Marsaglia RNG with processor-unique seed
 
-  me = comm->me;
-  nprocs = comm->nprocs;
-
-  random = new RanMars(lmp, seed + me);
+  random = new RanMars(lmp, seed + comm->me);
 
   // if requested, initialize shift RNG, same on every proc
 
@@ -350,15 +348,16 @@ void FixSRD::init()
 {
   // error checks
 
-  if (force->newton_pair == 0) error->all(FLERR, "Fix srd requires newton pair on");
+  if (force->newton_pair == 0)
+    error->all(FLERR, Error::NOLASTLINE, "Fix srd requires newton pair on");
   if (bigexist && comm->ghost_velocity == 0)
-    error->all(FLERR, "Fix srd requires ghost atoms store velocity");
+    error->all(FLERR, Error::NOLASTLINE, "Fix srd requires ghost atoms store velocity");
   if (bigexist && collidestyle == NOSLIP && !atom->torque_flag)
-    error->all(FLERR, "Fix srd no-slip requires atom attribute torque");
+    error->all(FLERR, Error::NOLASTLINE, "Fix srd no-slip requires atom attribute torque");
   if (initflag && update->dt != dt_big)
-    error->all(FLERR, "Cannot change timestep once fix srd is setup");
+    error->all(FLERR, Error::NOLASTLINE, "Cannot change timestep once fix srd is set up");
   if (comm->style != Comm::BRICK)
-    error->universe_all(FLERR, "Fix srd can only currently be used with comm_style brick");
+    error->all(FLERR, Error::NOLASTLINE, "Fix srd currently only be used with comm_style brick");
 
   // orthogonal vs triclinic simulation box
   // could be static or shearing box
@@ -370,7 +369,8 @@ void FixSRD::init()
   wallexist = 0;
   for (int m = 0; m < modify->nfix; m++) {
     if (strcmp(modify->fix[m]->style, "wall/srd") == 0) {
-      if (wallexist) error->all(FLERR, "Cannot use fix wall/srd more than once");
+      if (wallexist)
+        error->all(FLERR, Error::NOLASTLINE, "Cannot use fix wall/srd more than once");
       wallexist = 1;
       wallfix = dynamic_cast<FixWallSRD *>(modify->fix[m]);
       nwall = wallfix->nwall;
@@ -381,7 +381,7 @@ void FixSRD::init()
       vwall = wallfix->vwall;
       fwall = wallfix->fwall;
       walltrigger = 0.5 * neighbor->skin;
-      if (wallfix->overlap && overlap == 0 && me == 0)
+      if (wallfix->overlap && overlap == 0 && comm->me == 0)
         error->warning(FLERR, "Fix SRD walls overlap but fix srd overlap not set");
     }
   }
@@ -399,11 +399,12 @@ void FixSRD::init()
       deformflag = 1;
       auto *deform = dynamic_cast<FixDeform *>(modify->fix[i]);
       if ((deform->box_change & BOX_CHANGE_SHAPE) && deform->remapflag != Domain::V_REMAP)
-        error->all(FLERR, "Using fix srd with inconsistent fix deform remap option");
+        error->all(FLERR, Error::NOLASTLINE,
+                   "Using fix srd with inconsistent fix deform remap option");
     }
   }
 
-  if (deformflag && tstat == 0 && me == 0)
+  if (deformflag && tstat == 0 && comm->me == 0)
     error->warning(FLERR, "Using fix srd with box deformation but no SRD thermostat");
 
   // parameterize based on current box volume
@@ -431,7 +432,7 @@ void FixSRD::init()
 
   int all;
   MPI_Allreduce(&nrescale, &all, 1, MPI_INT, MPI_SUM, world);
-  if (me == 0) utils::logmesg(lmp, "  # of rescaled SRD velocities = {}\n", all);
+  if (comm->me == 0) utils::logmesg(lmp, "  # of rescaled SRD velocities = {}\n", all);
 
   velocity_stats(igroup);
   if (bigexist) velocity_stats(biggroup);
@@ -453,7 +454,7 @@ void FixSRD::setup(int /*vflag*/)
 {
   setup_bounds();
 
-  if (dist_srd_reneigh < nevery * dt_big * vmax && me == 0)
+  if (dist_srd_reneigh < nevery * dt_big * vmax && comm->me == 0)
     error->warning(FLERR, "Fix srd SRD moves may trigger frequent reneighboring");
 
   // setup search bins and search stencil based on these distances
@@ -2487,8 +2488,8 @@ int FixSRD::update_srd(int i, double dt, double *xscoll, double *vsnew, double *
                      "  srdlo/hi x {:.8} {:.8}\n"
                      "  srdlo/hi y {:.8} {:.8}\n"
                      "  srdlo/hi z {:.8} {:.8}\n",
-                     atom->tag[i], me, update->ntimestep, xs[0], xs[1], xs[2], srdlo[0], srdhi[0],
-                     srdlo[1], srdhi[1], srdlo[2], srdhi[2]);
+                     atom->tag[i], comm->me, update->ntimestep, xs[0], xs[1], xs[2],
+                     srdlo[0], srdhi[0], srdlo[1], srdhi[1], srdlo[2], srdhi[2]);
   }
 
   if (triclinic) domain->lamda2x(xs, xs);
@@ -2763,7 +2764,7 @@ void FixSRD::parameterize()
 
   // log current SRD settings
 
-  if (me == 0) {
+  if (comm->me == 0) {
     std::string mesg = "SRD info:\n";
     mesg += fmt::format("  SRD/big particles = {} {}\n", nsrd, mbig);
     mesg += fmt::format("  big particle diameter max/min = {:.8} {:.8}\n", maxbigdiam, minbigdiam);
@@ -2795,7 +2796,7 @@ void FixSRD::parameterize()
 
   if (tolflag) {
     if (cubicflag == CUBIC_ERROR) error->all(FLERR, "SRD bins for fix srd are not cubic enough");
-    if (me == 0) error->warning(FLERR, "SRD bins for fix srd are not cubic enough");
+    if (comm->me == 0) error->warning(FLERR, "SRD bins for fix srd are not cubic enough");
   }
 
   tolflag = 0;
@@ -2808,7 +2809,7 @@ void FixSRD::parameterize()
   if (tolflag) {
     if (cubicflag == CUBIC_ERROR)
       error->all(FLERR, "SRD bin size for fix srd differs from user request");
-    if (me == 0) error->warning(FLERR, "SRD bin size for fix srd differs from user request");
+    if (comm->me == 0) error->warning(FLERR, "SRD bin size for fix srd differs from user request");
   }
 
   // error if lamda < 0.6 of SRD grid size and no shifting allowed
@@ -2822,17 +2823,17 @@ void FixSRD::parameterize()
     error->all(FLERR, "Fix srd lamda must be >= 0.6 of SRD grid size");
   else if (lamda < 0.6 * maxgridsrd && shiftuser == SHIFT_POSSIBLE) {
     shiftflag = 1;
-    if (me == 0) error->warning(FLERR, "SRD bin shifting turned on due to small lamda");
+    if (comm->me == 0) error->warning(FLERR, "SRD bin shifting turned on due to small lamda");
   } else if (shiftuser == SHIFT_YES)
     shiftflag = 1;
 
   // warnings
 
-  if (bigexist && maxgridsrd > 0.25 * minbigdiam && me == 0)
+  if (bigexist && maxgridsrd > 0.25 * minbigdiam && comm->me == 0)
     error->warning(FLERR, "Fix srd grid size > 1/4 of big particle diameter");
-  if (viscosity < 0.0 && me == 0)
+  if (viscosity < 0.0 && comm->me == 0)
     error->warning(FLERR, "Fix srd viscosity < 0.0 due to low SRD density");
-  if (bigexist && dt_big * vmax > minbigdiam && me == 0)
+  if (bigexist && dt_big * vmax > minbigdiam && comm->me == 0)
     error->warning(FLERR, "Fix srd particles may move > big particle diameter");
 }
 
@@ -3463,6 +3464,7 @@ void FixSRD::setup_velocity_shift(int ishift, int dynamic)
   // if bin sent to lower numbered proc, I do not own it
   // if bin sent to self, I do not own it on even swap (avoids double counting)
 
+  int me = comm->me;
   vbin = shifts[ishift].vbin;
   for (i = 0; i < nbins; i++) vbin[i].owner = 1;
   for (int iswap = 0; iswap < 2 * dimension; iswap++) {
@@ -3790,7 +3792,7 @@ double FixSRD::compute_vector(int n)
     MPI_Allreduce(stats, stats_all, 10, MPI_DOUBLE, MPI_SUM, world);
     MPI_Allreduce(&stats[10], &stats_all[10], 1, MPI_DOUBLE, MPI_MAX, world);
     if (stats_all[7] != 0.0) stats_all[8] /= stats_all[7];
-    stats_all[6] /= nprocs;
+    stats_all[6] /= comm->nprocs;
 
     stats_flag = 1;
   }
@@ -3830,7 +3832,7 @@ void FixSRD::velocity_stats(int groupnum)
   MPI_Allreduce(&vmax, &all, 1, MPI_DOUBLE, MPI_MAX, world);
   vmax = all;
 
-  if (me == 0)
+  if (comm->me == 0)
     utils::logmesg(lmp, "  ave/max {} velocity = {:.8} {:.8}\n", group->names[groupnum], vave,
                    vmax);
 }
