@@ -64,6 +64,8 @@ class DihedralFourierKokkos : public DihedralFourier {
   DAT::ttransform_kkacc_1d_6 k_vatom;
 
  protected:
+  int allocated_kokkos;
+
   class NeighborKokkos *neighborKK;
 
   typename AT::t_kkfloat_1d_3_lr_randomread x;

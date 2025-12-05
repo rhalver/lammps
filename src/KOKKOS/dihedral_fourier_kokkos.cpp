@@ -51,6 +51,8 @@ DihedralFourierKokkos<DeviceType>::DihedralFourierKokkos(LAMMPS *lmp) : Dihedral
   h_warning_flag = k_warning_flag.view_host();
 
   centroidstressflag = CENTROID_NOTAVAIL;
+
+  allocated_kokkos = 0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -230,6 +232,7 @@ void DihedralFourierKokkos<DeviceType>::operator()(TagDihedralFourierCompute<NEW
   // dp = dp / dphi
   KK_FLOAT edihedral = 0.0;
   KK_FLOAT df = 0.0;
+
   for (int j = 0; j < d_nterms[type]; j++)
   {
     const int m = d_multiplicity(type,j);
@@ -253,7 +256,6 @@ void DihedralFourierKokkos<DeviceType>::operator()(TagDihedralFourierCompute<NEW
       df1_ = 0.0;
     }
 
-  KK_FLOAT edihedral = 0.0;
     if (eflag) edihedral += d_k(type,j) * p_;
 
     df += (-d_k(type,j) * df1_);
@@ -343,17 +345,27 @@ void DihedralFourierKokkos<DeviceType>::allocate_kokkos()
 {
   int n = atom->ndihedraltypes;
 
-  k_k = DAT::tdual_kkfloat_2d("DihedralFourier::k",n+1,nterms_max);
-  k_cos_shift = DAT::tdual_kkfloat_2d("DihedralFourier::cos_shift",n+1,nterms_max);
-  k_sin_shift = DAT::tdual_kkfloat_2d("DihedralFourier::sin_shift",n+1,nterms_max);
-  k_multiplicity = DAT::tdual_int_2d("DihedralFourier::multiplicity",n+1,nterms_max);
-  k_nterms = DAT::tdual_int_1d("DihedralFourier::nterms",n+1);
+  if (!allocated_kokkos) {
+    k_k = DAT::tdual_kkfloat_2d("DihedralFourier::k",n+1,nterms_max);
+    k_cos_shift = DAT::tdual_kkfloat_2d("DihedralFourier::cos_shift",n+1,nterms_max);
+    k_sin_shift = DAT::tdual_kkfloat_2d("DihedralFourier::sin_shift",n+1,nterms_max);
+    k_multiplicity = DAT::tdual_int_2d("DihedralFourier::multiplicity",n+1,nterms_max);
+    k_nterms = DAT::tdual_int_1d("DihedralFourier::nterms",n+1);
+  } else {
+    k_k.resize(n+1,nterms_max);
+    k_cos_shift.resize(n+1,nterms_max);
+    k_sin_shift.resize(n+1,nterms_max);
+    k_multiplicity.resize(n+1,nterms_max);
+    k_nterms.resize(n+1);
+  }
 
   d_k = k_k.template view<DeviceType>();
   d_cos_shift = k_cos_shift.template view<DeviceType>();
   d_sin_shift = k_sin_shift.template view<DeviceType>();
   d_multiplicity = k_multiplicity.template view<DeviceType>();
   d_nterms = k_nterms.template view<DeviceType>();
+
+  allocated_kokkos = 1;
 }
 
 /* ----------------------------------------------------------------------

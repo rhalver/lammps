@@ -298,7 +298,6 @@ void DihedralFourier::coeff(int narg, char **arg)
     error->all(FLERR,"Incorrect number of arguments for dihedral coefficients");
 
   int count = 0;
-  nterms_max = 0;
   for (int i = ilo; i <= ihi; i++) {
     nterms[i] = nterms_one;
     nterms_max = MAX(nterms_max,nterms_one);
