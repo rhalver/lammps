@@ -102,12 +102,12 @@ class DihedralCharmmfswKokkos : public DihedralCharmmfsw {
   typename AT::t_kkfloat_2d d_lj14_3;
   typename AT::t_kkfloat_2d d_lj14_4;
 
-  DAT::t_kkfloat_1d k_k;
-  DAT::t_kkfloat_1d k_multiplicity;
-  DAT::t_kkfloat_1d k_shift;
-  DAT::t_kkfloat_1d k_sin_shift;
-  DAT::t_kkfloat_1d k_cos_shift;
-  DAT::t_kkfloat_1d k_weight;
+  DAT::tdual_kkfloat_1d k_k;
+  DAT::tdual_kkfloat_1d k_multiplicity;
+  DAT::tdual_kkfloat_1d k_shift;
+  DAT::tdual_kkfloat_1d k_sin_shift;
+  DAT::tdual_kkfloat_1d k_cos_shift;
+  DAT::tdual_kkfloat_1d k_weight;
 
   typename AT::t_kkfloat_1d d_k;
   typename AT::t_kkfloat_1d d_multiplicity;
