@@ -32,7 +32,7 @@ using namespace FixConst;
 
 template<class DeviceType>
 FixExternalKokkos<DeviceType>::FixExternalKokkos(LAMMPS *lmp, int narg, char **arg) :
-  FixExternal(lmp, narg, arg), h_fexternal(nullptr)
+  FixExternal(lmp, narg, arg)
 {
   kokkosable = 1;
   atomKK = (AtomKokkos *) atom;
@@ -40,8 +40,8 @@ FixExternalKokkos<DeviceType>::FixExternalKokkos(LAMMPS *lmp, int narg, char **a
   datamask_read = EMPTY_MASK;
   datamask_modify = EMPTY_MASK;
 
-  maxatom = atom->nmax;
-  memoryKK->create_kokkos(k_fexternal,h_fexternal,maxatom,3,"external:k_fexternal");
+  memory->destroy(fexternal);
+  memoryKK->create_kokkos(k_fexternal,fexternal,atom->nmax,3,"external:k_fexternal");
   d_fexternal = k_fexternal.view<DeviceType>();
 }
 
@@ -52,7 +52,8 @@ FixExternalKokkos<DeviceType>::~FixExternalKokkos()
 {
   if (copymode) return;
 
-  memoryKK->destroy_kokkos(k_fexternal,h_fexternal);
+  memoryKK->destroy_kokkos(k_fexternal,fexternal);
+  fexternal = nullptr;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -94,19 +95,7 @@ void FixExternalKokkos<DeviceType>::post_force(int vflag)
   // add forces from current fexternal to KOKKOS array and then to atoms in group
 
   if ((ntimestep % napply) == 0) {
-    // reallocate KOKKOS data if needed
-    if (atom->nmax > maxatom) {
-      maxatom = atom->nmax;
-      memoryKK->destroy_kokkos(k_fexternal,h_fexternal);
-      memoryKK->create_kokkos(k_fexternal,h_fexternal,maxatom,3,"external:k_fexternal");
-      d_fexternal = k_fexternal.view<DeviceType>();
-    }
-    // copy and transfer external force data to device
-    for (int i = 0; i < nlocal; ++i) {
-      h_fexternal[i][0] = fexternal[i][0];
-      h_fexternal[i][1] = fexternal[i][1];
-      h_fexternal[i][2] = fexternal[i][2];
-    }
+    // transfer external force data to device
     k_fexternal.modify_host();
     k_fexternal.sync<DeviceType>();
 
@@ -132,6 +121,18 @@ void FixExternalKokkos<DeviceType>::operator()(TagFixExternal, const int &i) con
     f(i,1) += d_fexternal(i,1);
     f(i,2) += d_fexternal(i,2);
   }
+}
+
+/* ----------------------------------------------------------------------
+   allocate atom-based array
+------------------------------------------------------------------------- */
+
+template<class DeviceType>
+void FixExternalKokkos<DeviceType>::grow_arrays(int nmax)
+{
+  memoryKK->grow_kokkos(k_fexternal,fexternal,nmax,3,"external:fexternal");
+  memset(&fexternal[0][0], 0, sizeof(double)*3*nmax);
+  array_atom = fexternal;
 }
 
 namespace LAMMPS_NS {

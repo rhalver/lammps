@@ -165,6 +165,8 @@ action fix_efield_kokkos.cpp
 action fix_efield_kokkos.h
 action fix_eos_table_rx_kokkos.cpp fix_eos_table_rx.cpp
 action fix_eos_table_rx_kokkos.h fix_eos_table_rx.h
+action fix_external_kokkos.cpp
+action fix_external_kokkos.h
 action fix_freeze_kokkos.cpp fix_freeze.cpp
 action fix_freeze_kokkos.h fix_freeze.h
 action fix_gravity_kokkos.cpp

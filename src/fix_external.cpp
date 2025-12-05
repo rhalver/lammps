@@ -84,7 +84,6 @@ FixExternal::~FixExternal()
 
   atom->delete_callback(id,Atom::GROW);
 
-  // note: fexternal is NOT managed by fix external/kk
   memory->destroy(fexternal);
   delete[] caller_vector;
 }

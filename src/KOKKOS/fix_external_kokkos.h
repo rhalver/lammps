@@ -40,6 +40,7 @@ class FixExternalKokkos : public FixExternal {
   ~FixExternalKokkos() override;
   void init() override;
   void post_force(int) override;
+  void grow_arrays(int) override;
 
   KOKKOS_INLINE_FUNCTION
   void operator()(TagFixExternal, const int&) const;
@@ -47,12 +48,9 @@ class FixExternalKokkos : public FixExternal {
  private:
   DAT::ttransform_kkfloat_2d k_fexternal;
   typename AT::t_kkfloat_2d_randomread d_fexternal;
-  double **h_fexternal;
 
   typename AT::t_int_1d_randomread mask;
   typename AT::t_kkacc_1d_3 f;
-
-  int maxatom;
 };
 
 }
