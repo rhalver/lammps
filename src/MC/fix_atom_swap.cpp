@@ -38,6 +38,7 @@
 #include "pair_hybrid.h"
 #include "random_park.h"
 #include "region.h"
+#include "suffix.h"
 #include "update.h"
 
 #include <cctype>
@@ -223,6 +224,12 @@ void FixAtomSwap::init()
     if (nmutypes != 0)
       error->all(FLERR, "Mu not allowed when not using semi-grand in fix atom/swap command");
   }
+
+  // must have a pair style and not use INTEL package
+
+  if (!force->pair) error->all(FLERR, Error::NOLASTLINE, "Fix atom/swap requires a pair style");
+  if (force->pair && (force->pair->suffix_flag & Suffix::INTEL))
+    error->all(FLERR, Error::NOLASTLINE, "Fix {} is not compatible with /intel pair styles", style);
 
   // check if constraints for hybrid pair styles are fulfilled
 
