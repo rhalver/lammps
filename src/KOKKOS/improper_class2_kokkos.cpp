@@ -851,16 +851,6 @@ template<class DeviceType>
 void ImproperClass2Kokkos<DeviceType>::allocate()
 {
   ImproperClass2::allocate();
-}
-
-/* ----------------------------------------------------------------------
-   set coeffs for one type
-------------------------------------------------------------------------- */
-
-template<class DeviceType>
-void ImproperClass2Kokkos<DeviceType>::coeff(int narg, char **arg)
-{
-  ImproperClass2::coeff(narg, arg);
 
   int n = atom->nimpropertypes;
   k_k0 = DAT::tdual_kkfloat_1d("ImproperClass2::k0",n+1);
@@ -886,6 +876,18 @@ void ImproperClass2Kokkos<DeviceType>::coeff(int narg, char **arg)
   d_setflag = k_setflag.template view<DeviceType>();
   d_setflag_i = k_setflag_i.template view<DeviceType>();
   d_setflag_aa = k_setflag_aa.template view<DeviceType>();
+
+
+}
+
+/* ----------------------------------------------------------------------
+   set coeffs for one type
+------------------------------------------------------------------------- */
+
+template<class DeviceType>
+void ImproperClass2Kokkos<DeviceType>::coeff(int narg, char **arg)
+{
+  ImproperClass2::coeff(narg, arg);
 
   int ilo,ihi;
   utils::bounds(FLERR,arg[0],1,atom->nimpropertypes,ilo,ihi,error);

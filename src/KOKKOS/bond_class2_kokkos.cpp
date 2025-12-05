@@ -200,6 +200,17 @@ template<class DeviceType>
 void BondClass2Kokkos<DeviceType>::allocate()
 {
   BondClass2::allocate();
+
+  int n = atom->nbondtypes;
+  k_k2 = DAT::tdual_kkfloat_1d("BondClass2::k2",n+1);
+  k_k3 = DAT::tdual_kkfloat_1d("BondClass2::k3",n+1);
+  k_k4 = DAT::tdual_kkfloat_1d("BondClass2::k4",n+1);
+  k_r0 = DAT::tdual_kkfloat_1d("BondClass2::r0",n+1);
+
+  d_k2 = k_k2.template view<DeviceType>();
+  d_k3 = k_k3.template view<DeviceType>();
+  d_k4 = k_k4.template view<DeviceType>();
+  d_r0 = k_r0.template view<DeviceType>();
 }
 
 /* ----------------------------------------------------------------------
@@ -210,17 +221,6 @@ template<class DeviceType>
 void BondClass2Kokkos<DeviceType>::coeff(int narg, char **arg)
 {
   BondClass2::coeff(narg, arg);
-
-  int n = atom->nbondtypes;
-  DAT::tdual_kkfloat_1d k_k2("BondClass2::k2",n+1);
-  DAT::tdual_kkfloat_1d k_k3("BondClass2::k3",n+1);
-  DAT::tdual_kkfloat_1d k_k4("BondClass2::k4",n+1);
-  DAT::tdual_kkfloat_1d k_r0("BondClass2::r0",n+1);
-
-  d_k2 = k_k2.template view<DeviceType>();
-  d_k3 = k_k3.template view<DeviceType>();
-  d_k4 = k_k4.template view<DeviceType>();
-  d_r0 = k_r0.template view<DeviceType>();
 
   int ilo,ihi;
   utils::bounds(FLERR,arg[0],1,atom->nbondtypes,ilo,ihi,error);

@@ -139,6 +139,13 @@ class DihedralCharmmKokkos : public DihedralCharmm {
   typename AT::t_kkfloat_2d d_lj14_3;
   typename AT::t_kkfloat_2d d_lj14_4;
 
+  DAT::t_kkfloat_1d k_k;
+  DAT::t_int_1d k_multiplicity;
+  DAT::t_int_1d k_shift;
+  DAT::t_kkfloat_1d k_sin_shift;
+  DAT::t_kkfloat_1d k_cos_shift;
+  DAT::t_kkfloat_1d k_weight;
+
   typename AT::t_kkfloat_1d d_k;
   typename AT::t_int_1d d_multiplicity;
   typename AT::t_int_1d d_shift;
