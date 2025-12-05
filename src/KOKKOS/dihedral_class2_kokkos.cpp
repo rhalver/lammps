@@ -735,8 +735,6 @@ void DihedralClass2Kokkos<DeviceType>::allocate()
   d_setflag_at = k_setflag_at.template view<DeviceType>();
   d_setflag_aat = k_setflag_aat.template view<DeviceType>();
   d_setflag_bb13t = k_setflag_bb13t.template view<DeviceType>();
-
-
 }
 
 /* ----------------------------------------------------------------------
@@ -748,7 +746,10 @@ void DihedralClass2Kokkos<DeviceType>::coeff(int narg, char **arg)
 {
   DihedralClass2::coeff(narg, arg);
 
-  for (int i = 1; i <= n; i++) {
+  int ilo,ihi;
+  utils::bounds(FLERR,arg[0],1,atom->ndihedraltypes,ilo,ihi,error);
+
+  for (int i = ilo; i <= ihi; i++) {
     k_k1.view_host()[i] = k1[i];
     k_k2.view_host()[i] = k2[i];
     k_k3.view_host()[i] = k3[i];
