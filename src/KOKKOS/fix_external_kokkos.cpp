@@ -86,7 +86,7 @@ void FixExternalKokkos<DeviceType>::post_force(int vflag)
   // base class will move them along with atoms if ncall != napply
 
   if ((mode == PF_CALLBACK) && (ntimestep % ncall == 0)) {
-    atomKK->k_x.sync_hostkk();
+    atomKK->sync(Host, X_MASK | TAG_MASK);
     (this->callback)(ptr_caller,update->ntimestep,
                      atom->nlocal,atom->tag,atom->x,fexternal);
   }
