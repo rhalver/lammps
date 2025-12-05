@@ -119,7 +119,7 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
   shiftuser = SHIFT_NO;
   shiftseed = 0;
   tstat = 0;
-  putflag = 0;
+  unbiasflag = 0;
   rescale_rotate = rescale_collide = 1;
 
   int iarg = 8;
@@ -198,7 +198,7 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
       iarg += 2;
     } else if (strcmp(arg[iarg], "unbiased") == 0) {
       if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command: stream");
-      putflag = utils::logical(FLERR, arg[iarg + 1], false, lmp);
+      unbiasflag = utils::logical(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg], "rescale") == 0) {
       if (iarg + 2 > narg) error->all(FLERR, "Illegal fix srd command");
@@ -233,7 +233,7 @@ FixSRD::FixSRD(LAMMPS *lmp, int narg, char **arg) :
   if (cubictol < 0.0 || cubictol > 1.0) error->all(FLERR, "Illegal fix srd command");
   if ((shiftuser == SHIFT_YES || shiftuser == SHIFT_POSSIBLE) && shiftseed <= 0)
     error->all(FLERR, "Illegal fix srd command");
-  if (putflag && !tstat) error->all(FLERR, "PUT requires tstat");
+  if (unbiasflag && !tstat) error->all(FLERR, "PUT requires tstat");
 
   // initialize Marsaglia RNG with processor-unique seed
 
@@ -956,7 +956,7 @@ void FixSRD::reset_velocities()
   int dof_temp = 1;
   int dof_tstat;
   if (tstat) {
-    if (deformflag && !putflag)
+    if (deformflag && !unbiasflag)
       dof_tstat = dof_temp = 0;
     else
       dof_tstat = 1;
@@ -1015,7 +1015,7 @@ void FixSRD::reset_velocities()
 
       vave = vbin[i].vsum;
 
-      if (deformflag && !putflag) {
+      if (deformflag && !unbiasflag) {
         xlamda = vbin[i].xctr;
         vstream[0] =
             h_rate[0] * xlamda[0] + h_rate[5] * xlamda[1] + h_rate[4] * xlamda[2] + h_ratelo[0];
@@ -1073,7 +1073,7 @@ void FixSRD::reset_velocities()
   }
 
   // undo velocity remap (only if using PUT or tstat no)
-  if (deformflag && (putflag || !tstat)) {
+  if (deformflag && (unbiasflag || !tstat)) {
     domain->x2lamda(nlocal);
     for (i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
@@ -2761,7 +2761,7 @@ void FixSRD::parameterize()
             ((srd_per_cell - 1.0 + exp(-srd_per_cell)) / srd_per_cell);
   viscosity *= force->xxt2kmu;
 
-  // print SRD parameters
+  // log current SRD settings
 
   if (me == 0) {
     std::string mesg = "SRD info:\n";
@@ -2775,7 +2775,7 @@ void FixSRD::parameterize()
     mesg += fmt::format("  SRD per actual grid cell = {:.8}\n", srd_per_cell);
     mesg += fmt::format("  SRD viscosity = {:.8}\n", viscosity);
     mesg += fmt::format("  big/SRD mass density ratio = {:.8}\n", mdratio);
-    mesg += fmt::format("  unbiased profile = {}\n", putflag);
+    mesg += fmt::format("  unbiased profile = {}\n", unbiasflag ? "yes" : "no");
     utils::logmesg(lmp, mesg);
   }
 
