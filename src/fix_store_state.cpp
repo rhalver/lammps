@@ -485,7 +485,7 @@ void FixStoreState::setup(int /*vflag*/)
 
 void FixStoreState::end_of_step()
 {
-  // skip storing data is threshold condition is not met
+  // skip storing data if threshold condition is not met
 
   if (threshflag) {
     auto val = input->variable->compute_equal(thresh_idx);

@@ -149,7 +149,7 @@ FixRigidSmall::FixRigidSmall(LAMMPS *lmp, int narg, char **arg) :
             bodyID[i] = (tagint)((tagint)value[i] - minval + 1);
           else bodyID[0] = 0;
         delete[] value;
-      } else error->all(FLERR, 4, "Unsupported fix {} custom property", style, arg[4]);
+      } else error->all(FLERR, 4, "Unsupported fix {} custom property {}", style, arg[4]);
   } else error->all(FLERR, 3, "Unknown fix {} body style {}", style, arg[3]);
 
   if (atom->map_style == Atom::MAP_NONE)
@@ -533,7 +533,7 @@ void FixRigidSmall::init()
   for (const auto &ifix : modify->get_fix_list())
     if (ifix->rigid_flag) count++;
   if (count > 1 && comm->me == 0)
-    error->warning(FLERR, "More than one fix rigid command causes redundant communicaton");
+    error->warning(FLERR, "More than one fix rigid command causes redundant communication");
 
   if (earlyflag) {
     bool rflag = false;
@@ -2520,7 +2520,7 @@ void FixRigidSmall::readfile(int which, double **array, int *inbody)
 
         if (id <= 0 || id > maxmol)
           error->all(FLERR, Error::NOLASTLINE,
-                     "Invalid rigid body molecude ID {} in fix {} file", id, style);
+                     "Invalid rigid body molecule ID {} in fix {} file", id, style);
 
         if (hash.find(id) == hash.end()) {
           buf = next + 1;

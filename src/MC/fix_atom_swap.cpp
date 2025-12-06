@@ -264,7 +264,7 @@ void FixAtomSwap::init()
   if (idregion) {
     region = domain->get_region_by_id(idregion);
     if (!region)
-      error->all(FLERR, Error::NOLASTLINE, "Region {} for fix setforce does not exist", idregion);
+      error->all(FLERR, Error::NOLASTLINE, "Region {} for fix atom/swap does not exist", idregion);
   }
 
   for (int iswaptype = 0; iswaptype < nswaptypes; iswaptype++)
