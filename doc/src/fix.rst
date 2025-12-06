@@ -196,6 +196,7 @@ accelerated styles exist.
 * :doc:`add/heat <fix_add_heat>` - add a heat flux to each atom
 * :doc:`addtorque <fix_addtorque>` - add a torque to a group of atoms
 * :doc:`alchemy <fix_alchemy>` - perform an "alchemical transformation" between two partitions
+* :doc:`align/self <fix_align_self>` - add torque to groups of atoms due to a self-alignment
 * :doc:`amoeba/bitorsion <fix_amoeba_bitorsion>` - torsion/torsion terms in AMOEBA force field
 * :doc:`amoeba/pitorsion <fix_amoeba_pitorsion>` - 6-body terms in AMOEBA force field
 * :doc:`append/atoms <fix_append_atoms>` - append atoms to a running simulation
@@ -359,7 +360,6 @@ accelerated styles exist.
 * :doc:`press/langevin <fix_press_langevin>` - pressure control by Langevin barostat
 * :doc:`print <fix_print>` - print text and variables during a simulation
 * :doc:`propel/self <fix_propel_self>` - model self-propelled particles
-* :doc:`align/self <fix_align_self>` - add torque to groups of atoms due to a self-alignment
 * :doc:`property/atom <fix_property_atom>` - add customized per-atom values
 * :doc:`python/invoke <fix_python_invoke>` - call a Python function during a simulation
 * :doc:`python/move <fix_python_move>` - move particles using a Python function during a simulation run
