@@ -359,7 +359,7 @@ accelerated styles exist.
 * :doc:`press/langevin <fix_press_langevin>` - pressure control by Langevin barostat
 * :doc:`print <fix_print>` - print text and variables during a simulation
 * :doc:`propel/self <fix_propel_self>` - model self-propelled particles
-* :doc:`propel/selfalign <fix_propel_selfalign>` - add torque to groups of atoms due to a self-alignment
+* :doc:`align/self <fix_align_self>` - add torque to groups of atoms due to a self-alignment
 * :doc:`property/atom <fix_property_atom>` - add customized per-atom values
 * :doc:`python/invoke <fix_python_invoke>` - call a Python function during a simulation
 * :doc:`python/move <fix_python_move>` - move particles using a Python function during a simulation run

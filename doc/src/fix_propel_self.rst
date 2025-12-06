@@ -155,7 +155,7 @@ See the :doc:`Build package <Build_package>` page for more info.
 Related commands
 """"""""""""""""
 
-:doc:`fix propel/selfalign <fix_propel_selfalign>`,
+:doc:`fix align/self <fix_align_self>`,
 :doc:`fix efield <fix_efield>`,
 :doc:`fix setforce <fix_setforce>`,
 :doc:`fix addforce <fix_addforce>`

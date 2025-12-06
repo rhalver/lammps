@@ -61,7 +61,7 @@ pair_coeff      * * 1.0 1.0
 # -----------------------------
 fix rotLangevin all langevin ${Temperature} ${Temperature} ${RelaxTime} ${Seed} angmom ${RotTempPrefactor}
 fix active all propel/self quat ${ActiveForce}
-fix align all propel/selfalign quat ${SelfAlignment}
+fix align all align/self quat ${SelfAlignment}
 
 # -----------------------------
 # Integrators

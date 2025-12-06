@@ -13,19 +13,19 @@
 
 #ifdef FIX_CLASS
 // clang-format off
-FixStyle(propel/selfalign,FixPropelSelfAlign);
+FixStyle(align/self,FixAlignSelf);
 // clang-format on
 #else
 
-#ifndef LMP_FIX_PROPEL_SELFALIGN_H
-#define LMP_FIX_PROPEL_SELFALIGN_H
+#ifndef LMP_FIX_ALIGN_SELF_H
+#define LMP_FIX_ALIGN_SELF_H
 
 #include "fix.h"
 namespace LAMMPS_NS {
 
-class FixPropelSelfAlign : public Fix {
+class FixAlignSelf : public Fix {
  public:
-  FixPropelSelfAlign(class LAMMPS *, int, char **);
+  FixAlignSelf(class LAMMPS *, int, char **);
 
   void init() override;
   void post_force(int) override;

@@ -60,7 +60,7 @@ pair_coeff      * * 1.0 1.0
 # -----------------------------
 fix rotLangevin all langevin ${Temperature} ${Temperature} ${RelaxTime} ${Seed} omega yes
 fix active all propel/self dipole ${ActiveForce}
-fix align all propel/selfalign dipole -${SelfAlignment}
+fix align all align/self dipole ${SelfAlignment}
 
 # -----------------------------
 # Integrators

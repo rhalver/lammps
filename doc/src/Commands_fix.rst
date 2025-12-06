@@ -17,6 +17,7 @@ OPT.
    * :doc:`add/heat <fix_add_heat>`
    * :doc:`addtorque <fix_addtorque>`
    * :doc:`alchemy <fix_alchemy>`
+   * :doc:`align/self <fix_align_self>`
    * :doc:`amoeba/bitorsion <fix_amoeba_bitorsion>`
    * :doc:`amoeba/pitorsion <fix_amoeba_pitorsion>`
    * :doc:`append/atoms <fix_append_atoms>`
@@ -180,7 +181,6 @@ OPT.
    * :doc:`press/langevin <fix_press_langevin>`
    * :doc:`print <fix_print>`
    * :doc:`propel/self <fix_propel_self>`
-   * :doc:`propel/selfalign <fix_propel_selfalign>`
    * :doc:`property/atom (k) <fix_property_atom>`
    * :doc:`python/invoke <fix_python_invoke>`
    * :doc:`python/move <fix_python_move>`

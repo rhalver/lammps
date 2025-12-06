@@ -15,7 +15,7 @@
   Contributed by: Jeremy Fersula @ Sorbonne University
 ----------------------------------------------------------------------- */
 
-#include "fix_propel_selfalign.h"
+#include "fix_align_self.h"
 
 #include "atom.h"
 #include "atom_vec_ellipsoid.h"
@@ -35,18 +35,18 @@ static constexpr double SMALL = 1.0e-14;
 
 /* ---------------------------------------------------------------------- */
 
-FixPropelSelfAlign::FixPropelSelfAlign(LAMMPS *lmp, int narg, char **arg) :
+FixAlignSelf::FixAlignSelf(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg), avec(nullptr)
 {
 
-  if (narg != 5 && narg != 9) error->all(FLERR, "Illegal fix propel/selfalign command");
+  if (narg != 5 && narg != 9) error->all(FLERR, "Illegal fix align/self command");
 
   if (strcmp(arg[3], "dipole") == 0) {
     mode = DIPOLE;
   } else if (strcmp(arg[3], "quat") == 0) {
     mode = QUAT;
   } else {
-    error->all(FLERR, 3, "Unknown fix propel/selfalign keyword {}", arg[3]);
+    error->all(FLERR, 3, "Unknown fix align/self keyword {}", arg[3]);
   }
 
   magnitude = utils::numeric(FLERR, arg[4], false, lmp);
@@ -55,19 +55,19 @@ FixPropelSelfAlign::FixPropelSelfAlign(LAMMPS *lmp, int narg, char **arg) :
 
   if (narg == 9) {
     if (mode != QUAT)
-      error->all(FLERR, "Incorrect number of arguments for 'quat' mode of fix propel/selfalign");
+      error->all(FLERR, "Incorrect number of arguments for 'quat' mode of fix align/self");
     if (strcmp(arg[5], "qvector") == 0) {
       sx = utils::numeric(FLERR, arg[6], false, lmp);
       sy = utils::numeric(FLERR, arg[7], false, lmp);
       sz = utils::numeric(FLERR, arg[8], false, lmp);
       double snorm = sqrt(sx * sx + sy * sy + sz * sz);
       if (snorm < SMALL)
-        error->all(FLERR, 5, "Fix propel/selfalign qvector magnitude {} is too small", snorm);
+        error->all(FLERR, 5, "Fix align/self qvector magnitude {} is too small", snorm);
       sx = sx / snorm;
       sy = sy / snorm;
       sz = sz / snorm;
     } else {
-      error->all(FLERR, 5, "Mismatched fix propel/selfalign keyword {}", arg[5]);
+      error->all(FLERR, 5, "Mismatched fix align/self keyword {}", arg[5]);
     }
   } else {
     sx = 1.0;
@@ -78,7 +78,7 @@ FixPropelSelfAlign::FixPropelSelfAlign(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-int FixPropelSelfAlign::setmask()
+int FixAlignSelf::setmask()
 {
   int mask = 0;
   mask |= POST_FORCE;
@@ -87,17 +87,17 @@ int FixPropelSelfAlign::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void FixPropelSelfAlign::init()
+void FixAlignSelf::init()
 {
   if (mode == DIPOLE && (!atom->mu_flag || !atom->torque_flag))
     error->all(FLERR, Error::NOLASTLINE,
-               "Fix propel/selfalign requires atom attributes mu + torque with option dipole");
+               "Fix align/self requires atom attributes mu + torque with option dipole");
 
   if (mode == QUAT) {
     avec = dynamic_cast<AtomVecEllipsoid *>(atom->style_match("ellipsoid"));
     if (!avec)
       error->all(FLERR, Error::NOLASTLINE,
-                 "Fix propel/selfalign requires atom style ellipsoid with option quat");
+                 "Fix align/self requires atom style ellipsoid with option quat");
 
     // check that all particles are finite-size ellipsoids
     // no point particles allowed, spherical is OK
@@ -110,13 +110,13 @@ void FixPropelSelfAlign::init()
       if (mask[i] & groupbit)
         if (ellipsoid[i] < 0)
           error->one(FLERR, Error::NOLASTLINE,
-                     "Fix propel/selfalign requires extended particles with option quat");
+                     "Fix align/self requires extended particles with option quat");
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixPropelSelfAlign::post_force(int vflag)
+void FixAlignSelf::post_force(int vflag)
 {
   if (mode == DIPOLE)
     post_force_dipole(vflag);
@@ -126,7 +126,7 @@ void FixPropelSelfAlign::post_force(int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void FixPropelSelfAlign::post_force_dipole(int vflag)
+void FixAlignSelf::post_force_dipole(int vflag)
 {
   double **torque = atom->torque;
   double **v = atom->v;
@@ -148,7 +148,7 @@ void FixPropelSelfAlign::post_force_dipole(int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void FixPropelSelfAlign::post_force_quaternion(int vflag)
+void FixAlignSelf::post_force_quaternion(int vflag)
 {
   double **torque = atom->torque;
   double **v = atom->v;

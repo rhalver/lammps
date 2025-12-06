@@ -1,6 +1,6 @@
-.. index:: fix propel/selfalign
+.. index:: fix align/self
 
-fix propel/selfalign command
+fix align/self command
 ============================
 
 Syntax
@@ -8,10 +8,10 @@ Syntax
 
 .. code-block:: LAMMPS
 
-   fix ID group-ID propel/selfalign mode magnitude keyword values
+   fix ID group-ID align/self mode magnitude keyword values
 
 * ID, group-ID are documented in :doc:`fix <fix>` command
-* propel/selfalign = style name of this fix command
+* align/self = style name of this fix command
 * mode = *dipole* or *quat*
 * magnitude = magnitude of self-alignment torque
 * zero or one keyword/value pairs may be appended
@@ -28,8 +28,8 @@ Examples
 
 .. code-block:: LAMMPS
 
-   fix active all propel/selfalign dipole 40.0
-   fix active all propel/selfalign quat 15.7 qvector 1.0 0.0 0.0
+   fix active all align/self dipole 40.0
+   fix active all align/self quat 15.7 qvector 1.0 0.0 0.0
 
 Description
 """""""""""
