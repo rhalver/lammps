@@ -83,7 +83,7 @@ class BondClass2Kokkos : public BondClass2 {
   typename AT::t_kkfloat_1d d_k2, d_k3, d_k4;
   typename AT::t_kkfloat_1d d_r0;
 
-  void allocate();
+  void allocate() override;
 };
 
 }
