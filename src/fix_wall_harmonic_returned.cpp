@@ -13,14 +13,31 @@
 
 #include "fix_wall_harmonic_returned.h"
 #include "atom.h"
+#include "citeme.h"
 #include "error.h"
 
 using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
+static const char cite_fix_wall_harmonic_returned[] =
+    "fix wall/harmonic/returned command: https://doi.org/10.1021/acs.langmuir.4c04293\n\n"
+    "@Article{Barraud2025,\n"
+    " author  = {Barraud, Eddy and Dalmazzone, Christine and Mouret, "
+    "Aurelie and De Bruin, Theodorus and Creton, Benoit and Pasquier, David "
+    "and Lachet, Veronique and Nieto-Draghi, Carlos},\n"
+    " title        = {A Coarse-Grained Model Describing the Critical Micelle Concentration"
+    " of Perfluoroalkyl Surfactants in Ionic Aqueous Phase},\n"
+    " journal = {Langmuir},\n"
+    " year         = {2025},\n"
+    " number       = {11}, \n"
+    " pages        = {7272--7282}, \n"
+    " volume       = {41}, \n"
+    "}\n\n";
+
 FixWallHarmonicReturned::FixWallHarmonicReturned(LAMMPS *lmp, int narg, char **arg) : FixWall(lmp, narg, arg)
 {
+  if (lmp->citeme) lmp->citeme->add(cite_fix_wall_harmonic_returned);
   dynamic_group_allow = 1;
 }
 
