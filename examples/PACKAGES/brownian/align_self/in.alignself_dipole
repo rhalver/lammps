@@ -25,7 +25,7 @@ atom_style  hybrid sphere dipole
 # Simulation box and atoms
 # -----------------------------
 region       box block 0 ${BoxSize} 0 ${BoxSize} -0.5 0.5
-create_box   2 box
+create_box   1 box
 create_atoms 1 random ${NParticles} ${Seed} box
 
 # -----------------------------

@@ -44,7 +44,7 @@ unfix           1
 unfix           2
 
 # -----------------------------
-# Mass, dipole, velocities
+# Mass, shape, velocities, orientation
 # -----------------------------
 velocity    all create 0.0 ${Seed} mom yes rot yes
 set         type 1 shape ${Diameter} ${Diameter} ${Diameter}  # spheres
