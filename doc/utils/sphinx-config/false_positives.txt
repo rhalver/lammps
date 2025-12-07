@@ -2144,6 +2144,7 @@ lunit
 Lunkad
 Lussetti
 Lustig
+Lutsko
 lval
 lwsock
 lx
