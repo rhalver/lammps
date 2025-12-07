@@ -161,22 +161,32 @@ block ("yaml").  This modify option overrides the *one*, *multi*, or
 The *colname* keyword can be used to change the default header keyword for
 a column or field of thermodynamic output.  The column names can either be
 manually set by the user, or automatically generated for certain fixes and
-computes.  The setting for *ID string* replaces the default text with the
+computes.
+
+The setting for *ID string* replaces the default text with the
 provided string.  *ID* can be a positive integer when it represents the
 column number counting from the left, a negative integer when it represents
 the column number from the right (i.e., :math:`-1` is the last
 column/keyword), or a thermo keyword (or compute, fix, property, or
 variable reference) and then it replaces the string for that specific
-thermo keyword.  With a setting of *auto*, certain fixes or computes will
+thermo keyword.
+
+With a setting of *auto*, certain fixes or computes will
 generate more descriptive strings as their thermo keywords, which are
-described in the 'output' section of their documentation. Current commands
+described in the 'output' section of their documentation.  Current commands
 that automatically generate descriptive thermo output strings include 'fix
 nvt', 'fix npt', 'fix nph', 'compute reduce', and 'fix bond/react'.
 
-The *colname* keyword can be used multiple times. If multiple *colname*
-settings refer to the same keyword, the last setting has precedence.  A
-setting of *default* clears all previous settings, reverting all values
-to their default values.
+With a *colname* setting of *default*, the default column names are used.
+The default column names follow the same convention as the arguments
+provided to the :doc:`thermo_style <thermo_style>` command.
+
+The *colname* keyword can be used multiple times.  If multiple *colname*
+settings refer to the same keyword, the last setting has precedence.  The
+*auto* keyword will only override user-provided strings for computes and
+fixes that support automatically generated column names.  A setting of
+*default* clears all previous settings, reverting all values to their
+default values.
 
 The *format* keyword can be used to change the default numeric format of
 any of quantities the :doc:`thermo_style <thermo_style>` command
