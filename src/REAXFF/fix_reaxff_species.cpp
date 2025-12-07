@@ -1108,7 +1108,7 @@ void FixReaxFFSpecies::DeleteSpecies(int Nmole, int Nspec)
       MPI_Allreduce(&local_found_one, &found_one, 1, MPI_INT, MPI_SUM, world);
     }
 
-    if (found_one == 1) {
+    if (found_one > 0) {
       if (masslimitflag) {
 
         // find corresponding moltype
