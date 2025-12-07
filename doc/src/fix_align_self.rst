@@ -1,7 +1,7 @@
 .. index:: fix align/self
 
 fix align/self command
-============================
+======================
 
 Syntax
 """"""
@@ -53,19 +53,17 @@ differential drag in asymmetric rigid bodies (see :ref:`(Baconnier2025)
 <Baconnier2025>`).
 
 
-For mode *dipole*, :math:`e_i` is just equal to
-the dipole vectors of the atoms in the group. Therefore, if the dipoles
-are not unit vectors, the :math:`e_i` will not be unit vectors.
+For mode *dipole*, :math:`e_i` is just equal to the dipole vectors of
+the atoms in the group. Therefore, if the dipoles are not unit vectors,
+the :math:`e_i` will not be unit vectors.
 
 .. note::
 
-   If another command changes the magnitude of the dipole, this force
-   will change accordingly (since :math:`|e_i|` will change, which is
-   physically equivalent to re-scaling :math:`f_P` while keeping
-   :math:`|e_i|` constant), and no warning will be provided by
+   If another command changes the magnitude of the dipole, the applied
+   torque will change accordingly and no warning will be provided by
    LAMMPS. This is almost never what you want, so ensure you are not
    changing dipole magnitudes with another LAMMPS fix or pair
-   style. Furthermore, self-propulsion forces (almost) always set
+   style.  Furthermore, self-propulsion forces (almost) always set
    :math:`e_i` to be a unit vector for all times, so it's best to set
    all the dipole magnitudes to 1.0 unless you have a good reason not to
    (see the :doc:`set <set>` command on how to do this).
@@ -112,12 +110,12 @@ This fix is part of the BROWNIAN package.  It is only enabled if LAMMPS
 was built with that package.  See the :doc:`Build package
 <Build_package>` doc page for more info.
 
-The keyword *dipole* requires that atoms store torque and angular
-velocity (omega) as defined by the :doc:`atom_style sphere <atom_style>`
-command, as well as a dipole moment as defined by the :doc:`atom_style
-dipole <atom_style>` command which is part of the DIPOLE package.  The
-keyword *quat* requires that atoms store torque and quaternions as
-defined by the :doc:`atom_style ellipsoid <atom_style>` command.
+The keyword *dipole* requires that atoms store torque as defined by the
+:doc:`atom_style sphere <atom_style>` command, as well as a dipole
+moment as defined by the :doc:`atom_style dipole <atom_style>` command
+which is part of the DIPOLE package.  The keyword *quat* requires that
+atoms store torque and quaternions as defined by the :doc:`atom_style
+ellipsoid <atom_style>` command.
 
 Related commands
 """"""""""""""""
