@@ -35,11 +35,10 @@ static constexpr double SMALL = 1.0e-14;
 
 /* ---------------------------------------------------------------------- */
 
-FixAlignSelf::FixAlignSelf(LAMMPS *lmp, int narg, char **arg) :
-    Fix(lmp, narg, arg), avec(nullptr)
+FixAlignSelf::FixAlignSelf(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg), avec(nullptr)
 {
 
-  if (narg != 5 && narg != 9) error->all(FLERR, "Illegal fix align/self command");
+  if (narg != 5 && narg != 9) error->all(FLERR, "Incorrect number of fix align/self arguments");
 
   if (strcmp(arg[3], "dipole") == 0) {
     mode = DIPOLE;
@@ -55,7 +54,7 @@ FixAlignSelf::FixAlignSelf(LAMMPS *lmp, int narg, char **arg) :
 
   if (narg == 9) {
     if (mode != QUAT)
-      error->all(FLERR, "Incorrect number of arguments for 'quat' mode of fix align/self");
+      error->all(FLERR, 3, "Incorrect number of arguments for 'quat' mode of fix align/self");
     if (strcmp(arg[5], "qvector") == 0) {
       sx = utils::numeric(FLERR, arg[6], false, lmp);
       sy = utils::numeric(FLERR, arg[7], false, lmp);
@@ -67,7 +66,7 @@ FixAlignSelf::FixAlignSelf(LAMMPS *lmp, int narg, char **arg) :
       sy = sy / snorm;
       sz = sz / snorm;
     } else {
-      error->all(FLERR, 5, "Mismatched fix align/self keyword {}", arg[5]);
+      error->all(FLERR, 5, "Unknown fix align/self keyword {}", arg[5]);
     }
   } else {
     sx = 1.0;
@@ -91,13 +90,13 @@ void FixAlignSelf::init()
 {
   if (mode == DIPOLE && (!atom->mu_flag || !atom->torque_flag))
     error->all(FLERR, Error::NOLASTLINE,
-               "Fix align/self requires atom attributes mu + torque with option dipole");
+               "Fix align/self with option dipole requires atom attributes mu + torque");
 
   if (mode == QUAT) {
     avec = dynamic_cast<AtomVecEllipsoid *>(atom->style_match("ellipsoid"));
     if (!avec)
       error->all(FLERR, Error::NOLASTLINE,
-                 "Fix align/self requires atom style ellipsoid with option quat");
+                 "Fix align/self with option quat requires atom style ellipsoid");
 
     // check that all particles are finite-size ellipsoids
     // no point particles allowed, spherical is OK
@@ -110,7 +109,7 @@ void FixAlignSelf::init()
       if (mask[i] & groupbit)
         if (ellipsoid[i] < 0)
           error->one(FLERR, Error::NOLASTLINE,
-                     "Fix align/self requires extended particles with option quat");
+                     "Fix align/self with option quat requires extended particles");
   }
 }
 
