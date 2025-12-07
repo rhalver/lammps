@@ -256,6 +256,7 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
         }
       }
 
+      // delete_rate_limit keyword
     } else if (strcmp(arg[iarg], "delete_rate_limit") == 0) {
       if (iarg + 3 > narg)
         utils::missing_cmd_args(FLERR, "fix reaxff/species delete_rate_limit", error);
@@ -273,7 +274,9 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
         delete_Nlimit = utils::inumeric(FLERR, arg[iarg + 1], false, lmp);
       delete_Nsteps = utils::inumeric(FLERR, arg[iarg + 2], false, lmp);
       iarg += 3;
-      // position of molecules
+
+      // delete_subgroup keyword
+    } else if (strcmp(arg[iarg], "delete_subgroup") == 0) {
       if (iarg + 2 > narg)
         utils::missing_cmd_args(FLERR, "fix reaxff/species delete_subgroup", error);
       delete_subgroup = true;
@@ -281,6 +284,8 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
       if (deligroup == -1) error->all(FLERR,"Could not find fix reaxff/species group ID {}", arg[iarg + 1]);
       deligroupbit = group->get_bitmask_by_id(FLERR, arg[iarg + 1], "fix reaxff/species");
       iarg += 2;
+
+      // position of molecules
     } else if (strcmp(arg[iarg], "position") == 0) {
       if (iarg + 3 > narg) utils::missing_cmd_args(FLERR, "fix reaxff/species position", error);
       posflag = 1;
