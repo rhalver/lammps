@@ -820,6 +820,7 @@ void ReadDump::process_atoms()
   double **f = atom->f;
   tagint *tag = atom->tag;
   imageint *image = atom->image;
+  tagint *molecule = atom->molecule;
   tagint map_tag_max = atom->map_tag_max;
 
   for (i = 0; i < nnew; i++) {
@@ -865,6 +866,9 @@ void ReadDump::process_atoms()
           break;
         case Reader::Q:
           q[m] = fields[i][ifield];
+          break;
+        case Reader::MOL:
+          molecule[m] = fields[i][ifield];
           break;
         case Reader::APIP_LAMBDA:
           apip_lambda[m] = fields[i][ifield];
@@ -999,6 +1003,7 @@ void ReadDump::process_atoms()
     q = atom->q;
     apip_lambda = atom->apip_lambda;
     image = atom->image;
+    molecule = atom->molecule;
 
     // set atom attributes from other dump file fields
 
@@ -1021,6 +1026,9 @@ void ReadDump::process_atoms()
         break;
       case Reader::Q:
         q[m] = fields[i][ifield];
+        break;
+      case Reader::MOL:
+        molecule[m] = fields[i][ifield];
         break;
       case Reader::APIP_LAMBDA:
         apip_lambda[m] = fields[i][ifield];
@@ -1188,6 +1196,8 @@ int ReadDump::fields_and_keywords(int narg, char **arg)
     if (type < 0) break;
     if (type == Reader::Q && !atom->q_flag)
       error->all(FLERR,"Read dump of charge property that isn't supported by atom style");
+    if (type == Reader::MOL && !atom->molecule_flag)
+      error->all(FLERR,"Read dump of molecule ID that isn't supported by atom style");
     if (type == Reader::APIP_LAMBDA && !atom->apip_lambda_flag)
       error->all(FLERR,"Read dump of apip_lambda property that isn't supported by atom style");
 
@@ -1321,6 +1331,7 @@ int ReadDump::whichtype(char *str)
   else if (strcmp(str,"vx") == 0) type = Reader::VX;
   else if (strcmp(str,"vy") == 0) type = Reader::VY;
   else if (strcmp(str,"vz") == 0) type = Reader::VZ;
+  else if (strcmp(str,"mol") == 0) type = Reader::MOL;
   else if (strcmp(str,"q") == 0) type = Reader::Q;
   else if (strcmp(str,"apip_lambda") == 0) type = Reader::APIP_LAMBDA;
   else if (strcmp(str,"ix") == 0) type = Reader::IX;

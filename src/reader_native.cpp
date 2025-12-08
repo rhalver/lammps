@@ -413,6 +413,9 @@ bigint ReaderNative::read_header(double box[3][3], int &boxinfo, int &triclinic,
     else if (fieldtype[i] == Q)
       fieldindex[i] = find_label("q", labels);
 
+    else if (fieldtype[i] == MOL)
+      fieldindex[i] = find_label("mol", labels);
+
     else if (fieldtype[i] == IX)
       fieldindex[i] = find_label("ix", labels);
     else if (fieldtype[i] == IY)
