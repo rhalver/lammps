@@ -254,6 +254,10 @@ bigint ReaderNative::read_header(double box[3][3], int &boxinfo, int &triclinic,
     triclinic = 0;
     box[0][2] = box[1][2] = box[2][2] = 0.0;
     read_lines(1);
+    if (utils::strmatch(line,"ITEM: BOX BOUNDS.*abc\\s+origin")) {
+      error->one(FLERR, Error::NOLASTLINE,
+                 "Dump files in general triclinic format are not (yet) supported");
+    }
     if (utils::strmatch(line,"ITEM: BOX BOUNDS.*xy\\s+xz\\s+yz")) triclinic = 1;
 
     try {
