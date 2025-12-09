@@ -11,8 +11,9 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include "fix_wall_harmonic_returned.h"
+#include "fix_wall_harmonic_outside.h"
 #include "atom.h"
+#include "comm.h"
 #include "citeme.h"
 #include "error.h"
 
@@ -20,8 +21,8 @@ using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-static const char cite_fix_wall_harmonic_returned[] =
-    "fix wall/harmonic/returned command: https://doi.org/10.1021/acs.langmuir.4c04293\n\n"
+static const char cite_fix_wall_harmonic_outside[] =
+    "fix wall/harmonic/outside command: https://doi.org/10.1021/acs.langmuir.4c04293\n\n"
     "@Article{Barraud2025,\n"
     " author  = {Barraud, Eddy and Dalmazzone, Christine and Mouret, "
     "Aurelie and De Bruin, Theodorus and Creton, Benoit and Pasquier, David "
@@ -35,9 +36,12 @@ static const char cite_fix_wall_harmonic_returned[] =
     " volume       = {41}, \n"
     "}\n\n";
 
-FixWallHarmonicReturned::FixWallHarmonicReturned(LAMMPS *lmp, int narg, char **arg) : FixWall(lmp, narg, arg)
+FixWallHarmonicOutside::FixWallHarmonicOutside(LAMMPS *lmp, int narg, char **arg) : FixWall(lmp, narg, arg)
 {
-  if (lmp->citeme) lmp->citeme->add(cite_fix_wall_harmonic_returned);
+  if (lmp->citeme) lmp->citeme->add(cite_fix_wall_harmonic_outside);
+  /* Raise error if using the old name */
+  if ((strcmp(style, "wall/harmonic/returned") == 0) && (comm->me == 0))
+    error->warning(FLERR,"Fix wall/harmonic/returned was renamed to fix wall/harmonic/outside. Please update your input");
   dynamic_group_allow = 1;
 }
 
@@ -55,7 +59,7 @@ FixWallHarmonicReturned::FixWallHarmonicReturned(LAMMPS *lmp, int narg, char **a
 ------------------------------------------------------------------------- */
 
 
-void FixWallHarmonicReturned::wall_particle(int m, int which, double coord)
+void FixWallHarmonicOutside::wall_particle(int m, int which, double coord)
 {
   double dr, fwall;
   double vn;

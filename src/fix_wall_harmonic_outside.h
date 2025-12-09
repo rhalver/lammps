@@ -13,20 +13,22 @@
 
 #ifdef FIX_CLASS
 // clang-format off
-FixStyle(wall/harmonic/returned,FixWallHarmonicReturned);
+FixStyle(wall/harmonic/outside,FixWallHarmonicOutside);
+/* Backward compatibility with returned fix name*/
+FixStyle(wall/harmonic/returned,FixWallHarmonicOutside);
 // clang-format on
 #else
 
-#ifndef LMP_FIX_WALL_HARMONIC_RETURNED_H
-#define LMP_FIX_WALL_HARMONIC_RETURNED_H
+#ifndef LMP_FIX_WALL_HARMONIC_OUTSIDE_H
+#define LMP_FIX_WALL_HARMONIC_OUTSIDE_H
 
 #include "fix_wall.h"
 
 namespace LAMMPS_NS {
 
-class FixWallHarmonicReturned : public FixWall {
+class FixWallHarmonicOutside : public FixWall {
  public:
-  FixWallHarmonicReturned(class LAMMPS *, int, char **);
+  FixWallHarmonicOutside(class LAMMPS *, int, char **);
   void precompute(int) override {}
   void wall_particle(int, int, double) override;
 };
