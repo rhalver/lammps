@@ -16,7 +16,7 @@
    Contributing author: Stan Moore (SNL)
 ------------------------------------------------------------------------- */
 
-#include "dihedral_opls_kokkos.h"
+#include "dihedral_fourier_kokkos.h"
 
 #include "atom_kokkos.h"
 #include "atom_masks.h"
@@ -25,19 +25,19 @@
 #include "force.h"
 #include "memory_kokkos.h"
 #include "neighbor_kokkos.h"
+#include "math_const.h"
 
 #include <cmath>
 
 using namespace LAMMPS_NS;
+using namespace MathConst;
 
 static constexpr double TOLERANCE = 0.05;
-static constexpr double SMALL =     0.001;
-static constexpr double SMALLER =   0.00001;
 
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-DihedralOPLSKokkos<DeviceType>::DihedralOPLSKokkos(LAMMPS *lmp) : DihedralOPLS(lmp)
+DihedralFourierKokkos<DeviceType>::DihedralFourierKokkos(LAMMPS *lmp) : DihedralFourier(lmp)
 {
   kokkosable = 1;
   atomKK = (AtomKokkos *) atom;
@@ -51,12 +51,14 @@ DihedralOPLSKokkos<DeviceType>::DihedralOPLSKokkos(LAMMPS *lmp) : DihedralOPLS(l
   h_warning_flag = k_warning_flag.view_host();
 
   centroidstressflag = CENTROID_NOTAVAIL;
+
+  allocated_kokkos = 0;
 }
 
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-DihedralOPLSKokkos<DeviceType>::~DihedralOPLSKokkos()
+DihedralFourierKokkos<DeviceType>::~DihedralFourierKokkos()
 {
   if (!copymode) {
     memoryKK->destroy_kokkos(k_eatom,eatom);
@@ -67,7 +69,7 @@ DihedralOPLSKokkos<DeviceType>::~DihedralOPLSKokkos()
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-void DihedralOPLSKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
+void DihedralFourierKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 {
   eflag = eflag_in;
   vflag = vflag_in;
@@ -77,20 +79,25 @@ void DihedralOPLSKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   // reallocate per-atom arrays if necessary
 
   if (eflag_atom) {
+    if ((int)k_eatom.extent(0) < maxeatom) {
     memoryKK->destroy_kokkos(k_eatom,eatom);
     memoryKK->create_kokkos(k_eatom,eatom,maxeatom,"dihedral:eatom");
     d_eatom = k_eatom.view<DeviceType>();
+    } else Kokkos::deep_copy(d_eatom,0.0);
   }
   if (vflag_atom) {
+    if ((int)k_vatom.extent(0) < maxvatom) {
     memoryKK->destroy_kokkos(k_vatom,vatom);
     memoryKK->create_kokkos(k_vatom,vatom,maxvatom,"dihedral:vatom");
     d_vatom = k_vatom.view<DeviceType>();
+    } else Kokkos::deep_copy(d_vatom,0.0);
   }
 
-  k_k1.template sync<DeviceType>();
-  k_k2.template sync<DeviceType>();
-  k_k3.template sync<DeviceType>();
-  k_k4.template sync<DeviceType>();
+  k_k.template sync<DeviceType>();
+  k_cos_shift.template sync<DeviceType>();
+  k_sin_shift.template sync<DeviceType>();
+  k_multiplicity.template sync<DeviceType>();
+  k_nterms.template sync<DeviceType>();
 
   x = atomKK->k_x.view<DeviceType>();
   f = atomKK->k_f.view<DeviceType>();
@@ -112,15 +119,15 @@ void DihedralOPLSKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   if (evflag) {
     if (newton_bond) {
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<DeviceType, TagDihedralOPLSCompute<1,1> >(0,ndihedrallist),*this,ev);
+      Kokkos::parallel_reduce(Kokkos::RangePolicy<DeviceType, TagDihedralFourierCompute<1,1> >(0,ndihedrallist),*this,ev);
     } else {
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<DeviceType, TagDihedralOPLSCompute<0,1> >(0,ndihedrallist),*this,ev);
+      Kokkos::parallel_reduce(Kokkos::RangePolicy<DeviceType, TagDihedralFourierCompute<0,1> >(0,ndihedrallist),*this,ev);
     }
   } else {
     if (newton_bond) {
-      Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, TagDihedralOPLSCompute<1,0> >(0,ndihedrallist),*this);
+      Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, TagDihedralFourierCompute<1,0> >(0,ndihedrallist),*this);
     } else {
-      Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, TagDihedralOPLSCompute<0,0> >(0,ndihedrallist),*this);
+      Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, TagDihedralFourierCompute<0,0> >(0,ndihedrallist),*this);
     }
   }
 
@@ -157,7 +164,7 @@ void DihedralOPLSKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 template<class DeviceType>
 template<int NEWTON_BOND, int EVFLAG>
 KOKKOS_INLINE_FUNCTION
-void DihedralOPLSKokkos<DeviceType>::operator()(TagDihedralOPLSCompute<NEWTON_BOND,EVFLAG>, const int &n, EV_FLOAT& ev) const {
+void DihedralFourierKokkos<DeviceType>::operator()(TagDihedralFourierCompute<NEWTON_BOND,EVFLAG>, const int &n, EV_FLOAT& ev) const {
 
   // The f array is atomic
   Kokkos::View<KK_ACC_FLOAT*[3], typename DAT::t_kkacc_1d_3::array_layout,typename KKDevice<DeviceType>::value,Kokkos::MemoryTraits<Kokkos::Atomic|Kokkos::Unmanaged> > a_f = f;
@@ -190,56 +197,27 @@ void DihedralOPLSKokkos<DeviceType>::operator()(TagDihedralOPLSCompute<NEWTON_BO
   const KK_FLOAT vb3y = x(i4,1) - x(i3,1);
   const KK_FLOAT vb3z = x(i4,2) - x(i3,2);
 
-  // c0 calculation
+  const KK_FLOAT ax = vb1y*vb2zm - vb1z*vb2ym;
+  const KK_FLOAT ay = vb1z*vb2xm - vb1x*vb2zm;
+  const KK_FLOAT az = vb1x*vb2ym - vb1y*vb2xm;
+  const KK_FLOAT bx = vb3y*vb2zm - vb3z*vb2ym;
+  const KK_FLOAT by = vb3z*vb2xm - vb3x*vb2zm;
+  const KK_FLOAT bz = vb3x*vb2ym - vb3y*vb2xm;
 
-  const KK_FLOAT sb1 = 1.0 / (vb1x*vb1x + vb1y*vb1y + vb1z*vb1z);
-  const KK_FLOAT sb2 = 1.0 / (vb2x*vb2x + vb2y*vb2y + vb2z*vb2z);
-  const KK_FLOAT sb3 = 1.0 / (vb3x*vb3x + vb3y*vb3y + vb3z*vb3z);
+  const KK_FLOAT rasq = ax*ax + ay*ay + az*az;
+  const KK_FLOAT rbsq = bx*bx + by*by + bz*bz;
+  const KK_FLOAT rgsq = vb2xm*vb2xm + vb2ym*vb2ym + vb2zm*vb2zm;
+  const KK_FLOAT rg = sqrt(rgsq);
 
-  const KK_FLOAT rb1 = sqrt(sb1);
-  const KK_FLOAT rb3 = sqrt(sb3);
+  KK_FLOAT rginv,ra2inv,rb2inv;
+  rginv = ra2inv = rb2inv = 0.0;
+  if (rg > 0) rginv = 1.0/rg;
+  if (rasq > 0) ra2inv = 1.0/rasq;
+  if (rbsq > 0) rb2inv = 1.0/rbsq;
+  const KK_FLOAT rabinv = sqrt(ra2inv*rb2inv);
 
-  const KK_FLOAT c0 = (vb1x*vb3x + vb1y*vb3y + vb1z*vb3z) * rb1*rb3;
-
-  // 1st and 2nd angle
-
-  const KK_FLOAT b1mag2 = vb1x*vb1x + vb1y*vb1y + vb1z*vb1z;
-  const KK_FLOAT b1mag = sqrt(b1mag2);
-  const KK_FLOAT b2mag2 = vb2x*vb2x + vb2y*vb2y + vb2z*vb2z;
-  const KK_FLOAT b2mag = sqrt(b2mag2);
-  const KK_FLOAT b3mag2 = vb3x*vb3x + vb3y*vb3y + vb3z*vb3z;
-  const KK_FLOAT b3mag = sqrt(b3mag2);
-
-  KK_FLOAT ctmp = vb1x*vb2x + vb1y*vb2y + vb1z*vb2z;
-  const KK_FLOAT r12c1 = 1.0 / (b1mag*b2mag);
-  const KK_FLOAT c1mag = ctmp * r12c1;
-
-  ctmp = vb2xm*vb3x + vb2ym*vb3y + vb2zm*vb3z;
-  const KK_FLOAT r12c2 = 1.0 / (b2mag*b3mag);
-  const KK_FLOAT c2mag = ctmp * r12c2;
-
-  // cos and sin of 2 angles and final c
-
-  KK_FLOAT sin2 = MAX(1.0 - c1mag*c1mag,0.0);
-  KK_FLOAT sc1 = sqrt(sin2);
-  if (sc1 < SMALL) sc1 = SMALL;
-  sc1 = 1.0/sc1;
-
-  sin2 = MAX(1.0 - c2mag*c2mag,0.0);
-  KK_FLOAT sc2 = sqrt(sin2);
-  if (sc2 < SMALL) sc2 = SMALL;
-  sc2 = 1.0/sc2;
-
-  const KK_FLOAT s1 = sc1 * sc1;
-  const KK_FLOAT s2 = sc2 * sc2;
-  KK_FLOAT s12 = sc1 * sc2;
-  KK_FLOAT c = (c0 + c1mag*c2mag) * s12;
-
-  const KK_FLOAT cx = vb1y*vb2z - vb1z*vb2y;
-  const KK_FLOAT cy = vb1z*vb2x - vb1x*vb2z;
-  const KK_FLOAT cz = vb1x*vb2y - vb1y*vb2x;
-  const KK_FLOAT cmag = sqrt(cx*cx + cy*cy + cz*cz);
-  const KK_FLOAT dx = (cx*vb3x + cy*vb3y + cz*vb3z)/cmag/b3mag;
+  KK_FLOAT c = (ax*bx + ay*by + az*bz)*rabinv;
+  const KK_FLOAT s = rg*rabinv*(ax*vb3x + ay*vb3y + az*vb3z);
 
   // error check
 
@@ -249,54 +227,77 @@ void DihedralOPLSKokkos<DeviceType>::operator()(TagDihedralOPLSCompute<NEWTON_BO
   if (c > 1.0) c = 1.0;
   if (c < -1.0) c = -1.0;
 
-  // force & energy
-  // p = sum (i=1,4) k_i * (1 + (-1)**(i+1)*cos(i*phi) )
-  // pd = dp/dc
-
-  KK_FLOAT phi = acos(c);
-  if (dx < 0.0) phi *= -1.0;
-  KK_FLOAT si = sin(phi);
-  if (fabs(si) < SMALLER) si = SMALLER;
-  const KK_FLOAT siinv = 1.0/si;
-
-  const KK_FLOAT p = d_k1[type]*(1.0 + c) + d_k2[type]*(1.0 - cos(2.0*phi)) +
-    d_k3[type]*(1.0 + cos(3.0*phi)) + d_k4[type]*(1.0 - cos(4.0*phi)) ;
-  const KK_FLOAT pd = d_k1[type] - 2.0*d_k2[type]*sin(2.0*phi)*siinv +
-    3.0*d_k3[type]*sin(3.0*phi)*siinv - 4.0*d_k4[type]*sin(4.0*phi)*siinv;
-
+  // force and energy
+  // p = sum(i=1,nterms) k_i*(1+cos(n_i*phi-d_i)
+  // dp = dp / dphi
   KK_FLOAT edihedral = 0.0;
-  if (eflag) edihedral = p;
+  KK_FLOAT df = 0.0;
 
-  const KK_FLOAT a = pd;
-  c = c * a;
-  s12 = s12 * a;
-  const KK_FLOAT a11 = c*sb1*s1;
-  const KK_FLOAT a22 = -sb2 * (2.0*c0*s12 - c*(s1+s2));
-  const KK_FLOAT a33 = c*sb3*s2;
-  const KK_FLOAT a12 = -r12c1 * (c1mag*c*s1 + c2mag*s12);
-  const KK_FLOAT a13 = -rb1*rb3*s12;
-  const KK_FLOAT a23 = r12c2 * (c2mag*c*s2 + c1mag*s12);
+  for (int j = 0; j < d_nterms[type]; j++)
+  {
+    const int m = d_multiplicity(type,j);
+    KK_FLOAT p_ = 1.0;
+    KK_FLOAT ddf1_,df1_;
+    ddf1_ = df1_ = 0.0;
 
-  const KK_FLOAT sx2  = a12*vb1x + a22*vb2x + a23*vb3x;
-  const KK_FLOAT sy2  = a12*vb1y + a22*vb2y + a23*vb3y;
-  const KK_FLOAT sz2  = a12*vb1z + a22*vb2z + a23*vb3z;
+    for (int i = 0; i < m; i++) {
+      ddf1_ = p_*c - df1_*s;
+      df1_ = p_*s + df1_*c;
+      p_ = ddf1_;
+    }
+
+    p_ = p_*d_cos_shift(type,j) + df1_*d_sin_shift(type,j);
+    df1_ = df1_*d_cos_shift(type,j) - ddf1_*d_sin_shift(type,j);
+    df1_ *= -m;
+    p_ += 1.0;
+
+    if (m == 0) {
+      p_ = 1.0 + d_cos_shift(type,j);
+      df1_ = 0.0;
+    }
+
+    if (eflag) edihedral += d_k(type,j) * p_;
+
+    df += (-d_k(type,j) * df1_);
+  }
+
+  const KK_FLOAT fg = vb1x*vb2xm + vb1y*vb2ym + vb1z*vb2zm;
+  const KK_FLOAT hg = vb3x*vb2xm + vb3y*vb2ym + vb3z*vb2zm;
+  const KK_FLOAT fga = fg*ra2inv*rginv;
+  const KK_FLOAT hgb = hg*rb2inv*rginv;
+  const KK_FLOAT gaa = -ra2inv*rg;
+  const KK_FLOAT gbb = rb2inv*rg;
+
+  const KK_FLOAT dtfx = gaa*ax;
+  const KK_FLOAT dtfy = gaa*ay;
+  const KK_FLOAT dtfz = gaa*az;
+  const KK_FLOAT dtgx = fga*ax - hgb*bx;
+  const KK_FLOAT dtgy = fga*ay - hgb*by;
+  const KK_FLOAT dtgz = fga*az - hgb*bz;
+  const KK_FLOAT dthx = gbb*bx;
+  const KK_FLOAT dthy = gbb*by;
+  const KK_FLOAT dthz = gbb*bz;
+
+  const KK_FLOAT sx2 = df*dtgx;
+  const KK_FLOAT sy2 = df*dtgy;
+  const KK_FLOAT sz2 = df*dtgz;
 
   KK_FLOAT f1[3],f2[3],f3[3],f4[3];
-  f1[0] = a11*vb1x + a12*vb2x + a13*vb3x;
-  f1[1] = a11*vb1y + a12*vb2y + a13*vb3y;
-  f1[2] = a11*vb1z + a12*vb2z + a13*vb3z;
+  f1[0] = df*dtfx;
+  f1[1] = df*dtfy;
+  f1[2] = df*dtfz;
 
-  f2[0] = -sx2 - f1[0];
-  f2[1] = -sy2 - f1[1];
-  f2[2] = -sz2 - f1[2];
+  f2[0] = sx2 - f1[0];
+  f2[1] = sy2 - f1[1];
+  f2[2] = sz2 - f1[2];
 
-  f4[0] = a13*vb1x + a23*vb2x + a33*vb3x;
-  f4[1] = a13*vb1y + a23*vb2y + a33*vb3y;
-  f4[2] = a13*vb1z + a23*vb2z + a33*vb3z;
+  f4[0] = df*dthx;
+  f4[1] = df*dthy;
+  f4[2] = df*dthz;
 
-  f3[0] = sx2 - f4[0];
-  f3[1] = sy2 - f4[1];
-  f3[2] = sz2 - f4[2];
+  f3[0] = -sx2 - f4[0];
+  f3[1] = -sy2 - f4[1];
+  f3[2] = -sz2 - f4[2];
 
   // apply force to each of 4 atoms
 
@@ -332,28 +333,39 @@ void DihedralOPLSKokkos<DeviceType>::operator()(TagDihedralOPLSCompute<NEWTON_BO
 template<class DeviceType>
 template<int NEWTON_BOND, int EVFLAG>
 KOKKOS_INLINE_FUNCTION
-void DihedralOPLSKokkos<DeviceType>::operator()(TagDihedralOPLSCompute<NEWTON_BOND,EVFLAG>, const int &n) const {
+void DihedralFourierKokkos<DeviceType>::operator()(TagDihedralFourierCompute<NEWTON_BOND,EVFLAG>, const int &n) const {
   EV_FLOAT ev;
-  this->template operator()<NEWTON_BOND,EVFLAG>(TagDihedralOPLSCompute<NEWTON_BOND,EVFLAG>(), n, ev);
+  this->template operator()<NEWTON_BOND,EVFLAG>(TagDihedralFourierCompute<NEWTON_BOND,EVFLAG>(), n, ev);
 }
 
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-void DihedralOPLSKokkos<DeviceType>::allocate()
+void DihedralFourierKokkos<DeviceType>::allocate_kokkos()
 {
-  DihedralOPLS::allocate();
-
   int n = atom->ndihedraltypes;
-  k_k1 = DAT::tdual_kkfloat_1d("DihedralOPLS::k1",n+1);
-  k_k2 = DAT::tdual_kkfloat_1d("DihedralOPLS::k2",n+1);
-  k_k3 = DAT::tdual_kkfloat_1d("DihedralOPLS::k3",n+1);
-  k_k4 = DAT::tdual_kkfloat_1d("DihedralOPLS::k4",n+1);
 
-  d_k1 = k_k1.template view<DeviceType>();
-  d_k2 = k_k2.template view<DeviceType>();
-  d_k3 = k_k3.template view<DeviceType>();
-  d_k4 = k_k4.template view<DeviceType>();
+  if (!allocated_kokkos) {
+    k_k = DAT::tdual_kkfloat_2d("DihedralFourier::k",n+1,nterms_max);
+    k_cos_shift = DAT::tdual_kkfloat_2d("DihedralFourier::cos_shift",n+1,nterms_max);
+    k_sin_shift = DAT::tdual_kkfloat_2d("DihedralFourier::sin_shift",n+1,nterms_max);
+    k_multiplicity = DAT::tdual_int_2d("DihedralFourier::multiplicity",n+1,nterms_max);
+    k_nterms = DAT::tdual_int_1d("DihedralFourier::nterms",n+1);
+  } else {
+    k_k.resize(n+1,nterms_max);
+    k_cos_shift.resize(n+1,nterms_max);
+    k_sin_shift.resize(n+1,nterms_max);
+    k_multiplicity.resize(n+1,nterms_max);
+    k_nterms.resize(n+1);
+  }
+
+  d_k = k_k.template view<DeviceType>();
+  d_cos_shift = k_cos_shift.template view<DeviceType>();
+  d_sin_shift = k_sin_shift.template view<DeviceType>();
+  d_multiplicity = k_multiplicity.template view<DeviceType>();
+  d_nterms = k_nterms.template view<DeviceType>();
+
+  allocated_kokkos = 1;
 }
 
 /* ----------------------------------------------------------------------
@@ -361,24 +373,29 @@ void DihedralOPLSKokkos<DeviceType>::allocate()
 ------------------------------------------------------------------------- */
 
 template<class DeviceType>
-void DihedralOPLSKokkos<DeviceType>::coeff(int narg, char **arg)
+void DihedralFourierKokkos<DeviceType>::coeff(int narg, char **arg)
 {
-  DihedralOPLS::coeff(narg, arg);
+  DihedralFourier::coeff(narg, arg);
+  allocate_kokkos();
 
   int ilo,ihi;
   utils::bounds(FLERR,arg[0],1,atom->ndihedraltypes,ilo,ihi,error);
 
   for (int i = ilo; i <= ihi; i++) {
-    k_k1.view_host()[i] = k1[i];
-    k_k2.view_host()[i] = k2[i];
-    k_k3.view_host()[i] = k3[i];
-    k_k4.view_host()[i] = k4[i];
+    k_nterms.view_host()[i] = nterms[i];
+    for (int j = 0; j < nterms[i]; j++) {
+      k_k.view_host()(i,j) = k[i][j];
+      k_cos_shift.view_host()(i,j) = cos_shift[i][j];
+      k_sin_shift.view_host()(i,j) = sin_shift[i][j];
+      k_multiplicity.view_host()(i,j) = multiplicity[i][j];
+    }
   }
 
-  k_k1.modify_host();
-  k_k2.modify_host();
-  k_k3.modify_host();
-  k_k4.modify_host();
+  k_k.modify_host();
+  k_cos_shift.modify_host();
+  k_sin_shift.modify_host();
+  k_multiplicity.modify_host();
+  k_nterms.modify_host();
 }
 
 /* ----------------------------------------------------------------------
@@ -386,22 +403,27 @@ void DihedralOPLSKokkos<DeviceType>::coeff(int narg, char **arg)
 ------------------------------------------------------------------------- */
 
 template<class DeviceType>
-void DihedralOPLSKokkos<DeviceType>::read_restart(FILE *fp)
+void DihedralFourierKokkos<DeviceType>::read_restart(FILE *fp)
 {
-  DihedralOPLS::read_restart(fp);
+  DihedralFourier::read_restart(fp);
+  allocate_kokkos();
 
   int n = atom->ndihedraltypes;
   for (int i = 1; i <= n; i++) {
-    k_k1.view_host()[i] = k1[i];
-    k_k2.view_host()[i] = k2[i];
-    k_k3.view_host()[i] = k3[i];
-    k_k4.view_host()[i] = k4[i];
+    k_nterms.view_host()[i] = nterms[i];
+    for (int j = 0; j < nterms[i]; j++) {
+      k_k.view_host()(i,j) = k[i][j];
+      k_cos_shift.view_host()(i,j) = cos_shift[i][j];
+      k_sin_shift.view_host()(i,j) = sin_shift[i][j];
+      k_multiplicity.view_host()(i,j) = multiplicity[i][j];
+    }
   }
 
-  k_k1.modify_host();
-  k_k2.modify_host();
-  k_k3.modify_host();
-  k_k4.modify_host();
+  k_k.modify_host();
+  k_cos_shift.modify_host();
+  k_sin_shift.modify_host();
+  k_multiplicity.modify_host();
+  k_nterms.modify_host();
 }
 
 /* ----------------------------------------------------------------------
@@ -414,7 +436,7 @@ void DihedralOPLSKokkos<DeviceType>::read_restart(FILE *fp)
 template<class DeviceType>
 //template<int NEWTON_BOND>
 KOKKOS_INLINE_FUNCTION
-void DihedralOPLSKokkos<DeviceType>::ev_tally(EV_FLOAT &ev, const int i1, const int i2, const int i3, const int i4,
+void DihedralFourierKokkos<DeviceType>::ev_tally(EV_FLOAT &ev, const int i1, const int i2, const int i3, const int i4,
                         KK_FLOAT &edihedral, KK_FLOAT *f1, KK_FLOAT *f3, KK_FLOAT *f4,
                         const KK_FLOAT &vb1x, const KK_FLOAT &vb1y, const KK_FLOAT &vb1z,
                         const KK_FLOAT &vb2x, const KK_FLOAT &vb2y, const KK_FLOAT &vb2z,
@@ -539,9 +561,9 @@ void DihedralOPLSKokkos<DeviceType>::ev_tally(EV_FLOAT &ev, const int i1, const 
 /* ---------------------------------------------------------------------- */
 
 namespace LAMMPS_NS {
-template class DihedralOPLSKokkos<LMPDeviceType>;
+template class DihedralFourierKokkos<LMPDeviceType>;
 #ifdef LMP_KOKKOS_GPU
-template class DihedralOPLSKokkos<LMPHostType>;
+template class DihedralFourierKokkos<LMPHostType>;
 #endif
 }
 
