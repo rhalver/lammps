@@ -65,9 +65,6 @@ struct remap_plan_3d_kokkos {
   int *rcvcnts;                     // # of elements in recv buffer for each rank
   int *sdispls;                     // extraction location in send buffer for each rank
   int *rdispls;                     // extraction location in recv buffer for each rank
-  int selfcommringloc;              // current proc's location in commringlist
-  int selfnsendloc;                 // current proc's location in send lists
-  int selfnrecvloc;                 // current proc's location in recv lists
 };
 
 template<class DeviceType>

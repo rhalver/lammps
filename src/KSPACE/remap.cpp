@@ -150,10 +150,7 @@ void remap_3d(FFT_SCALAR *in, FFT_SCALAR *out, FFT_SCALAR *buf,
 
       int numpacked = 0;
       for (isend = 0; isend < plan->commringlen; isend++) {
-        if (isend == plan->selfcommringloc && plan->self) {
-          numpacked++;
-        }
-        else if (plan->sendcnts[isend]) {
+        if (plan->sendcnts[isend]) {
           plan->pack(&in[plan->send_offset[numpacked]],
                       &plan->sendbuf[plan->sdispls[isend]],
                       &plan->packplan[numpacked]);
@@ -165,25 +162,11 @@ void remap_3d(FFT_SCALAR *in, FFT_SCALAR *out, FFT_SCALAR *buf,
                     MPI_FFT_SCALAR, scratch, plan->rcvcnts,
                     plan->rdispls, MPI_FFT_SCALAR, plan->comm);
 
-      // copy in -> scratch -> out for self data
-
-      if (plan->self) {
-        plan->pack(&in[plan->send_offset[plan->selfnsendloc]],
-                  &plan->sendbuf[plan->sdispls[plan->selfcommringloc]],
-                  &plan->packplan[plan->selfnsendloc]);
-        plan->unpack(&plan->sendbuf[plan->sdispls[plan->selfcommringloc]],
-                    &out[plan->recv_offset[plan->selfnrecvloc]],
-                    &plan->unpackplan[plan->selfnrecvloc]);
-      }
-
       // unpack the data from the recv buffer into out
 
       numpacked = 0;
       for (irecv = 0; irecv < plan->commringlen; irecv++) {
-        if (irecv == plan->selfcommringloc && plan->self) {
-          numpacked++;
-        }
-        else if (plan->rcvcnts[irecv]) {
+        if (plan->rcvcnts[irecv]) {
           plan->unpack(&scratch[plan->rdispls[irecv]],
                        &out[plan->recv_offset[numpacked]],
                        &plan->unpackplan[numpacked]);
@@ -554,10 +537,6 @@ struct remap_plan_3d *remap_3d_create_plan(
 
       // send space
 
-      plan->selfcommringloc = -1;
-      plan->selfnsendloc = -1;
-      plan->selfnrecvloc = -1;
-
       plan->nsend = nsend;
       plan->pack = pack_3d;
 
@@ -622,10 +601,6 @@ struct remap_plan_3d *remap_3d_create_plan(
     int total_send_size = 0;
     for (i = 0; i < plan->commringlen; i++) {
       iproc = plan->commringlist[i];
-      if (iproc == me) {
-        plan->selfcommringloc = i;
-        plan->selfnsendloc = nsend;
-      }
       if (remap_3d_collide(&in,&outarray[iproc],&overlap)) {
         // number of entries required for this pack's 3-d coords
         plan->send_offset[nsend] = nqty *
@@ -663,11 +638,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 
     for (i = 0; i < plan->commringlen; i++) {
       iproc = plan->commringlist[i];
-      if (iproc == me) {
-        plan->selfnrecvloc = nrecv;
-      }
       if (remap_3d_collide(&out,&inarray[iproc],&overlap)) {
-
         if (permute == 0) {
           plan->recv_offset[nrecv] = nqty *
             ((overlap.klo-out.klo)*out.jsize*out.isize +
@@ -717,15 +688,7 @@ struct remap_plan_3d *remap_3d_create_plan(
     // init remaining fields in remap plan
 
     plan->memory = memory;
-
-    if (plan->sendcnts[plan->selfcommringloc]) {
-      plan->self = 1;
-      plan->sendcnts[plan->selfcommringloc] = 0;
-      plan->rcvcnts[plan->selfcommringloc] = 0;
-    }
-    else {
-      plan->self = 0;
-    }
+    plan->self = 0;
 
     // if requested, allocate internal scratch space for recvs,
     // only need it if I will receive any data (including self)
