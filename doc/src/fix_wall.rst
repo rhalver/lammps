@@ -191,9 +191,9 @@ spring potential:
 
  E = \epsilon \quad (r - r_c)^2 \qquad r < r_c
 
-For style *wall/harmonic/outside*, 
+For style *wall/harmonic/outside*,
 the energy E is given by an attractive-only harmonic
-spring potential for selected atoms group passing outside 
+spring potential for selected atoms group passing outside
 the wall placed at :math:`w_0` up to a cutoff distance :math:`r_c`:
 .. math::
 
@@ -208,12 +208,12 @@ For style *wall/morse*, the energy E is given by a Morse potential:
        \qquad r < r_c
 
 
-For style *wall/harmonic/outside*, the formulation avoids the presence 
-of repulsive bands inside a controlled volume preventing the definition 
-of a precise volumetric concentration (see example scripts for 2D visualization). 
-Instead, the particles are allowed to go outside by a small amount, 
-getting a finer definition of the concentration inside the controlled 
-volume, as employed for the CMC determination in 
+For style *wall/harmonic/outside*, the formulation avoids the presence
+of repulsive bands inside a controlled volume preventing the definition
+of a precise volumetric concentration (see example scripts for 2D visualization).
+Instead, the particles are allowed to go outside by a small amount,
+getting a finer definition of the concentration inside the controlled
+volume, as employed for the CMC determination in
 Barraud et al :ref:`(Barraud) <Barraud>`.
 
 .. versionadded:: 28Mar2023
