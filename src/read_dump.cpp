@@ -820,6 +820,7 @@ void ReadDump::process_atoms()
   double **f = atom->f;
   tagint *tag = atom->tag;
   imageint *image = atom->image;
+  tagint *molecule = atom->molecule;
   tagint map_tag_max = atom->map_tag_max;
 
   for (i = 0; i < nnew; i++) {
@@ -865,6 +866,9 @@ void ReadDump::process_atoms()
           break;
         case Reader::Q:
           q[m] = fields[i][ifield];
+          break;
+        case Reader::MOL:
+          molecule[m] = fields[i][ifield];
           break;
         case Reader::APIP_LAMBDA:
           apip_lambda[m] = fields[i][ifield];
@@ -999,6 +1003,7 @@ void ReadDump::process_atoms()
     q = atom->q;
     apip_lambda = atom->apip_lambda;
     image = atom->image;
+    molecule = atom->molecule;
 
     // set atom attributes from other dump file fields
 
@@ -1021,6 +1026,9 @@ void ReadDump::process_atoms()
         break;
       case Reader::Q:
         q[m] = fields[i][ifield];
+        break;
+      case Reader::MOL:
+        molecule[m] = fields[i][ifield];
         break;
       case Reader::APIP_LAMBDA:
         apip_lambda[m] = fields[i][ifield];
@@ -1157,7 +1165,7 @@ void ReadDump::migrate_atoms_by_coords()
 
 int ReadDump::fields_and_keywords(int narg, char **arg)
 {
-  // per-field vectors, leave space for ID and TYPE
+  // per-field vectors, leave extra space for ID and TYPE
 
   fieldtype = new int[narg+2];
   fieldlabel = new char*[narg+2];
@@ -1175,6 +1183,7 @@ int ReadDump::fields_and_keywords(int narg, char **arg)
   nfield = 0;
   fieldtype[nfield++] = Reader::ID;
   if (iarg < narg) {
+    // must include type field since we found "add yes" or "add keep"
     if (comm->me == 0) utils::logmesg(lmp, "Adding 'type' field to requested per-atom fields\n");
     fieldtype[nfield++] = Reader::TYPE;
   }
@@ -1187,16 +1196,21 @@ int ReadDump::fields_and_keywords(int narg, char **arg)
     if (type < 0) break;
     if (type == Reader::Q && !atom->q_flag)
       error->all(FLERR,"Read dump of charge property that isn't supported by atom style");
+    if (type == Reader::MOL && !atom->molecule_flag)
+      error->all(FLERR,"Read dump of molecule ID that isn't supported by atom style");
     if (type == Reader::APIP_LAMBDA && !atom->apip_lambda_flag)
       error->all(FLERR,"Read dump of apip_lambda property that isn't supported by atom style");
-    fieldtype[nfield++] = type;
+
     iarg++;
+    if (type == Reader::ID) continue; // already present since added by default
+    if ((type == Reader::TYPE) && (nfield > 1) && (fieldtype[1] == Reader::TYPE)) continue;
+    fieldtype[nfield++] = type;
   }
 
   // check for no fields
 
   if (fieldtype[nfield-1] == Reader::ID || fieldtype[nfield-1] == Reader::TYPE)
-    error->all(FLERR,"Read_dump command is empty or starts with an invalid field. Use at least 'id' or 'type'.");
+    error->all(FLERR,"Read_dump command has no or invalid attribute fields");
 
   if (domain->dimension == 2) {
     for (int i = 0; i < nfield; i++)
@@ -1208,7 +1222,7 @@ int ReadDump::fields_and_keywords(int narg, char **arg)
   for (int i = 0; i < nfield; i++)
     for (int j = i+1; j < nfield; j++)
       if (fieldtype[i] == fieldtype[j])
-        error->all(FLERR,"Duplicate fields in read_dump command");
+        error->all(FLERR,"Duplicate fields {} and {} in read_dump command", arg[i], arg[j]);
 
   // parse optional args
 
@@ -1278,6 +1292,10 @@ int ReadDump::fields_and_keywords(int narg, char **arg)
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR, "read_dump format", error);
       delete[] readerstyle;
       readerstyle = utils::strdup(arg[iarg+1]);
+      // adjust first field type added by default depending on format
+      if (strcmp(readerstyle, "xyz") == 0) fieldtype[0] = Reader::TYPE;
+      if (strcmp(readerstyle, "native") == 0) fieldtype[0] = Reader::ID;
+      if (strcmp(readerstyle, "molfile") == 0) fieldtype[0] = Reader::TYPE;
       iarg += 2;
       break;
     } else error->all(FLERR,"Unknown read_dump keyword: {}",arg[iarg]);
@@ -1313,6 +1331,7 @@ int ReadDump::whichtype(char *str)
   else if (strcmp(str,"vx") == 0) type = Reader::VX;
   else if (strcmp(str,"vy") == 0) type = Reader::VY;
   else if (strcmp(str,"vz") == 0) type = Reader::VZ;
+  else if (strcmp(str,"mol") == 0) type = Reader::MOL;
   else if (strcmp(str,"q") == 0) type = Reader::Q;
   else if (strcmp(str,"apip_lambda") == 0) type = Reader::APIP_LAMBDA;
   else if (strcmp(str,"ix") == 0) type = Reader::IX;
