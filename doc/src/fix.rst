@@ -194,7 +194,8 @@ accelerated styles exist.
 * :doc:`adapt/fep <fix_adapt_fep>` - enhanced version of fix adapt
 * :doc:`addforce <fix_addforce>` - add a force to each atom
 * :doc:`add/heat <fix_add_heat>` - add a heat flux to each atom
-* :doc:`addtorque <fix_addtorque>` - add a torque to a group of atoms
+* :doc:`addtorque/atom <fix_addtorque_atom>` - add a torque to a finite-size particles
+* :doc:`addtorque/group <fix_addtorque_group>` - add a torque to a group of atoms
 * :doc:`alchemy <fix_alchemy>` - perform an "alchemical transformation" between two partitions
 * :doc:`amoeba/bitorsion <fix_amoeba_bitorsion>` - torsion/torsion terms in AMOEBA force field
 * :doc:`amoeba/pitorsion <fix_amoeba_pitorsion>` - 6-body terms in AMOEBA force field
@@ -402,6 +403,7 @@ accelerated styles exist.
 * :doc:`set <fix_set>` - reset an atom property via an atom-style variable every N steps
 * :doc:`setforce <fix_setforce>` - set the force on each atom
 * :doc:`setforce/spin <fix_setforce>` - set magnetic precession vectors on each atom
+* :doc:`settorque/atom <fix_settorque_atom>` - set the torque on each finite-size atom
 * :doc:`sgcmc <fix_sgcmc>` - fix for hybrid semi-grand canonical MD/MC simulations
 * :doc:`shake <fix_shake>` - SHAKE constraints on bonds and/or angles
 * :doc:`shardlow <fix_shardlow>` - integration of DPD equations of motion using the Shardlow splitting
