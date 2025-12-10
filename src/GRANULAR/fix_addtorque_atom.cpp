@@ -49,6 +49,10 @@ FixAddTorqueAtom::FixAddTorqueAtom(LAMMPS *lmp, int narg, char **arg) :
   respa_level_support = 1;
   ilevel_respa = 0;
 
+  xstyle = ystyle = zstyle = NONE;
+  xvar = yvar = zvar = -1;
+  varflag = NONE;
+
   if (utils::strmatch(arg[3], "^v_")) {
     xstr = utils::strdup(arg[3] + 2);
   } else {
@@ -200,12 +204,11 @@ void FixAddTorqueAtom::min_setup(int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void FixAddTorqueAtom::post_force(int vflag)
+void FixAddTorqueAtom::post_force(int /*vflag*/)
 {
   double **x = atom->x;
   double **torque = atom->torque;
   int *mask = atom->mask;
-  imageint *image = atom->image;
   int nlocal = atom->nlocal;
 
   if (update->ntimestep % nevery) return;

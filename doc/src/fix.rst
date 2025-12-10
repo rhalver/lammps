@@ -453,6 +453,7 @@ accelerated styles exist.
 * :doc:`wall/gran <fix_wall_gran>` - frictional wall(s) for granular simulations
 * :doc:`wall/gran/region <fix_wall_gran_region>` - :doc:`fix wall/region <fix_wall_region>` equivalent for use with granular particles
 * :doc:`wall/harmonic <fix_wall>` - harmonic spring wall
+* :doc:`wall/harmonic/outside <fix_wall>` - harmonic spring wall for containing particles
 * :doc:`wall/lj1043 <fix_wall>` - Lennard-Jones 10--4--3 wall
 * :doc:`wall/lj126 <fix_wall>` - Lennard-Jones 12--6 wall
 * :doc:`wall/lj93 <fix_wall>` - Lennard-Jones 9--3 wall

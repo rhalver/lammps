@@ -122,7 +122,7 @@ Related commands
 
 :doc:`fix propel/self <fix_propel_self>`,
 :doc:`fix brownian <fix_brownian>`,
-:doc:`fix addtorque <fix_addtorque>`
+:doc:`fix addtorque/group <fix_addtorque_group>`
 
 Default
 """""""

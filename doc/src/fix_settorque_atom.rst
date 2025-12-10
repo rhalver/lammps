@@ -80,10 +80,10 @@ to it.
    This fix is not (currently) designed to be used with rigid fixes.
    While it will set the torque of all of the atoms in a rigid body as
    described above, there is not always an easy mapping between these
-   peratom torques and the torque experienced by the body. The exception
-   may be when used in conjunction to :doc:`fix setforce <set_force>` to
-   simultaneously zero forces and torques to freeze a rigid body.
-
+   peratom torques and the torque experienced by the body.  The exception
+   may be when it is used in conjunction with
+   :doc:`fix setforce <fix_setforce>` to simultaneously zero forces and
+   torques to freeze a rigid body.
 
 ----------
 

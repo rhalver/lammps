@@ -1751,10 +1751,7 @@ std::string FixNH::get_thermo_colname(int n)
     ilen = mtchain;
     if (n < ilen) {
       ich = n;
-      if (ich == 0)
-        return fmt::format("f_{}:KE_eta_dot[{}]",id,n+1);
-      else
-        return fmt::format("f_{}:KE_eta_dot[{}]",id,n+1);
+      return fmt::format("f_{}:KE_eta_dot[{}]",id,n+1);
     }
     n -= ilen;
   }
