@@ -836,6 +836,8 @@ There is one quantity in the global vector for each *react* argument:
 
   (1) cumulative number of reactions that occurred
 
+.. versionadded:: TBD
+
 This fix supports automatically generated thermo column names when using
 :doc:`thermo_modify colname auto <thermo_modify>`.  The thermo column names
 are 'f_', followed by the fix ID, followed by a colon, followed by the
