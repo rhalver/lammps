@@ -551,10 +551,12 @@ void KSpace::modify_params(int narg, char **arg)
     } else if (strcmp(arg[iarg],"collective") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal kspace_modify command");
       collective_flag = utils::logical(FLERR,arg[iarg+1],false,lmp);
+      if (collective_flag) nonblocking_flag = 0;
       iarg += 2;
     } else if (strcmp(arg[iarg],"nonblocking") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal kspace_modify command");
       nonblocking_flag = utils::logical(FLERR,arg[iarg+1],false,lmp);
+      if (nonblocking_flag) collective_flag = 0;
       iarg += 2;
     } else if (strcmp(arg[iarg],"diff") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal kspace_modify command");
@@ -613,7 +615,6 @@ void KSpace::modify_params(int narg, char **arg)
       iarg += n;
     }
   }
-  if (collective_flag > 0 && nonblocking_flag > 0) error->all(FLERR,"Illegal kspace_modify command, collective and nonblocking cannot both be true.");
 }
 
 /* ---------------------------------------------------------------------- */

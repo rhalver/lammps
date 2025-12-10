@@ -451,8 +451,9 @@ parameters, see the :doc:`Howto dispersion <Howto_dispersion>` doc page.
 Restrictions
 """"""""""""
 
-The *collective* and *nonblocking* keywords are mutually exclusive and
-cannot be enabled at the same time.
+The *collective* and *nonblocking* keywords cannot both be enabled
+at the same time.  Whichever of the two keywords is enabled last will
+disable the other.
 
 Related commands
 """"""""""""""""
