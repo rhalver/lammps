@@ -64,7 +64,7 @@ Syntax
        *com* value = *yes* or *no*
        *thresh* args = variable operator value
          variable = equal style or compatible variable reference
-         operator = "<" or "<=" or ">" or ">=" or "==" or "!=" or "|^"
+         operator = "<" or "<=" or ">" or ">=" or "==" or "!=" or "\|^"
          value = numeric value to compare to
 
 
