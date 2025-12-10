@@ -18,6 +18,7 @@ OPT.
    * :doc:`addtorque/atom <fix_addtorque_atom>`
    * :doc:`addtorque/group <fix_addtorque_group>`
    * :doc:`alchemy <fix_alchemy>`
+   * :doc:`align/self <fix_align_self>`
    * :doc:`amoeba/bitorsion <fix_amoeba_bitorsion>`
    * :doc:`amoeba/pitorsion <fix_amoeba_pitorsion>`
    * :doc:`append/atoms <fix_append_atoms>`

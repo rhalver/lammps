@@ -197,6 +197,7 @@ accelerated styles exist.
 * :doc:`addtorque/atom <fix_addtorque_atom>` - add a torque to a finite-size particles
 * :doc:`addtorque/group <fix_addtorque_group>` - add a torque to a group of atoms
 * :doc:`alchemy <fix_alchemy>` - perform an "alchemical transformation" between two partitions
+* :doc:`align/self <fix_align_self>` - add torque to groups of atoms due to a self-alignment
 * :doc:`amoeba/bitorsion <fix_amoeba_bitorsion>` - torsion/torsion terms in AMOEBA force field
 * :doc:`amoeba/pitorsion <fix_amoeba_pitorsion>` - 6-body terms in AMOEBA force field
 * :doc:`append/atoms <fix_append_atoms>` - append atoms to a running simulation
