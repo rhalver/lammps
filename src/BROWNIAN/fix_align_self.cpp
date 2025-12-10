@@ -125,7 +125,7 @@ void FixAlignSelf::post_force(int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void FixAlignSelf::post_force_dipole(int vflag)
+void FixAlignSelf::post_force_dipole(int /*vflag*/)
 {
   double **torque = atom->torque;
   double **v = atom->v;
@@ -147,7 +147,7 @@ void FixAlignSelf::post_force_dipole(int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void FixAlignSelf::post_force_quaternion(int vflag)
+void FixAlignSelf::post_force_quaternion(int /*vflag*/)
 {
   double **torque = atom->torque;
   double **v = atom->v;
