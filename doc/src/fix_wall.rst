@@ -27,7 +27,7 @@ fix wall/harmonic command
 =========================
 
 fix wall/harmonic/outside command
-=========================
+=================================
 
 fix wall/lepton command
 =========================
@@ -333,11 +333,11 @@ the density of particles in the wall and colloid can be different, as
 specified by the :math:`\epsilon` prefactor.
 
 For the *wall/harmonic* and *wall/harmonic/outside* style,
- :math:`\epsilon` is effectively the spring
-constant K, and has units (energy/distance\^2).  The input parameter
-:math:`\sigma` is ignored.  The minimum energy position of the harmonic
-spring is at the *cutoff*\ .  This is a repulsive-only spring since the
-interaction is truncated at the *cutoff*
+:math:`\epsilon` is effectively the spring constant K, and has units
+(energy/distance\^2).  The input parameter :math:`\sigma` is ignored.
+The minimum energy position of the harmonic spring is at the *cutoff*\ .
+This is a repulsive-only spring since the interaction is truncated at
+the *cutoff*
 
 For the *wall/morse* style, the three parameters are in this order:
 :math:`D_0` the depth of the potential, :math:`\alpha` the width
