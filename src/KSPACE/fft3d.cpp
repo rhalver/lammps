@@ -241,7 +241,7 @@ void fft_3d(FFT_DATA *in, FFT_DATA *out, int flag, struct fft_plan_3d *plan)
                           2 = permute twice = slow->fast, fast->mid, mid->slow
    nbuf                 returns size of internal storage buffers used by FFT
    usecollective        use collective MPI operations for remapping data
-   useisend             use non-blocking or blocking MPI pt2pt operations for remapping data
+   usenonblocking       use non-blocking or blocking MPI pt2pt operations for remapping data
 ------------------------------------------------------------------------- */
 
 struct fft_plan_3d *fft_3d_create_plan(
@@ -250,7 +250,7 @@ struct fft_plan_3d *fft_3d_create_plan(
        int in_klo, int in_khi,
        int out_ilo, int out_ihi, int out_jlo, int out_jhi,
        int out_klo, int out_khi,
-       int scaled, int permute, int *nbuf, int usecollective, int useisend)
+       int scaled, int permute, int *nbuf, int usecollective, int usenonblocking)
 {
   struct fft_plan_3d *plan;
   int me,nprocs;
@@ -340,7 +340,7 @@ struct fft_plan_3d *fft_3d_create_plan(
   plan->mid1_plan = remap_3d_create_plan(comm, first_ilo,first_ihi,first_jlo,first_jhi,
                                          first_klo,first_khi,second_ilo,second_ihi,
                                          second_jlo,second_jhi,second_klo,second_khi,
-                                         2,1,0,FFT_PRECISION,usecollective,useisend);
+                                         2,1,0,FFT_PRECISION,usecollective,usenonblocking);
   if (plan->mid1_plan == nullptr) return nullptr;
 
   // 1d FFTs along mid axis
@@ -381,7 +381,7 @@ struct fft_plan_3d *fft_3d_create_plan(
                          second_jlo,second_jhi,second_klo,second_khi,
                          second_ilo,second_ihi,
                          third_jlo,third_jhi,third_klo,third_khi,
-                         third_ilo,third_ihi,2,1,0,FFT_PRECISION,usecollective,useisend);
+                         third_ilo,third_ihi,2,1,0,FFT_PRECISION,usecollective,usenonblocking);
   if (plan->mid2_plan == nullptr) return nullptr;
 
   // 1d FFTs along slow axis

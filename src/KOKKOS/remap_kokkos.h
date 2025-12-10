@@ -40,7 +40,7 @@ struct remap_plan_3d_kokkos {
   int *send_offset;                 // extraction loc for each send
   int *send_size;                   // size of each send message
   int *send_proc;                   // proc to send each message to
-  int *send_bufloc;                 // if useisend, offset in send buf for each isend
+  int *send_bufloc;                 // if usenonblocking, offset in send buf for each isend
   struct pack_plan_3d *packplan;    // pack plan for each send message
   int *recv_offset;                 // insertion loc for each recv
   int *recv_size;                   // size of each recv message
@@ -56,7 +56,7 @@ struct remap_plan_3d_kokkos {
   int memory;                       // user provides scratch space or not
   MPI_Comm comm;                    // group of procs performing remap
   int usecollective;                // use collective or point-to-point MPI
-  int useisend;                     // if using point-to-point MPI, use MPI_Isend
+  int usenonblocking;               // if using point-to-point MPI, use MPI_Isend
   int usegpu_aware;                 // use GPU-Aware MPI or not
   // variables for collective MPI only
   int commringlen;                  // length of commringlist

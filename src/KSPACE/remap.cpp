@@ -88,7 +88,7 @@ void remap_3d(FFT_SCALAR *in, FFT_SCALAR *out, FFT_SCALAR *buf,
 
     for (isend = 0; isend < plan->nsend; isend++) {
       int in_offset = plan->send_offset[isend];
-      if (plan->useisend) {
+      if (plan->usenonblocking) {
         plan->pack(&in[in_offset],
                   &plan->sendbuf[plan->send_bufloc[isend]],
                   &plan->packplan[isend]);
@@ -98,7 +98,7 @@ void remap_3d(FFT_SCALAR *in, FFT_SCALAR *out, FFT_SCALAR *buf,
                   &plan->packplan[isend]);
       }
 
-      if (plan->useisend) {
+      if (plan->usenonblocking) {
         MPI_Isend(plan->sendbuf + plan->send_bufloc[isend],plan->send_size[isend],MPI_FFT_SCALAR,
                 plan->send_proc[isend],0,plan->comm,&plan->isend_reqs[isend]);
       } else {
@@ -136,7 +136,7 @@ void remap_3d(FFT_SCALAR *in, FFT_SCALAR *out, FFT_SCALAR *buf,
                    &out[out_offset],&plan->unpackplan[irecv]);
     }
 
-    if (plan->useisend) {
+    if (plan->usenonblocking) {
       // finally, wait for all Isends to be done
       MPI_Waitall(plan->nsend,plan->isend_reqs,MPI_STATUS_IGNORE);
     }
@@ -200,7 +200,7 @@ void remap_3d(FFT_SCALAR *in, FFT_SCALAR *out, FFT_SCALAR *buf,
                           1 = single precision (4 bytes per datum)
                           2 = double precision (8 bytes per datum)
    usecollective        whether to use collective MPI or point-to-point
-   useisend             whether to use non-blocking or blocking MPI point-to-point
+   usenonblocking       whether to use non-blocking or blocking MPI point-to-point
 ------------------------------------------------------------------------- */
 
 struct remap_plan_3d *remap_3d_create_plan(
@@ -209,7 +209,7 @@ struct remap_plan_3d *remap_3d_create_plan(
   int in_klo, int in_khi,
   int out_ilo, int out_ihi, int out_jlo, int out_jhi,
   int out_klo, int out_khi, int nqty, int permute,
-  int memory, int /*precision*/, int usecollective, int useisend)
+  int memory, int /*precision*/, int usecollective, int usenonblocking)
 
 {
 
@@ -228,7 +228,7 @@ struct remap_plan_3d *remap_3d_create_plan(
   plan = (struct remap_plan_3d *) malloc(sizeof(struct remap_plan_3d));
   if (plan == nullptr) return nullptr;
   plan->usecollective = usecollective;
-  plan->useisend = useisend;
+  plan->usenonblocking = usenonblocking;
 
   // store parameters in local data structs
 
@@ -300,7 +300,7 @@ struct remap_plan_3d *remap_3d_create_plan(
       plan->packplan = (struct pack_plan_3d *)
         malloc(nsend*sizeof(struct pack_plan_3d));
 
-      if (plan->useisend)
+      if (plan->usenonblocking)
         plan->isend_reqs = (MPI_Request *) malloc(nsend*sizeof(MPI_Request));
         plan->send_bufloc = (int *) malloc(nsend*sizeof(int));
         if (plan->send_bufloc == nullptr) return nullptr;
@@ -445,7 +445,7 @@ struct remap_plan_3d *remap_3d_create_plan(
     // find biggest send message (not including self) and malloc space for it
 
     size = 0;
-    if (plan->useisend) {
+    if (plan->usenonblocking) {
       for (nsend = 0; nsend < plan->nsend; nsend++)
         size += plan->send_size[nsend];
     } else {
@@ -770,7 +770,7 @@ void remap_3d_destroy_plan(struct remap_plan_3d *plan)
       free(plan->send_size);
       free(plan->send_proc);
       free(plan->packplan);
-      if (plan->useisend) {
+      if (plan->usenonblocking) {
         free(plan->isend_reqs);
         free(plan->send_bufloc);
       }
