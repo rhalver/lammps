@@ -15,6 +15,7 @@
 #include "remap.h"
 
 #include <cstdlib>
+#include <cstring>
 #include <set>
 
 #define PACK_DATA FFT_SCALAR
@@ -227,10 +228,11 @@ struct remap_plan_3d *remap_3d_create_plan(
 
   plan = (struct remap_plan_3d *) malloc(sizeof(struct remap_plan_3d));
   if (plan == nullptr) return nullptr;
+
+  // zero out entire plan data structure including all pointers and set flags
+  memset(plan, 0, sizeof(struct remap_plan_3d));
   plan->usecollective = usecollective;
   plan->usenonblocking = usenonblocking;
-  plan->scratch = nullptr;
-  plan->sendbuf = nullptr;
 
   // store parameters in local data structs
 
@@ -776,6 +778,7 @@ void remap_3d_destroy_plan(struct remap_plan_3d *plan)
       if (plan->usenonblocking) {
         free(plan->isend_reqs);
         free(plan->send_bufloc);
+        plan->send_bufloc = nullptr;
       }
     }
 
@@ -789,10 +792,11 @@ void remap_3d_destroy_plan(struct remap_plan_3d *plan)
     }
   }
 
-  // free buffers, if needed
+  // free buffers, if needed and not freed before
 
   if (plan->scratch) free(plan->scratch);
   if (plan->sendbuf) free(plan->sendbuf);
+  if (plan->send_bufloc) free(plan->send_bufloc);
 
   // free plan itself
 
