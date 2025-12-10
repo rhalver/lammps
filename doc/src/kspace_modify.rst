@@ -87,6 +87,8 @@ collective operations and adequate hardware.
 
 ----------
 
+.. versionadded:: 10Dec2025
+
 The *nonblocking* keyword applies only to PPPM.  It is set to *no* by
 default. If this option is set to *yes*, LAMMPS will use non-blocking
 point-to-point MPI operations to remap data for 3d-FFT operations
