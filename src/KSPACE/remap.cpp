@@ -229,6 +229,8 @@ struct remap_plan_3d *remap_3d_create_plan(
   if (plan == nullptr) return nullptr;
   plan->usecollective = usecollective;
   plan->usenonblocking = usenonblocking;
+  plan->scratch = nullptr;
+  plan->sendbuf = nullptr;
 
   // store parameters in local data structs
 
@@ -438,8 +440,7 @@ struct remap_plan_3d *remap_3d_create_plan(
     if (nrecv == plan->nrecv) plan->self = 0;
     else plan->self = 1;
 
-    // the plan->sendbuf and plan->recvbuf are used by both the
-    // collective & non-collective implementations.
+    // plan->sendbuf is used by both the collective & non-collective implementations.
     // For non-collective and blocking, the buffer size is MAX(send_size) for any one send
 
     // find biggest send message (not including self) and malloc space for it
@@ -471,6 +472,7 @@ struct remap_plan_3d *remap_3d_create_plan(
     // Non-collectives do not use MPI Communicator Groups
 
     MPI_Comm_dup(comm,&plan->comm);
+
   } else {
     int *commringlist;
     int commringlen = 0;
@@ -763,6 +765,7 @@ void remap_3d_destroy_plan(struct remap_plan_3d *plan)
       free(plan->unpackplan);
     }
   } else {
+
     // free arrays used in pt2pt communication
 
     if (plan->nsend || plan->self) {
@@ -786,9 +789,14 @@ void remap_3d_destroy_plan(struct remap_plan_3d *plan)
     }
   }
 
+  // free buffers, if needed
+
+  if (plan->scratch) free(plan->scratch);
+  if (plan->sendbuf) free(plan->sendbuf);
+
   // free plan itself
 
-  delete plan;
+  free(plan);
 }
 
 /* ----------------------------------------------------------------------
