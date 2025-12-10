@@ -26,7 +26,7 @@ Examples
 Description
 """""""""""
 
-.. versionchanged:: TBD
+.. versionchanged:: 10Dec2025
    Fix *addtorque* was renamed to fix *addtorque/group*
 
 Add a set of forces to each atom in

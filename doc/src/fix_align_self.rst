@@ -34,7 +34,7 @@ Examples
 Description
 """""""""""
 
-.. versionadded:: TBD
+.. versionadded:: 10Dec2025
 
 Add a torque to each atom in the group due to a self-alignment toward an
 intrinsic orientation. The torque is given by :

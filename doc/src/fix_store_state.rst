@@ -111,7 +111,7 @@ If the *com* keyword is set to *yes* then the *xu*, *yu*, and *zu*
 inputs store the position of each atom relative to the center-of-mass
 of the group of atoms, instead of storing the absolute position.
 
-.. versionadded:: TBD
+.. versionadded:: 10Dec2025
 
 If the *thresh* keyword is used, data is only stored on steps where also
 the threshold condition following the keyword is met.  The first
