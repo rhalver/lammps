@@ -160,14 +160,16 @@ an equal-style :doc:`variable <variable>`. When using the
 first Nsteps timesteps of the first run (after reading either a data or
 restart file).
 
+.. versionadded:: TBD
+
 The *delete_subgroup* keyword enforces a requirement that deleted molecules
 must have at least one atom in the group specified by the keyword's
-*group-ID* argument. For example, this keyword can be used to delete an
+*group-ID* argument.  For example, this keyword can be used to delete an
 entire molecule when it is partially inside a :doc:`region <region>`, as
 long as the molecule is fully contained with the overall fix group.
 
 The *delete* keyword can output information about the deleted molecules in
-either the legacy format or JSON format. The latter is activated when the
+either the legacy format or in JSON format.  The latter is activated when the
 *filedel* argument has a '.json' extension.  The legacy format lists how
 many of each species are deleted, while the JSON format provides the atom ID,
 atom type, and coordinates of deleted atoms within each molecule.  The
