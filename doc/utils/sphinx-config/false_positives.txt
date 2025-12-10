@@ -232,7 +232,7 @@ Babaei
 Baconnier
 backcolor
 Baczewski
-Bear
+Baer
 Bagchi
 Bagi
 Bagnold
@@ -266,6 +266,7 @@ Bashford
 bashrc
 Baskes
 Batatia
+batoms
 Batra
 Bayly
 bb
@@ -337,6 +338,7 @@ Bkappa
 blabel
 Blaise
 blanchedalmond
+blength
 blo
 blocksize
 blueviolet
@@ -647,6 +649,7 @@ createAtoms
 CreateIDs
 crespi
 Crespi
+Creton
 Creuze
 Critchley
 crossterm
@@ -721,6 +724,7 @@ cyrstals
 cython
 cz
 Daivis
+Dalmazzone
 Dammak
 dampflag
 Darden
@@ -837,6 +841,7 @@ dichalcogenide
 dichalcogenides
 Dickel
 diel
+diels
 Dietz
 differentiable
 diffusively
@@ -910,6 +915,7 @@ dpme
 dr
 dR
 dragforce
+Draghi
 Drautz
 dreiding
 Dreiding
@@ -2430,6 +2436,7 @@ MoS
 Mosayebi
 Moseler
 Moskalev
+Moureta
 Moustafa
 mov
 mpi
@@ -2512,6 +2519,7 @@ myIndex
 mylammps
 myMultiply
 MyPool
+myPress
 mysocket
 mySpin
 myTemp
@@ -2642,6 +2650,7 @@ nhc
 nhi
 NiAlH
 Nicklas
+Nieto
 Niklasson
 Nikolskiy
 nimproperlist
@@ -2698,6 +2707,7 @@ noguess
 Noid
 nolib
 nonaffine
+nonblocking
 nonequilibrium
 nongauss
 nonGaussian
@@ -2932,6 +2942,7 @@ Parrinello
 Partay
 Particuology
 Pascuet
+Pasquier
 pastewka
 Pastewka
 pathangle
@@ -3455,6 +3466,7 @@ rx
 rxd
 rxnave
 rxnbond
+rxns
 rxnsum
 ry
 Ryckaert

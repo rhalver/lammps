@@ -15,6 +15,7 @@
 #include "remap.h"
 
 #include <cstdlib>
+#include <cstring>
 #include <set>
 
 #define PACK_DATA FFT_SCALAR
@@ -227,10 +228,11 @@ struct remap_plan_3d *remap_3d_create_plan(
 
   plan = (struct remap_plan_3d *) malloc(sizeof(struct remap_plan_3d));
   if (plan == nullptr) return nullptr;
+
+  // zero out entire plan data structure including all pointers and set flags
+  memset(plan, 0, sizeof(struct remap_plan_3d));
   plan->usecollective = usecollective;
   plan->usenonblocking = usenonblocking;
-  plan->scratch = nullptr;
-  plan->sendbuf = nullptr;
 
   // store parameters in local data structs
 
@@ -744,57 +746,32 @@ void remap_3d_destroy_plan(struct remap_plan_3d *plan)
   if (!((plan->usecollective) && (plan->commringlen == 0)))
     MPI_Comm_free(&plan->comm);
 
-  if (plan->usecollective) {
-    if (plan->commringlist != nullptr) {
-      free(plan->commringlist);
-      free(plan->sendcnts);
-      free(plan->rcvcnts);
-      free(plan->sdispls);
-      free(plan->rdispls);
-    }
+  // free allocated buffers
+#define SAFE_FREE(ptr) if (ptr) free(ptr)
 
-    if (plan->nsend) {
-      free(plan->send_offset);
-      free(plan->send_size);
-      free(plan->packplan);
-    }
+  SAFE_FREE(plan->commringlist);
+  SAFE_FREE(plan->isend_reqs);
+  SAFE_FREE(plan->packplan);
+  SAFE_FREE(plan->rcvcnts);
+  SAFE_FREE(plan->rdispls);
+  SAFE_FREE(plan->recv_bufloc);
+  SAFE_FREE(plan->recv_offset);
+  SAFE_FREE(plan->recv_proc);
+  SAFE_FREE(plan->recv_size);
+  SAFE_FREE(plan->request);
+  SAFE_FREE(plan->scratch);
+  SAFE_FREE(plan->sdispls);
+  SAFE_FREE(plan->send_bufloc);
+  SAFE_FREE(plan->send_offset);
+  SAFE_FREE(plan->send_proc);
+  SAFE_FREE(plan->send_size);
+  SAFE_FREE(plan->sendbuf);
+  SAFE_FREE(plan->sendcnts);
+  SAFE_FREE(plan->unpackplan);
 
-    if (plan->nrecv) {
-      free(plan->recv_offset);
-      free(plan->recv_size);
-      free(plan->unpackplan);
-    }
-  } else {
+#undef SAFE_FREE
 
-    // free arrays used in pt2pt communication
-
-    if (plan->nsend || plan->self) {
-      free(plan->send_offset);
-      free(plan->send_size);
-      free(plan->send_proc);
-      free(plan->packplan);
-      if (plan->usenonblocking) {
-        free(plan->isend_reqs);
-        free(plan->send_bufloc);
-      }
-    }
-
-    if (plan->nrecv || plan->self) {
-      free(plan->recv_offset);
-      free(plan->recv_size);
-      free(plan->recv_proc);
-      free(plan->recv_bufloc);
-      free(plan->request);
-      free(plan->unpackplan);
-    }
-  }
-
-  // free buffers, if needed
-
-  if (plan->scratch) free(plan->scratch);
-  if (plan->sendbuf) free(plan->sendbuf);
-
-  // free plan itself
+  // free the plan itself
 
   free(plan);
 }

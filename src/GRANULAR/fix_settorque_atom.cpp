@@ -80,7 +80,9 @@ FixSetTorqueAtom::FixSetTorqueAtom(LAMMPS *lmp, int narg, char **arg) :
     if (strcmp(arg[iarg], "region") == 0) {
       if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix settorque/atom region", error);
       region = domain->get_region_by_id(arg[iarg + 1]);
-      if (!region) error->all(FLERR, "Region {} for fix settorque/atom does not exist", arg[iarg + 1]);
+      if (!region)
+        error->all(FLERR, "Region {} for fix settorque/atom does not exist", arg[iarg + 1]);
+      delete[] idregion;
       idregion = utils::strdup(arg[iarg + 1]);
       iarg += 2;
     } else
