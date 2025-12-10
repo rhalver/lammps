@@ -16,9 +16,10 @@
    Contributing author: Laurent Joly (U Lyon, France), ljoly.ulyon@gmail.com
 ------------------------------------------------------------------------- */
 
-#include "fix_addtorque.h"
+#include "fix_addtorque_group.h"
 
 #include "atom.h"
+#include "comm.h"
 #include "domain.h"
 #include "error.h"
 #include "force.h"
@@ -36,10 +37,13 @@ enum{NONE,CONSTANT,EQUAL,ATOM};
 
 /* ---------------------------------------------------------------------- */
 
-FixAddTorque::FixAddTorque(LAMMPS *lmp, int narg, char **arg) :
+FixAddTorqueGroup::FixAddTorqueGroup(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  if (narg != 6) error->all(FLERR,"Illegal fix addtorque command");
+  if (narg != 6) error->all(FLERR,"Illegal fix addtorque/group command");
+
+  if ((strcmp(style, "addtorque") == 0) && (comm->me == 0))
+    error->warning(FLERR,"Fix addtorque was renamed to fix addtorque/group. Please update your input");
 
   scalar_flag = 1;
   vector_flag = 1;
@@ -79,7 +83,7 @@ FixAddTorque::FixAddTorque(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-FixAddTorque::~FixAddTorque()
+FixAddTorqueGroup::~FixAddTorqueGroup()
 {
   delete [] xstr;
   delete [] ystr;
@@ -88,7 +92,7 @@ FixAddTorque::~FixAddTorque()
 
 /* ---------------------------------------------------------------------- */
 
-int FixAddTorque::setmask()
+int FixAddTorqueGroup::setmask()
 {
   int mask = 0;
   mask |= POST_FORCE;
@@ -99,30 +103,30 @@ int FixAddTorque::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void FixAddTorque::init()
+void FixAddTorqueGroup::init()
 {
   // check variables
 
   if (xstr) {
     xvar = input->variable->find(xstr);
     if (xvar < 0)
-      error->all(FLERR,"Variable name for fix addtorque does not exist");
+      error->all(FLERR,"Variable name for fix addtorque/group does not exist");
     if (input->variable->equalstyle(xvar)) xstyle = EQUAL;
-    else error->all(FLERR,"Variable for fix addtorque is invalid style");
+    else error->all(FLERR,"Variable for fix addtorque/group is invalid style");
   }
   if (ystr) {
     yvar = input->variable->find(ystr);
     if (yvar < 0)
-      error->all(FLERR,"Variable name for fix addtorque does not exist");
+      error->all(FLERR,"Variable name for fix addtorque/group does not exist");
     if (input->variable->equalstyle(yvar)) ystyle = EQUAL;
-    else error->all(FLERR,"Variable for fix addtorque is invalid style");
+    else error->all(FLERR,"Variable for fix addtorque/group is invalid style");
   }
   if (zstr) {
     zvar = input->variable->find(zstr);
     if (zvar < 0)
-      error->all(FLERR,"Variable name for fix addtorque does not exist");
+      error->all(FLERR,"Variable name for fix addtorque/group does not exist");
     if (input->variable->equalstyle(zvar)) zstyle = EQUAL;
-    else error->all(FLERR,"Variable for fix addtorque is invalid style");
+    else error->all(FLERR,"Variable for fix addtorque/group is invalid style");
   }
 
   if (xstyle == EQUAL || ystyle == EQUAL || zstyle == EQUAL)
@@ -137,7 +141,7 @@ void FixAddTorque::init()
 
 /* ---------------------------------------------------------------------- */
 
-void FixAddTorque::setup(int vflag)
+void FixAddTorqueGroup::setup(int vflag)
 {
   if (utils::strmatch(update->integrate_style,"^verlet"))
     post_force(vflag);
@@ -150,14 +154,14 @@ void FixAddTorque::setup(int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void FixAddTorque::min_setup(int vflag)
+void FixAddTorqueGroup::min_setup(int vflag)
 {
   post_force(vflag);
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixAddTorque::post_force(int /*vflag*/)
+void FixAddTorqueGroup::post_force(int /*vflag*/)
 {
   double **x = atom->x;
   double **f = atom->f;
@@ -245,14 +249,14 @@ void FixAddTorque::post_force(int /*vflag*/)
 
 /* ---------------------------------------------------------------------- */
 
-void FixAddTorque::post_force_respa(int vflag, int ilevel, int /*iloop*/)
+void FixAddTorqueGroup::post_force_respa(int vflag, int ilevel, int /*iloop*/)
 {
   if (ilevel == ilevel_respa) post_force(vflag);
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixAddTorque::min_post_force(int vflag)
+void FixAddTorqueGroup::min_post_force(int vflag)
 {
   post_force(vflag);
 }
@@ -261,7 +265,7 @@ void FixAddTorque::min_post_force(int vflag)
    potential energy of added torque
 ------------------------------------------------------------------------- */
 
-double FixAddTorque::compute_scalar()
+double FixAddTorqueGroup::compute_scalar()
 {
   // only sum across procs one time
 
@@ -276,7 +280,7 @@ double FixAddTorque::compute_scalar()
    return components of total torque on fix group before torque was changed
 ------------------------------------------------------------------------- */
 
-double FixAddTorque::compute_vector(int n)
+double FixAddTorqueGroup::compute_vector(int n)
 {
   // only sum across procs one time
 
