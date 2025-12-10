@@ -710,7 +710,7 @@ void Output::write_molecule_json(FILE *fp, int json_level, int printflag, int *i
             int len;
             MPI_Recv(&len, 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             metadata_val.resize(len);
-            MPI_Recv(&metadata_val[0], len, MPI_CHAR, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(metadata_val.data(), len, MPI_CHAR, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
           }
           MPI_Recv(&n2recv, 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
           std::vector<Particle> atoms_recv(n2recv);
