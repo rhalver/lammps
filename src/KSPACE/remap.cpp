@@ -545,10 +545,10 @@ struct remap_plan_3d *remap_3d_create_plan(
       plan->pack = pack_3d;
 
       plan->send_offset = (int *) malloc(nsend*sizeof(int));
-      plan->send_size = (int *) malloc(plan->commringlen*sizeof(int));
+      plan->send_size = (int *) malloc(plan->commringlen*sizeof(int) + 1);
 
-      plan->sendcnts = (int *) malloc(plan->commringlen*sizeof(int));
-      plan->sdispls = (int *) malloc(plan->commringlen*sizeof(int));
+      plan->sendcnts = (int *) malloc(plan->commringlen*sizeof(int) + 1);
+      plan->sdispls = (int *) malloc(plan->commringlen*sizeof(int) + 1);
 
       // only used when sendcnt > 0
 
