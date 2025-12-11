@@ -637,9 +637,9 @@ void KSpace::modify_params(int narg, char **arg)
       } else {
         mesg += "  Gewald/disp is determined automatically\n";
       }
-    }    
+    }
     if (comm->me == 0) utils::logmesg(lmp, mesg, false);
-  }   
+  }
 }
 
 /* ---------------------------------------------------------------------- */
