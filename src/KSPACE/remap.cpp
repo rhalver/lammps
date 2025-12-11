@@ -583,10 +583,10 @@ struct remap_plan_3d *remap_3d_create_plan(
       }
 
       plan->recv_offset = (int *) malloc(nrecv*sizeof(int));
-      plan->recv_size = (int *) malloc(plan->commringlen*sizeof(int));
+      plan->recv_size = (int *) malloc(plan->commringlen*sizeof(int) + 1);
 
-      plan->rcvcnts = (int *) malloc(plan->commringlen*sizeof(int));
-      plan->rdispls = (int *) malloc(plan->commringlen*sizeof(int));
+      plan->rcvcnts = (int *) malloc(plan->commringlen*sizeof(int) + 1);
+      plan->rdispls = (int *) malloc(plan->commringlen*sizeof(int) + 1);
 
       // only used when recvcnt > 0
 
