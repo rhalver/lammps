@@ -563,7 +563,7 @@ int PairMLIAPKokkos<DeviceType>::pack_reverse_comm_kokkos(int nv, int first_up, 
       const int i = start/nf;
       const int gstart=(first_up+i)*nf;
       const int j = start%nf;
-      val(start+j) = static_cast<double>(to[gstart+j]);
+      val(start) = static_cast<double>(to[gstart+j]);
     }
   );
   return nv*nf;
@@ -631,7 +631,7 @@ void PairMLIAPKokkos<DeviceType>::unpack_reverse_comm_kokkos(int nv, DAT::tdual_
       const int i = start/nf;
       const int gstart=idx(i)*nf;
       const int j=i%nf;
-      to[gstart+j] += static_cast<CommType>(val(start+j));
+      to[gstart+j] += static_cast<CommType>(val(start));
     }
   );
 }
