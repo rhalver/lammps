@@ -630,7 +630,7 @@ void PairMLIAPKokkos<DeviceType>::unpack_reverse_comm_kokkos(int nv, DAT::tdual_
   Kokkos::parallel_for(nv*nf, KOKKOS_LAMBDA (int start) {
       const int i = start/nf;
       const int gstart=idx(i)*nf;
-      const int j=i%nf;
+      const int j=start%nf;
       to[gstart+j] += static_cast<CommType>(val(start));
     }
   );
