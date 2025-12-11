@@ -180,7 +180,8 @@ void KSpace::two_charge()
 void KSpace::triclinic_check()
 {
   if (domain->triclinic && triclinic_support != 1)
-    error->all(FLERR,"KSpace style does not yet support triclinic geometries");
+    error->all(FLERR, Error::NOLASTLINE,
+               "KSpace style {} does not yet support triclinic geometries", force->kspace_style);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -197,27 +198,24 @@ void KSpace::compute_dummy(int eflag, int vflag, int alloc)
 void KSpace::pair_check()
 {
   if (force->pair == nullptr)
-    error->all(FLERR,"KSpace solver requires a pair style");
+    error->all(FLERR, Error::NOLASTLINE,
+               "KSpace style {} requires a pair style", force->kspace_style);
 
-  if (ewaldflag && !force->pair->ewaldflag)
-    error->all(FLERR,"KSpace style is incompatible with Pair style");
-  if (pppmflag && !force->pair->pppmflag)
-    error->all(FLERR,"KSpace style is incompatible with Pair style");
-  if (msmflag && !force->pair->msmflag)
-    error->all(FLERR,"KSpace style is incompatible with Pair style");
-  if (dispersionflag && !force->pair->dispersionflag)
-    error->all(FLERR,"KSpace style is incompatible with Pair style");
-  if (dipoleflag && !force->pair->dipoleflag)
-    error->all(FLERR,"KSpace style is incompatible with Pair style");
-  if (spinflag && !force->pair->spinflag)
-    error->all(FLERR,"KSpace style is incompatible with Pair style");
-  if (tip4pflag && !force->pair->tip4pflag)
-    error->all(FLERR,"KSpace style is incompatible with Pair style");
+  bool compatible = true;
+  if (ewaldflag && !force->pair->ewaldflag) compatible = false;
+  if (pppmflag && !force->pair->pppmflag) compatible = false;
+  if (msmflag && !force->pair->msmflag) compatible = false;
+  if (dispersionflag && !force->pair->dispersionflag) compatible = false;
+  if (dipoleflag && !force->pair->dipoleflag) compatible = false;
+  if (spinflag && !force->pair->spinflag) compatible = false;
+  if (tip4pflag && !force->pair->tip4pflag) compatible = false;
+  if (force->pair->dispersionflag && !dispersionflag) compatible = false;
+  if (force->pair->tip4pflag && !tip4pflag) compatible = false;
 
-  if (force->pair->dispersionflag && !dispersionflag)
-    error->all(FLERR,"KSpace style is incompatible with Pair style");
-  if (force->pair->tip4pflag && !tip4pflag)
-    error->all(FLERR,"KSpace style is incompatible with Pair style");
+  if (!compatible)
+    error->all(FLERR, Error::NOLASTLINE,
+               "KSpace style {} is incompatible with Pair style {}",
+               force->kspace_style, force->pair_style);
 }
 
 /* ----------------------------------------------------------------------
