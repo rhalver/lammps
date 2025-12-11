@@ -160,7 +160,7 @@ an equal-style :doc:`variable <variable>`. When using the
 first Nsteps timesteps of the first run (after reading either a data or
 restart file).
 
-.. versionadded:: TBD
+.. versionadded:: 10Dec2025
 
 The *delete_subgroup* keyword enforces a requirement that deleted molecules
 must have at least one atom in the group specified by the keyword's

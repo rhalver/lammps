@@ -243,7 +243,7 @@ scalar or vector values from a compute as input.  See the :doc:`Howto
 output <Howto_output>` doc page for an overview of LAMMPS output
 options.
 
-.. versionadded:: TBD
+.. versionadded:: 10Dec2025
 
 This compute supports automatically generated thermo column names when
 using :doc:`thermo_modify colname auto <thermo_modify>`.  The thermo column

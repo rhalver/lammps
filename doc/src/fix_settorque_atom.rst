@@ -34,7 +34,7 @@ Examples
 Description
 """""""""""
 
-.. versionadded:: TBD
+.. versionadded:: 10Dec2025
 
 This fix is intended to set the peratom torque of individual finite-size
 atoms in the fix group to the specified values. Unlike :doc:`fix

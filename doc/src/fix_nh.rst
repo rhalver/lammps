@@ -642,7 +642,7 @@ by tchain for eta_dot, followed by ndof for omega, etc:
 * KE_etap_dot[pchain] = kinetic energy of each barostat thermostat velocity (energy units)
 * PE_strain[1] = scalar strain energy (energy units)
 
-.. versionadded:: TBD
+.. versionadded:: 10Dec2025
 
 This fix supports automatically generated thermo column names when using
 :doc:`thermo_modify colname auto <thermo_modify>`.  The thermo column names
