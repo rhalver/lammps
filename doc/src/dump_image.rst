@@ -224,8 +224,8 @@ format <png_format_>`_ is created, else a `PPM (aka NETPBM) format
 <ppm_format_>`_ file is created.  The JPEG and PNG files are binary; PPM
 has a text mode header followed by binary data. JPEG images have lossy
 compression, PNG has lossless compression, and PPM files are
-uncompressed but can be compressed with a support compression program,
-if LAMMPS has been compiled with :ref:`-DLAMMPS_GZIP <gzip>` and a
+uncompressed but can be compressed with a supported compression program,
+if LAMMPS has been compiled with :ref:`compression support <gzip>` and a
 supported suffix is used.
 
 .. _jpeg_format: https://jpeg.org/jpeg/

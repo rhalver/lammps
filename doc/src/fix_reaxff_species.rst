@@ -87,9 +87,9 @@ the first line.
    low frequency.
 
 If the filename ends with ".gz" or some :ref:`other supported
-compression format suffix <gzip>`, the output file is written in gzipped
-format.  A compressed output file can be significantly smaller than the
-text version, but will also take longer to write.
+compression format suffix <gzip>`, the output file is written in
+compressed format.  A compressed output file can be significantly
+smaller than the text version, but will also take longer to write.
 
 .. versionadded:: 15Jun2023
 

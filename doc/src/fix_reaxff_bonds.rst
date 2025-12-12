@@ -53,9 +53,9 @@ The meaning of the column header abbreviations is as follows:
 * q = atomic charge
 
 If the filename ends with ".gz" or some :ref:`other supported
-compression format suffix <gzip>`, the output file is written in gzipped
-format.  A compressed output file can be significantly smaller than the
-text version, but will also take longer to write.
+compression format suffix <gzip>`, the output file is written in
+compressed format.  A compressed output file can be significantly
+smaller than the text version, but will also take longer to write.
 
 .. versionadded:: 2Apr2025
 

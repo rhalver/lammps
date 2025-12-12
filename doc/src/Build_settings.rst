@@ -470,10 +470,10 @@ including :doc:`read_data <read_data>`, :doc:`write_data <write_data>`,
 <write_dump>`.  Supported compression tools and algorithms are currently
 ``gzip``, ``bzip2``, ``zstd``, ``xz``, ``lz4``, ``lzma`` (via xz),
 ``brotli``, and ``7-zip (via 7z)``.  LAMMPS checks at runtime, which
-compression commands are available and adjust the check for supported
-suffixes accordingly.  The list of available compression formats is
-shown when running LAMMPS with the :doc:`-help or -h command_line flag
-<Run_options>`.
+compression commands are available and adjusts the check for supported
+suffixes accordingly.  The list of available compression formats and
+suffixes is shown when running LAMMPS with the :doc:`-help or -h
+command_line flag <Run_options>`.
 
 .. tabs::
 

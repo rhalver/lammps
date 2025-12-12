@@ -1086,11 +1086,11 @@ FILE *platform::compressed_write(const std::string &file)
   const auto &compress = find_compress_type(file);
   if (compress.style == ::compress_info::NONE) return nullptr;
   if (!file_is_writable(file)) return nullptr;
-  // empty compressflags indicates that compression is not supported.
-  if (compress.compressflags.empty()) return nullptr;
 
   if (find_exe_path(compress.command).size()) {
     // explicitly delete existing files for compatibility with commands that cannot write to stdout
+    // and thus we don't use redirection to a file, but provide the file name as argument directly.
+    // this can result in failure or inclusion of the same filename multiple times with out deleting
     if (file_is_readable(file)) unlink(file);
     // put quotes around file name for shell command so that they may contain blanks
     fp = popen((compress.command + compress.compressflags + "\"" + file + "\""), "w");
