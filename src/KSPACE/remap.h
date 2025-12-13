@@ -19,10 +19,10 @@
 
 struct remap_plan_3d {
   remap_plan_3d(int, int);
-  virtual ~remap_plan_3d();
+  ~remap_plan_3d();
 
   remap_plan_3d() = delete;
-  remap_plan_3d(const remap_plan_3d &) = default;
+  remap_plan_3d(const remap_plan_3d &) = delete;
   remap_plan_3d(remap_plan_3d &&) = delete;
   remap_plan_3d &operator=(const remap_plan_3d &) = delete;
   remap_plan_3d &operator=(remap_plan_3d &&) = delete;

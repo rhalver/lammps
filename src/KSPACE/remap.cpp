@@ -229,7 +229,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 
   try {
     plan = new remap_plan_3d(usecollective, usenonblocking);
-  } catch (std::exception &) {
+  } catch (std::bad_alloc &) {
     return nullptr;
   }
 
@@ -269,6 +269,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 
   outarray = (struct extent_3d *) malloc(nprocs*sizeof(struct extent_3d));
   if (outarray == nullptr) {
+    free(inarray);
     delete plan;
     return nullptr;
   }
@@ -809,13 +810,16 @@ remap_plan_3d::remap_plan_3d(int _usecollective, int _usenonblocking) :
 {
   usecollective = _usecollective;
   usenonblocking = _usenonblocking;
+  nrecv = nsend = self = memory = usecollective = usenonblocking = commringlen = 0;
+  comm = MPI_COMM_NULL;
 }
 
 /* 3d remap plan destructor. free all allocated storage */
 remap_plan_3d::~remap_plan_3d()
 {
   // free any allocated (= non-null) buffers
-#define SAFE_FREE(ptr) if (ptr) free(ptr)
+#define SAFE_FREE(ptr) \
+  if (ptr) free(ptr)
 
   SAFE_FREE(sendbuf);
   SAFE_FREE(scratch);
